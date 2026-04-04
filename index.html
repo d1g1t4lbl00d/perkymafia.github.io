@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- ╔══════════════════════════════════════════════════════════════╗
+     ║  PERKY MAFIA — WEB OFICIAL                                 ║
+     ║                                                             ║
+     ║  COMO EDITAR ESTA WEB:                                     ║
+     ║  1. Busca los bloques [EDITAR] para cambiar textos         ║
+     ║  2. Las imagenes estan en /assets/ — cambia los archivos   ║
+     ║  3. Los colores estan en :root { } al principio del CSS    ║
+     ║  4. Los links a redes estan marcados con [LINK]            ║
+     ╚══════════════════════════════════════════════════════════════╝ -->
+
+<!-- [EDITAR] Titulo de la pestaña del navegador -->
+<title>★ PERKY MAFIA ★ oficial ★</title>
+<meta name="description" content="PERKY MAFIA — Escucha todos los tracks. FOR PERKY PAKOS.">
+
+<!-- [EDITAR] Favicon e imagen para redes — cambia assets/favicon.png y assets/logo.png -->
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta property="og:image" content="assets/logo.png">
+<meta property="og:title" content="PERKY MAFIA">
+<meta property="og:description" content="FOR PERKY PAKOS — 58 tracks en SoundCloud">
+
+<!-- Fuentes — no tocar salvo que quieras cambiar las tipografias -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Comic+Neue:wght@400;700&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
+
+<style>
+/* ================================================================
+   [EDITAR] COLORES — cambia estos valores para cambiar toda la web
+   ================================================================ */
+:root {
+  --bg:      #0a0a0a;   /* fondo principal (negro) */
+  --green:   #39ff14;   /* verde neon */
+  --pink:    #ff2a6d;   /* rosa/rojo */
+  --yellow:  #ffe600;   /* amarillo */
+  --cyan:    #293435;   /* cian */
+  --white:   #f0f0f0;   /* blanco */
+  --red:     #ff0000;   /* rojo puro */
+  --orange:  #ff6600;   /* naranja */
+}
+
+/* ================================================================
+   RESET — no tocar
+   ================================================================ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:'VT323',monospace;
+  background:var(--bg);color:var(--white);
+  overflow-x:hidden;cursor:crosshair;
+  image-rendering:pixelated;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:14px}
+::-webkit-scrollbar-track{background:var(--bg);border-left:3px solid var(--green);border-right:3px solid var(--green)}
+::-webkit-scrollbar-thumb{background:var(--pink);border:2px solid var(--yellow)}
+
+/* ================================================================
+   LOADER
+   ================================================================ */
+.loader{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.8rem;
+  z-index:999999;transition:opacity 0.4s,visibility 0.4s;
+}
+.loader.hidden{opacity:0;visibility:hidden}
+.loader img{width:80px;height:auto;image-rendering:auto;filter:drop-shadow(0 0 10px var(--pink));animation:logoFloat 2s ease-in-out infinite}
+.loader-t{
+  font-family:'Press Start 2P',monospace;
+  font-size:clamp(1rem,4vw,2rem);color:var(--green);
+  animation:blink 0.4s step-end infinite;
+}
+.loader-bar{width:200px;height:20px;border:3px solid var(--green);position:relative;overflow:hidden}
+.loader-fill{position:absolute;top:0;left:0;height:100%;background:var(--green);animation:loadFill 1.2s steps(10) forwards}
+@keyframes loadFill{from{width:0}to{width:100%}}
+@keyframes blink{50%{opacity:0}}
+
+/* ================================================================
+   NAV
+   ================================================================ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:10000;
+  padding:0.4rem 0.8rem;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg);border-bottom:3px solid var(--green);
+  font-family:'Press Start 2P',monospace;font-size:0.55rem;
+  transition:transform 0.3s;
+}
+.nav-logo{color:var(--pink);text-decoration:none;display:flex;align-items:center;gap:0.4rem}
+.nav-logo:hover .nav-logo-text{color:var(--yellow);text-shadow:0 0 12px var(--yellow),0 0 25px rgba(255,230,0,0.4),2px 2px 0 var(--pink)}
+.nav-logo img{width:28px;height:28px;image-rendering:auto;filter:drop-shadow(0 0 4px var(--pink))}
+.nav-logo-text{
+  font-family:'UnifrakturMaguntia',cursive;
+  font-size:clamp(1rem,2.5vw,1.35rem);
+  color:var(--pink);
+  text-shadow:0 0 8px var(--pink),0 0 20px rgba(255,42,109,0.3),2px 2px 0 var(--yellow);
+  letter-spacing:0.05em;
+  transition:all 0.2s;
+  line-height:1;
+}
+.nav-links{display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap}
+.nav-links a{color:var(--green);text-decoration:none;transition:color 0.1s}
+.nav-links a:hover{color:var(--yellow);text-decoration:underline wavy}
+.nav-links a.ext{
+  background:var(--red);color:var(--white);padding:0.25rem 0.5rem;
+  border:2px solid var(--yellow);text-decoration:none;
+  animation:extPulse 1s step-end infinite;
+}
+@keyframes extPulse{50%{background:var(--pink)}}
+
+/* ================================================================
+   HERO
+   ================================================================ */
+.hero{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;padding:4rem 1rem;
+}
+.hero-bg-vid{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;opacity:0.25;
+  filter:saturate(2) contrast(1.4) hue-rotate(20deg);
+  z-index:0;mix-blend-mode:screen;
+}
+.hero-bg-img{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;opacity:0.1;
+  filter:grayscale(1) contrast(2);z-index:0;mix-blend-mode:overlay;
+}
+/* scanlines CRT */
+.scanlines::after{
+  content:'';position:absolute;top:0;left:0;width:100%;height:100%;
+  background:repeating-linear-gradient(0deg,rgba(0, 0, 0, 0.15) 0px,rgba(0,0,0,0.15) 1px,transparent 1px,transparent 3px);
+  pointer-events:none;z-index:1;
+}
+.hero-content{
+  position:relative;z-index:2;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:1.2rem;
+}
+.hero-ascii{
+  font-family:'VT323',monospace;font-size:clamp(0.45rem,1.4vw,0.8rem);
+  color:var(--green);white-space:pre;line-height:1.1;
+  text-shadow:0 0 10px var(--green);
+  opacity:0;animation:fadeIn 0.5s 0.8s forwards;
+}
+.hero-title{
+  font-family:'UnifrakturMaguntia',cursive;
+  font-size:clamp(2.5rem,10vw,7rem);line-height:1.1;color:var(--white);
+  text-shadow:4px 4px 0 var(--pink),-2px -2px 0 var(--cyan),0 0 20px var(--pink),0 0 50px rgba(255,42,109,0.4);
+  opacity:0;animation:fadeIn 0.5s 1s forwards;
+  letter-spacing:0.03em;
+}
+.hero-sub{
+  font-family:'VT323',monospace;font-size:clamp(1.2rem,3vw,2rem);
+  color:var(--yellow);text-shadow:0 0 10px var(--yellow);
+  opacity:0;animation:fadeIn 0.5s 1.2s forwards;
+}
+.hero-stats{
+  display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:center;
+  opacity:0;animation:fadeIn 0.5s 1.4s forwards;
+}
+.stat-box{
+  border:3px solid var(--green);padding:0.6rem 1rem;
+  text-align:center;position:relative;background:rgba(57,255,20,0.05);
+}
+.stat-box::before{
+  content:'';position:absolute;top:-3px;left:-3px;right:-3px;bottom:-3px;
+  border:1px dashed var(--green);opacity:0.3;
+}
+.stat-n{font-family:'Press Start 2P',monospace;font-size:1.2rem;color:var(--pink);text-shadow:2px 2px 0 rgba(255,42,109,0.3)}
+.stat-l{font-size:1rem;color:var(--green)}
+.hero-cta{
+  display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;
+  opacity:0;animation:fadeIn 0.5s 1.6s forwards;
+}
+.btn-pixel{
+  font-family:'Press Start 2P',monospace;font-size:0.6rem;
+  padding:0.8rem 1.2rem;border:3px solid;cursor:pointer;
+  text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;
+  transition:all 0.1s;position:relative;
+}
+.btn-pixel:hover{transform:translate(-2px,-2px)}
+.btn-pixel:active{transform:translate(2px,2px)}
+.btn-play{background:var(--pink);color:var(--white);border-color:var(--yellow);box-shadow:4px 4px 0 var(--yellow)}
+.btn-play:hover{box-shadow:6px 6px 0 var(--yellow)}
+.btn-sc{background:transparent;color:var(--green);border-color:var(--green);box-shadow:4px 4px 0 var(--green)}
+.btn-sc:hover{background:rgba(57,255,20,0.1);box-shadow:6px 6px 0 var(--green)}
+.scroll-hint{
+  position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);
+  font-family:'VT323',monospace;font-size:1.3rem;color:var(--green);z-index:2;
+  animation:bounce 1.5s ease-in-out infinite;text-shadow:0 0 8px var(--green);
+}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(10px)}}
+@keyframes fadeIn{to{opacity:1}}
+
+/* ================================================================
+   GLITCH — efecto glitch en textos
+   ================================================================ */
+.glitch{position:relative;display:inline-block}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%}
+.glitch::before{color:var(--cyan);z-index:-1;animation:g1 3s infinite steps(2)}
+.glitch::after{color:var(--pink);z-index:-1;animation:g2 3s infinite steps(2)}
+@keyframes g1{
+  0%,100%{clip-path:inset(0 0 90% 0);transform:translate(-3px)}
+  25%{clip-path:inset(30% 0 40% 0);transform:translate(3px)}
+  50%{clip-path:inset(60% 0 10% 0);transform:translate(-2px)}
+  75%{clip-path:inset(10% 0 70% 0);transform:translate(2px)}
+}
+@keyframes g2{
+  0%,100%{clip-path:inset(80% 0 0 0);transform:translate(3px)}
+  25%{clip-path:inset(10% 0 60% 0);transform:translate(-3px)}
+  50%{clip-path:inset(40% 0 30% 0);transform:translate(2px)}
+  75%{clip-path:inset(70% 0 5% 0);transform:translate(-2px)}
+}
+
+/* ================================================================
+   MARQUEE STRIP
+   ================================================================ */
+.strip{
+  border-top:3px solid var(--pink);border-bottom:3px solid var(--pink);
+  background:var(--pink);padding:0.3rem 0;overflow:hidden;
+}
+.strip-track{display:flex;animation:marquee 20s linear infinite;width:max-content}
+.strip-item{
+  font-family:'Press Start 2P',monospace;font-size:0.6rem;
+  color:var(--bg);white-space:nowrap;padding:0 1.5rem;
+}
+.strip-item .s{color:var(--yellow)}
+@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ================================================================
+   SECCIONES — comun
+   ================================================================ */
+section{padding:4rem 1rem;position:relative}
+.sec-head{text-align:center;margin-bottom:2.5rem}
+.sec-tag{font-family:'VT323',monospace;font-size:1.3rem;color:var(--green);text-shadow:0 0 8px var(--green)}
+.sec-title{
+  font-family:'Press Start 2P',monospace;font-size:clamp(1rem,4vw,2rem);
+  color:var(--white);text-shadow:3px 3px 0 var(--pink);margin-top:0.3rem;
+}
+.sec-line{width:100px;height:3px;margin:0.8rem auto 0;background:linear-gradient(90deg,var(--pink),var(--cyan),var(--green))}
+
+/* ================================================================
+   PLAYER
+   ================================================================ */
+#tracks{position:relative;overflow:hidden}
+#tracks .sec-bg{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;opacity:0.06;filter:grayscale(1) contrast(3);z-index:0;
+}
+#tracks>*{position:relative;z-index:1}
+.player-box{
+  max-width:850px;margin:0 auto;
+  border:3px solid var(--green);
+  box-shadow:0 0 15px rgba(57,255,20,0.2),6px 6px 0 var(--pink);
+  background:var(--bg);overflow:hidden;
+}
+.player-top{
+  padding:0.5rem 0.8rem;border-bottom:3px solid var(--green);
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(57,255,20,0.08);
+  font-family:'Press Start 2P',monospace;font-size:0.45rem;
+}
+.player-top .dot{width:8px;height:8px;background:var(--red);display:inline-block;margin-right:0.4rem;animation:blink 0.8s step-end infinite}
+.player-top .cnt{color:var(--yellow)}
+.soundcloud-embed{width:100%;border:none;display:block}
+.player-bot{
+  padding:0.4rem 0.8rem;border-top:2px dashed var(--green);
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:1rem;color:var(--green);background:rgba(57,255,20,0.03);
+}
+.player-bot a{color:var(--pink);text-decoration:none;font-family:'Press Start 2P',monospace;font-size:0.45rem}
+.player-bot a:hover{color:var(--yellow);text-decoration:underline}
+
+/* ================================================================
+   CATALOGO
+   ================================================================ */
+#all-tracks{background:linear-gradient(180deg,var(--bg) 0%,#0d0d12 100%);position:relative;overflow:hidden}
+#all-tracks .catalogo-bg{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;opacity:0.08;filter:grayscale(0.5) contrast(1.5) brightness(0.8);z-index:0;
+}
+#all-tracks>*{position:relative;z-index:1}
+.tracks-grid{max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:1rem}
+.track-item{
+  border:2px solid var(--green);box-shadow:4px 4px 0 var(--pink);
+  overflow:hidden;background:var(--bg);transition:transform 0.1s,box-shadow 0.1s;
+}
+.track-item:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--pink);border-color:var(--yellow)}
+
+/* ================================================================
+   VIDEO SECTION
+   ================================================================ */
+.vid-section{
+  position:relative;overflow:hidden;min-height:50vh;
+  display:flex;align-items:center;justify-content:center;
+  border-top:3px solid var(--pink);border-bottom:3px solid var(--pink);
+}
+.vid-section video{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;opacity:0.35;filter:saturate(1.5) contrast(1.3) hue-rotate(30deg);
+}
+.vid-section .vid-text{position:relative;z-index:2;text-align:center;padding:2rem}
+.vid-section .vid-text h2{
+  font-family:'Press Start 2P',monospace;font-size:clamp(1rem,4vw,2.5rem);
+  color:var(--white);text-shadow:3px 3px 0 var(--pink),0 0 30px var(--pink);margin-bottom:0.5rem;
+}
+.vid-section .vid-text p{font-family:'VT323',monospace;font-size:1.5rem;color:var(--yellow);text-shadow:0 0 10px var(--yellow)}
+
+/* ================================================================
+   PILL BOTTLE — animaciones agresivas sincronizadas
+   ================================================================ */
+.pill-wrap{
+  position:relative;
+  display:inline-block;
+  animation:pillEntry 0.8s cubic-bezier(0.16,1,0.3,1) forwards;
+  opacity:0;
+}
+.pill-bottle{
+  width:clamp(180px,30vw,320px);height:auto;
+  position:relative;z-index:2;
+  filter:
+    drop-shadow(0 0 20px var(--pink))
+    drop-shadow(0 0 40px rgba(255,42,109,0.5));
+  animation:
+    pillThrob 0.5s ease-in-out infinite,
+    pillShake 4s steps(1) infinite,
+    pillGlow 3s ease-in-out infinite alternate;
+}
+
+/* — RGB split ghost layers — */
+.pill-ghost{
+  position:absolute;top:0;left:0;
+  width:clamp(180px,30vw,320px);height:auto;
+  pointer-events:none;
+  mix-blend-mode:screen;
+  opacity:0;
+}
+.pill-ghost--r{
+  z-index:1;
+  animation:ghostR 4s steps(1) infinite;
+  filter:hue-rotate(-40deg) saturate(3) brightness(1.5);
+}
+.pill-ghost--c{
+  z-index:1;
+  animation:ghostC 4s steps(1) infinite;
+  filter:hue-rotate(160deg) saturate(3) brightness(1.5);
+}
+
+/* — Entrada — */
+@keyframes pillEntry{
+  0%{opacity:0;transform:scale(0.2) rotate(-25deg) translateY(60px)}
+  50%{opacity:1;transform:scale(1.12) rotate(4deg) translateY(-10px)}
+  70%{transform:scale(0.94) rotate(-2deg) translateY(5px)}
+  85%{transform:scale(1.04) rotate(1deg) translateY(-3px)}
+  100%{opacity:1;transform:scale(1) rotate(0deg) translateY(0)}
+}
+
+/* — Pulso de bajo / throb ritmico — */
+@keyframes pillThrob{
+  0%,100%{transform:scale(1) translateY(0)}
+  15%{transform:scale(1.04) translateY(-3px)}
+  30%{transform:scale(0.98) translateY(1px)}
+  50%{transform:scale(1.02) translateY(-1px)}
+}
+
+/* — Sacudida glitch intermitente — */
+@keyframes pillShake{
+  0%,8%,100%{transform:translate(0,0) rotate(0deg)}
+  1%{transform:translate(-6px,3px) rotate(-2deg)}
+  2%{transform:translate(5px,-2px) rotate(1.5deg)}
+  3%{transform:translate(-3px,-4px) rotate(-1deg)}
+  4%{transform:translate(4px,2px) rotate(2deg)}
+  5%{transform:translate(-2px,1px) rotate(-0.5deg)}
+  25%,33%{transform:translate(0,0)}
+  26%{transform:translate(3px,-3px) rotate(1deg)}
+  27%{transform:translate(-4px,2px) rotate(-1.5deg)}
+  28%{transform:translate(2px,3px) rotate(0.8deg)}
+  50%,54%{transform:translate(0,0)}
+  51%{transform:translate(-5px,-2px) rotate(-2.5deg)}
+  52%{transform:translate(6px,1px) rotate(1.8deg)}
+  53%{transform:translate(-2px,4px) rotate(-0.6deg)}
+  75%,80%{transform:translate(0,0)}
+  76%{transform:translate(4px,-4px) rotate(2deg)}
+  77%{transform:translate(-3px,3px) rotate(-1.2deg)}
+  78%{transform:translate(2px,-1px) rotate(0.5deg)}
+}
+
+/* — Glow color cycling — */
+@keyframes pillGlow{
+  0%{filter:drop-shadow(0 0 15px var(--pink)) drop-shadow(0 0 40px rgba(255,42,109,0.6)) brightness(1)}
+  25%{filter:drop-shadow(0 0 25px var(--red)) drop-shadow(0 0 50px rgba(255,0,0,0.5)) brightness(1.15)}
+  50%{filter:drop-shadow(0 0 20px var(--cyan)) drop-shadow(0 0 45px rgba(5,217,232,0.5)) brightness(1.05)}
+  75%{filter:drop-shadow(0 0 30px var(--yellow)) drop-shadow(0 0 55px rgba(255,230,0,0.4)) brightness(1.2)}
+  100%{filter:drop-shadow(0 0 18px var(--green)) drop-shadow(0 0 40px rgba(57,255,20,0.5)) brightness(1.1)}
+}
+
+/* — Ghost R channel glitch — */
+@keyframes ghostR{
+  0%,5%,26%,30%,51%,56%,76%,81%,100%{opacity:0;transform:translate(0,0)}
+  1%{opacity:0.6;transform:translate(8px,-3px)}
+  2%{opacity:0.5;transform:translate(10px,2px)}
+  3%{opacity:0.7;transform:translate(6px,-4px)}
+  4%{opacity:0.4;transform:translate(12px,1px)}
+  27%{opacity:0.5;transform:translate(7px,-2px)}
+  28%{opacity:0.6;transform:translate(9px,3px)}
+  29%{opacity:0.4;transform:translate(5px,-1px)}
+  52%{opacity:0.7;transform:translate(11px,-3px)}
+  53%{opacity:0.5;transform:translate(8px,2px)}
+  54%{opacity:0.3;transform:translate(6px,-2px)}
+  55%{opacity:0.6;transform:translate(10px,1px)}
+  77%{opacity:0.5;transform:translate(9px,-4px)}
+  78%{opacity:0.6;transform:translate(7px,3px)}
+  79%{opacity:0.4;transform:translate(11px,-1px)}
+  80%{opacity:0.3;transform:translate(6px,2px)}
+}
+
+/* — Ghost C channel glitch — */
+@keyframes ghostC{
+  0%,5%,26%,30%,51%,56%,76%,81%,100%{opacity:0;transform:translate(0,0)}
+  1%{opacity:0.5;transform:translate(-7px,3px)}
+  2%{opacity:0.6;transform:translate(-9px,-2px)}
+  3%{opacity:0.4;transform:translate(-5px,4px)}
+  4%{opacity:0.5;transform:translate(-11px,-1px)}
+  27%{opacity:0.6;transform:translate(-8px,2px)}
+  28%{opacity:0.4;transform:translate(-6px,-3px)}
+  29%{opacity:0.5;transform:translate(-10px,1px)}
+  52%{opacity:0.5;transform:translate(-9px,3px)}
+  53%{opacity:0.6;transform:translate(-7px,-2px)}
+  54%{opacity:0.4;transform:translate(-11px,4px)}
+  55%{opacity:0.3;transform:translate(-5px,-1px)}
+  77%{opacity:0.6;transform:translate(-8px,4px)}
+  78%{opacity:0.4;transform:translate(-10px,-3px)}
+  79%{opacity:0.5;transform:translate(-6px,1px)}
+  80%{opacity:0.5;transform:translate(-9px,-2px)}
+}
+
+/* — Flicker strobe overlay on the whole vid-section — */
+.vid-section::before{
+  content:'';
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  z-index:3;pointer-events:none;
+  background:radial-gradient(ellipse at center, transparent 40%, rgba(255,42,109,0.08) 100%);
+  animation:sectionFlicker 6s steps(1) infinite;
+}
+@keyframes sectionFlicker{
+  0%,3%,100%{opacity:1}
+  1%{opacity:0.4}
+  2%{opacity:0.9}
+  50%,52%{opacity:1}
+  51%{opacity:0.3}
+  75%,77%{opacity:1}
+  76%{opacity:0.5}
+}
+
+/* ================================================================
+   ABOUT
+   ================================================================ */
+#about{position:relative;overflow:hidden}
+#about .about-bg{
+  position:absolute;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;opacity:0.07;filter:grayscale(1) contrast(2) brightness(0.8);z-index:0;
+}
+#about>*{position:relative;z-index:1}
+.about-box{
+  max-width:600px;margin:0 auto;border:3px solid var(--green);
+  padding:1.5rem;background:rgba(10,10,10,0.9);
+  box-shadow:0 0 20px rgba(57,255,20,0.1);position:relative;
+}
+.about-box::before{
+  content:'/* about.txt */';position:absolute;top:-0.8rem;left:1rem;
+  font-family:'Press Start 2P',monospace;font-size:0.4rem;
+  color:var(--bg);background:var(--green);padding:0.15rem 0.4rem;
+}
+.about-text{font-family:'VT323',monospace;font-size:1.4rem;line-height:1.7;color:var(--green)}
+.about-text .hl{color:var(--pink);text-shadow:0 0 5px rgba(255,42,109,0.3)}
+.about-text .yl{color:var(--yellow)}
+.social-row{display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;margin-top:2rem}
+.soc-btn{
+  display:flex;align-items:center;gap:0.4rem;padding:0.5rem 1rem;
+  border:3px solid var(--green);background:transparent;color:var(--green);
+  font-family:'Press Start 2P',monospace;font-size:0.5rem;
+  text-decoration:none;box-shadow:3px 3px 0 var(--pink);transition:all 0.1s;
+}
+.soc-btn:hover{background:var(--green);color:var(--bg);transform:translate(-2px,-2px);box-shadow:5px 5px 0 var(--pink)}
+.soc-btn svg{width:16px;height:16px;fill:currentColor}
+
+/* ================================================================
+   FOOTER
+   ================================================================ */
+footer{
+  padding:1.5rem;text-align:center;background:var(--bg);
+  border-top:3px solid var(--green);
+}
+.ft-logo{font-family:'UnifrakturMaguntia',cursive;font-size:1.3rem;color:var(--pink);text-shadow:0 0 8px var(--pink),2px 2px 0 var(--yellow);display:flex;align-items:center;justify-content:center;gap:0.5rem}
+.ft-logo img{width:32px;height:32px;image-rendering:auto;filter:drop-shadow(0 0 4px var(--pink))}
+.hero-logo{
+  width:clamp(120px,25vw,200px);height:auto;
+  image-rendering:auto;
+  filter:drop-shadow(0 0 15px var(--pink)) drop-shadow(0 0 30px rgba(255,42,109,0.4));
+  animation:logoFloat 3s ease-in-out infinite;
+  opacity:0;animation:fadeIn 0.5s 0.5s forwards,logoFloat 3s 1.5s ease-in-out infinite;
+}
+@keyframes logoFloat{
+  0%,100%{transform:translateY(0) rotate(0deg)}
+  25%{transform:translateY(-8px) rotate(2deg)}
+  75%{transform:translateY(4px) rotate(-1deg)}
+}
+.ft-txt{font-family:'VT323',monospace;font-size:1.1rem;color:var(--green);margin-top:0.3rem;opacity:0.6}
+.ft-txt a{color:var(--pink);text-decoration:none}
+.ft-counter{margin-top:0.8rem;font-family:'Press Start 2P',monospace;font-size:0.4rem;color:var(--yellow);opacity:0.4}
+
+/* ================================================================
+   ANIMACIONES
+   ================================================================ */
+.reveal{opacity:0;transform:translateY(20px);transition:opacity 0.5s,transform 0.5s}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media(max-width:768px){
+  nav{padding:0.3rem 0.5rem;font-size:0.45rem}
+  .nav-links{gap:0.5rem}
+  .nav-logo-text{font-size:0.9rem}
+  section{padding:3rem 0.8rem}
+  .hero{padding:3.5rem 0.8rem}
+  .hero-ascii{font-size:0.35rem}
+  .hero-stats{gap:0.6rem}
+  .stat-box{padding:0.4rem 0.6rem}
+  .stat-n{font-size:0.9rem}
+  .btn-pixel{font-size:0.5rem;padding:0.6rem 0.8rem}
+  .hero-cta{flex-direction:column;align-items:center}
+  .btn-pixel{width:100%;max-width:250px;justify-content:center}
+  .pill-bottle,.pill-ghost{width:clamp(140px,40vw,220px)}
+  .vid-section{min-height:35vh}
+}
+@media(max-width:480px){
+  .nav-links a:nth-child(2){display:none}
+}
+
+/* ================================================================
+   METAL LOGO SVG
+   ================================================================ */
+.hero-metal-logo{
+  width:clamp(280px,65vw,700px);height:auto;
+  opacity:0;
+  animation:fadeIn 0.6s 0.9s forwards, logoGlitch 8s 2s steps(1) infinite;
+}
+@keyframes logoGlitch{
+  0%,4%,100%{transform:translate(0,0)}
+  1%{transform:translate(-4px,2px)}
+  2%{transform:translate(3px,-2px)}
+  3%{transform:translate(-2px,1px)}
+  25%,29%{transform:translate(0,0)}
+  26%{transform:translate(3px,-3px)}
+  27%{transform:translate(-5px,1px)}
+  28%{transform:translate(2px,2px)}
+  50%,53%{transform:translate(0,0)}
+  51%{transform:translate(-3px,-2px)}
+  52%{transform:translate(4px,3px)}
+  75%,78%{transform:translate(0,0)}
+  76%{transform:translate(5px,-1px)}
+  77%{transform:translate(-2px,3px)}
+}
+.nav-metal-logo{
+  height:28px;width:auto;
+  transition:filter 0.2s;
+}
+.nav-logo:hover .nav-metal-logo{
+  filter:drop-shadow(0 0 8px var(--yellow)) brightness(1.2);
+}
+.footer-metal-logo{
+  height:24px;width:auto;
+}
+
+/* ================================================================
+   BLOOD DROPS — stats
+   ================================================================ */
+.hero-stats{
+  display:flex;gap:2rem;flex-wrap:wrap;justify-content:center;
+  opacity:0;animation:fadeIn 0.5s 1.4s forwards;
+}
+.stat-drop{
+  text-align:center;
+  animation:dropBounce 3s ease-in-out infinite;
+}
+.stat-drop:nth-child(2){animation-delay:0.4s}
+.stat-drop:nth-child(3){animation-delay:0.8s}
+.drop-svg{
+  width:80px;height:auto;
+  filter:drop-shadow(0 0 10px rgba(255,0,0,0.5));
+  transition:transform 0.2s, filter 0.2s;
+}
+.stat-drop:hover .drop-svg{
+  transform:scale(1.15);
+  filter:drop-shadow(0 0 20px rgba(255,0,0,0.8));
+}
+.drop-label{
+  font-family:'Press Start 2P',monospace;
+  font-size:0.55rem;
+  color:var(--green);
+  margin-top:0.3rem;
+  text-shadow:0 0 6px var(--green);
+}
+@keyframes dropBounce{
+  0%,100%{transform:translateY(0)}
+  30%{transform:translateY(-8px)}
+  50%{transform:translateY(2px)}
+  70%{transform:translateY(-4px)}
+}
+
+/* ================================================================
+   WHATSAPP SECTION
+   ================================================================ */
+#whatsapp{
+  background:linear-gradient(180deg,var(--bg) 0%,#0a0d0a 100%);
+}
+.wa-box{
+  max-width:400px;margin:0 auto;text-align:center;
+  border:3px solid var(--green);
+  padding:1.5rem;background:rgba(10,10,10,0.95);
+  box-shadow:0 0 20px rgba(57,255,20,0.15),6px 6px 0 var(--pink);
+  position:relative;
+}
+.wa-box::before{
+  content:'/* grupo.exe */';position:absolute;top:-0.8rem;left:1rem;
+  font-family:'Press Start 2P',monospace;font-size:0.4rem;
+  color:var(--bg);background:var(--green);padding:0.15rem 0.4rem;
+}
+.wa-qr-wrap{
+  border:3px solid var(--pink);
+  padding:0.5rem;
+  display:inline-block;
+  background:#fff;
+  box-shadow:0 0 15px rgba(255,42,109,0.3);
+}
+.wa-qr{
+  width:220px;height:220px;
+  display:block;
+  image-rendering:auto;
+}
+.wa-txt{
+  font-family:'VT323',monospace;
+  font-size:1.4rem;
+  color:var(--green);
+  margin-top:1rem;
+  text-shadow:0 0 8px var(--green);
+}
+
+/* ================================================================
+   EVENTOS — calendario
+   ================================================================ */
+.eventos-section{
+  position:relative;overflow:hidden;
+}
+.eventos-bg-vid{
+  position:absolute !important;top:0;left:0;width:100%;height:100%;
+  object-fit:cover;opacity:0.15;
+  filter:saturate(1.5) contrast(1.3) hue-rotate(10deg);
+  z-index:0 !important;
+}
+.eventos-section .sec-head,
+.eventos-section .eventos-grid{position:relative;z-index:1}
+.eventos-grid{
+  max-width:700px;margin:0 auto;
+  display:flex;flex-direction:column;gap:1rem;
+}
+.evento-card{
+  display:flex;align-items:stretch;
+  border:2px solid var(--green);
+  background:rgba(10,10,10,0.92);
+  box-shadow:4px 4px 0 var(--pink);
+  overflow:hidden;
+  transition:transform 0.1s,box-shadow 0.1s,border-color 0.1s;
+}
+.evento-card:hover{
+  transform:translate(-2px,-2px);
+  box-shadow:6px 6px 0 var(--pink);
+  border-color:var(--yellow);
+}
+.evento-fecha{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:1rem 1.2rem;
+  background:var(--pink);
+  min-width:80px;
+}
+.evento-dia{
+  font-family:'Press Start 2P',monospace;
+  font-size:1.5rem;color:var(--white);
+  line-height:1;
+}
+.evento-mes{
+  font-family:'Press Start 2P',monospace;
+  font-size:0.55rem;color:var(--yellow);
+  margin-top:0.3rem;
+}
+.evento-info{
+  padding:0.8rem 1rem;
+  display:flex;flex-direction:column;justify-content:center;gap:0.2rem;
+}
+.evento-titulo{
+  font-family:'Press Start 2P',monospace;
+  font-size:0.6rem;color:var(--white);
+  text-shadow:1px 1px 0 var(--pink);
+}
+.evento-lugar{
+  font-family:'VT323',monospace;
+  font-size:1.1rem;color:var(--yellow);
+}
+.evento-desc{
+  font-family:'VT323',monospace;
+  font-size:1rem;color:var(--green);
+  opacity:0.7;
+}
+
+/* ================================================================
+   RESPONSIVE additions
+   ================================================================ */
+@media(max-width:768px){
+  .hero-metal-logo{width:clamp(240px,85vw,500px)}
+  .nav-metal-logo{height:22px}
+  .drop-svg{width:65px}
+  .drop-label{font-size:0.45rem}
+  .hero-stats{gap:1.2rem}
+  .wa-qr{width:180px;height:180px}
+  .evento-fecha{min-width:65px;padding:0.7rem}
+  .evento-dia{font-size:1.1rem}
+  .evento-titulo{font-size:0.5rem}
+}
+
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOADER — pantalla de carga
+     ============================================================ -->
+<div class="loader" id="loader">
+  <img src="assets/logo.png" alt="">
+  <!-- [EDITAR] Texto del loader -->
+  <div class="loader-t">francisconocorazon</div>
+  <div class="loader-bar"><div class="loader-fill"></div></div>
+</div>
+
+<!-- ============================================================
+     NAV — barra de navegacion
+     ============================================================ -->
+<nav>
+  <!-- [EDITAR] Logo del nav — cambia assets/logo.png -->
+  <a href="#" class="nav-logo">
+    <img src="assets/logo.png" alt="PERKY MAFIA">
+    <svg class="nav-metal-logo" viewBox="0 0 300 46" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="nvG" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2.5" result="b"/>
+          <feFlood flood-color="#ff2a6d" flood-opacity="0.6"/>
+          <feComposite in2="b" operator="in" result="g"/>
+          <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <text x="4" y="35" font-family="'UnifrakturMaguntia',cursive" font-size="36" fill="none" stroke="#ff2a6d" stroke-width="3" opacity="0.3" filter="url(#nvG)">Perky Mafia</text>
+      <text x="4" y="35" font-family="'UnifrakturMaguntia',cursive" font-size="36" fill="none" stroke="#05d9e8" stroke-width="1.2" opacity="0.45">Perky Mafia</text>
+      <text x="4" y="35" font-family="'UnifrakturMaguntia',cursive" font-size="36" fill="#f0f0f0">Perky Mafia</text>
+    </svg>
+  </a>
+  <div class="nav-links">
+    <a href="#tracks">[TRACKS]</a>
+    <a href="#all-tracks">[CATALOGO]</a>
+    <a href="#about">[INFO]</a>
+    <a href="#whatsapp">[GRUPO]</a>
+    <a href="#eventos">[EVENTOS]</a>
+    <!-- [LINK] Enlace a SoundCloud -->
+    <a href="https://soundcloud.com/perky-labs" target="_blank" rel="noopener" class="ext">SOUNDCLOUD →</a>
+  </div>
+</nav>
+
+<!-- ============================================================
+     HERO — seccion principal con video y foto de fondo
+     ============================================================ -->
+<section class="hero scanlines">
+  <!-- [EDITAR] Video de fondo — cambia el archivo assets/video-bg.mp4 -->
+  <video class="hero-bg-vid" autoplay muted loop playsinline>
+    <source src="assets/video-bg.mp4" type="video/mp4">
+  </video>
+
+  <!-- [EDITAR] Imagen de fondo — cambia el archivo assets/foto-evento.jpeg -->
+  <img class="hero-bg-img" src="assets/foto-evento.jpeg" alt="">
+
+  <div class="hero-content">
+
+    <!-- [EDITAR] Logo — cambia assets/logo.png -->
+    <img class="hero-logo" src="assets/logo.png" alt="PERKY MAFIA Logo">
+
+    <!-- [EDITAR] ASCII art — puedes cambiarlo o borrarlo -->
+    <pre class="hero-ascii">
+ 
+    </pre>
+
+    <svg class="hero-metal-logo" viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="hmP" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="6" result="b1"/>
+          <feFlood flood-color="#ff2a6d" flood-opacity="0.7"/>
+          <feComposite in2="b1" operator="in" result="g1"/>
+          <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="b2"/>
+          <feFlood flood-color="#ff2a6d" flood-opacity="0.2"/>
+          <feComposite in2="b2" operator="in" result="g2"/>
+          <feMerge><feMergeNode in="g2"/><feMergeNode in="g1"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="hmD">
+          <feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="4" seed="7"/>
+          <feDisplacementMap in="SourceGraphic" scale="2.5"/>
+        </filter>
+      </defs>
+      <!-- PERKY glow -->
+      <text x="350" y="115" text-anchor="middle" font-family="'UnifrakturMaguntia',cursive" font-size="130" fill="none" stroke="#ff2a6d" stroke-width="9" opacity="0.3" filter="url(#hmP)">Perky</text>
+      <!-- PERKY cyan edge -->
+      <text x="350" y="115" text-anchor="middle" font-family="'UnifrakturMaguntia',cursive" font-size="130" fill="none" stroke="#05d9e8" stroke-width="2.5" opacity="0.6">Perky</text>
+      <!-- PERKY yellow ghost -->
+      <text x="353" y="118" text-anchor="middle" font-family="'UnifrakturMaguntia',cursive" font-size="130" fill="none" stroke="#ffe600" stroke-width="1.5" opacity="0.15">Perky</text>
+      <!-- PERKY fill -->
+      <text x="350" y="115" text-anchor="middle" font-family="'UnifrakturMaguntia',cursive" font-size="130" fill="#f0f0f0" filter="url(#hmD)">Perky</text>
+      <!-- separator line -->
+      <line x1="220" y1="140" x2="480" y2="140" stroke="#ff2a6d" stroke-width="1.5" opacity="0.4"/>
+      <line x1="260" y1="146" x2="440" y2="146" stroke="#ff2a6d" stroke-width="0.8" opacity="0.2"/>
+      <!-- MAFIA glow -->
+      <text x="350" y="248" text-anchor="middle" font-family="'UnifrakturMaguntia',cursive" font-size="130" fill="none" stroke="#ff2a6d" stroke-width="9" opacity="0.3" filter="url(#hmP)">Mafia</text>
+      <!-- MAFIA cyan edge -->
+      <text x="350" y="248" text-anchor="middle" font-family="'UnifrakturMaguntia',cursive" font-size="130" fill="none" stroke="#05d9e8" stroke-width="2.5" opacity="0.6">Mafia</text>
+      <!-- MAFIA yellow ghost -->
+      <text x="353" y="251" text-anchor="middle" font-family="'UnifrakturMaguntia',cursive" font-size="130" fill="none" stroke="#ffe600" stroke-width="1.5" opacity="0.15">Mafia</text>
+      <!-- MAFIA fill -->
+      <text x="350" y="248" text-anchor="middle" font-family="'UnifrakturMaguntia',cursive" font-size="130" fill="#f0f0f0" filter="url(#hmD)">Mafia</text>
+    </svg>
+
+    <!-- [EDITAR] Subtitulo -->
+    <p class="hero-sub">
+      <span style="animation:blink 1s step-end infinite">►</span>
+      
+      <span style="animation:blink 1s step-end infinite">◄</span>
+    </p>
+
+    <!-- [EDITAR] Estadisticas -->
+    <div class="hero-stats">
+<div class="stat-drop reveal">
+        <svg class="drop-svg" viewBox="0 0 90 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="drpGlow1" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="b"/>
+              <feFlood flood-color="#ff0000" flood-opacity="0.5"/>
+              <feComposite in2="b" operator="in" result="g"/>
+              <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <radialGradient id="drpFill1" cx="40%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#ff2a2a"/>
+              <stop offset="50%" stop-color="#cc0000"/>
+              <stop offset="100%" stop-color="#660000"/>
+            </radialGradient>
+            <radialGradient id="drpShine1" cx="35%" cy="30%" r="30%">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </radialGradient>
+          </defs>
+          <!-- drop shape -->
+          <path d="M45,8 C45,8 12,52 12,75 C12,93.5 26.8,108 45,108 C63.2,108 78,93.5 78,75 C78,52 45,8 45,8 Z" fill="url(#drpFill1)" filter="url(#drpGlow1)" stroke="#ff0000" stroke-width="1" opacity="0.95"/>
+          <!-- highlight -->
+          <ellipse cx="35" cy="55" rx="12" ry="18" fill="url(#drpShine1)"/>
+          <!-- drip at bottom -->
+          <ellipse cx="45" cy="110" rx="5" ry="4" fill="#660000" opacity="0.5"/>
+          <!-- number -->
+          <text x="45" y="82" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="16" fill="#f0f0f0" style="text-shadow:0 0 6px #000">58</text>
+        </svg>
+        <div class="drop-label">HIMNOS</div>
+      </div>
+<div class="stat-drop reveal">
+        <svg class="drop-svg" viewBox="0 0 90 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="drpGlow2" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="b"/>
+              <feFlood flood-color="#ff0000" flood-opacity="0.5"/>
+              <feComposite in2="b" operator="in" result="g"/>
+              <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <radialGradient id="drpFill2" cx="40%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#ff2a2a"/>
+              <stop offset="50%" stop-color="#cc0000"/>
+              <stop offset="100%" stop-color="#660000"/>
+            </radialGradient>
+            <radialGradient id="drpShine2" cx="35%" cy="30%" r="30%">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </radialGradient>
+          </defs>
+          <!-- drop shape -->
+          <path d="M45,8 C45,8 12,52 12,75 C12,93.5 26.8,108 45,108 C63.2,108 78,93.5 78,75 C78,52 45,8 45,8 Z" fill="url(#drpFill2)" filter="url(#drpGlow2)" stroke="#ff0000" stroke-width="1" opacity="0.95"/>
+          <!-- highlight -->
+          <ellipse cx="35" cy="55" rx="12" ry="18" fill="url(#drpShine2)"/>
+          <!-- drip at bottom -->
+          <ellipse cx="45" cy="110" rx="5" ry="4" fill="#660000" opacity="0.5"/>
+          <!-- number -->
+          <text x="45" y="82" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="16" fill="#f0f0f0" style="text-shadow:0 0 6px #000">120</text>
+        </svg>
+        <div class="drop-label">FANATICOS</div>
+      </div>
+<div class="stat-drop reveal">
+        <svg class="drop-svg" viewBox="0 0 90 120" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="drpGlow3" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="b"/>
+              <feFlood flood-color="#ff0000" flood-opacity="0.5"/>
+              <feComposite in2="b" operator="in" result="g"/>
+              <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <radialGradient id="drpFill3" cx="40%" cy="35%" r="60%">
+              <stop offset="0%" stop-color="#ff2a2a"/>
+              <stop offset="50%" stop-color="#cc0000"/>
+              <stop offset="100%" stop-color="#660000"/>
+            </radialGradient>
+            <radialGradient id="drpShine3" cx="35%" cy="30%" r="30%">
+              <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+              <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+            </radialGradient>
+          </defs>
+          <!-- drop shape -->
+          <path d="M45,8 C45,8 12,52 12,75 C12,93.5 26.8,108 45,108 C63.2,108 78,93.5 78,75 C78,52 45,8 45,8 Z" fill="url(#drpFill3)" filter="url(#drpGlow3)" stroke="#ff0000" stroke-width="1" opacity="0.95"/>
+          <!-- highlight -->
+          <ellipse cx="35" cy="55" rx="12" ry="18" fill="url(#drpShine3)"/>
+          <!-- drip at bottom -->
+          <ellipse cx="45" cy="110" rx="5" ry="4" fill="#660000" opacity="0.5"/>
+          <!-- number -->
+          <text x="45" y="82" text-anchor="middle" font-family="'Press Start 2P',monospace" font-size="16" fill="#f0f0f0" style="text-shadow:0 0 6px #000">∞</text>
+        </svg>
+        <div class="drop-label">FUNDADORES</div>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="hero-cta">
+      <a href="#tracks" class="btn-pixel btn-play">► ponme la pista</a>
+      <!-- [LINK] Enlace a SoundCloud -->
+      <a href="https://soundcloud.com/perky-labs" target="_blank" rel="noopener" class="btn-pixel btn-sc">◊ SOUNDCLOUD</a>
+    </div>
+  </div>
+
+  <!-- [EDITAR] Texto del scroll hint -->
+  <div class="scroll-hint">DALE PABAJO ▼</div>
+</section>
+
+<!-- ============================================================
+     MARQUEE — texto en movimiento
+     [EDITAR] Cambia los textos de cada strip-item
+     ============================================================ -->
+<div class="strip">
+  <div class="strip-track">
+    <div class="strip-item">★ PERKY MAFIA <span class="s">★</span></div>
+    <div class="strip-item">★ pa lo nene y las nena <span class="s">★</span></div>
+    <div class="strip-item">★ SOUNDCLOUD <span class="s">★</span></div>
+    <div class="strip-item">★ 58 HITS <span class="s">★</span></div>
+    <div class="strip-item">★ MAZO DE CALLEJEROS <span class="s">★</span></div>
+    <!-- Duplicados para el loop (no borrar) -->
+    <div class="strip-item">★ PERKY MAFIA <span class="s">★</span></div>
+    <div class="strip-item">★ PA LOS NENE Y LAS NENA <span class="s">★</span></div>
+    <div class="strip-item">★ SOUNDCLOUD <span class="s">★</span></div>
+    <div class="strip-item">★ 58 HITS <span class="s">★</span></div>
+    <div class="strip-item">★ MAZO DE CALLEJEROS <span class="s">★</span></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     REPRODUCTOR PRINCIPAL
+     ============================================================ -->
+<section id="tracks">
+  <!-- [EDITAR] Imagen de fondo de esta seccion — cambia assets/foto-selfie.jpeg -->
+  <img class="sec-bg" src="assets/foto-selfie.jpeg" alt="">
+
+  <div class="sec-head reveal">
+    <div class="sec-tag">&lt;tas escuxando&gt;</div>
+    <!-- [EDITAR] Titulo de la seccion -->
+    <h2 class="sec-title">los temitas</h2>
+    <div class="sec-line"></div>
+  </div>
+
+  <div class="player-box reveal">
+    <div class="player-top">
+      <span><span class="dot"></span> mirate el soundcloud</span>
+      <span class="cnt">58 BANGERS</span>
+    </div>
+    <!--
+      [EDITAR] REPRODUCTOR SOUNDCLOUD
+      Para cambiar la cuenta, cambia "perky-labs" en la URL de abajo
+      por tu nuevo username de soundcloud.
+    -->
+    <iframe
+      class="soundcloud-embed"
+      width="100%" height="600"
+      scrolling="no" frameborder="no" allow="autoplay"
+      src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/perky-labs&color=%23ff2a6d&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=false&visual=false">
+    </iframe>
+    <div class="player-bot">
+      <span>powered by francisconocorazon ♫</span>
+      <!-- [LINK] -->
+      <a href="https://soundcloud.com/perky-labs" target="_blank">→ ABRIR EN SC</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     VIDEO SECTION — seccion con video de fondo
+     ============================================================ -->
+<div class="vid-section scanlines">
+  <!-- [EDITAR] Video — cambia assets/video-bg.mp4 -->
+  <video autoplay muted loop playsinline>
+    <source src="assets/video-bg2.mp4" type="video/mp4">
+  </video>
+  <div class="vid-text">
+    <div class="pill-wrap">
+      <img class="pill-bottle" src="assets/pill-bottle.png" alt="PERKY MAFIA">
+      <img class="pill-ghost pill-ghost--r" src="assets/pill-bottle.png" alt="" aria-hidden="true">
+      <img class="pill-ghost pill-ghost--c" src="assets/pill-bottle.png" alt="" aria-hidden="true">
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     CATALOGO COMPLETO
+     ============================================================ -->
+<section id="all-tracks">
+  <!-- [EDITAR] Imagen de fondo — cambia assets/foto-fiesta.jpeg -->
+  <img class="catalogo-bg" src="assets/foto-fiesta.jpeg" alt="">
+  <div class="sec-head reveal">
+    <div class="sec-tag">&lt;catalogo_completo&gt;</div>
+    <h2 class="sec-title">TO LOS TEMITAS</h2>
+    <div class="sec-line"></div>
+  </div>
+  <!-- Los tracks se cargan automaticamente con JavaScript (ver abajo) -->
+  <div class="tracks-grid" id="tracksGrid"></div>
+  <div style="text-align:center;margin-top:1.2rem" class="reveal">
+    <span class="sec-tag">Linea directa con el telefono rojo ☁</span>
+  </div>
+</section>
+
+<!-- MARQUEE 2 -->
+<div class="strip">
+  <div class="strip-track" style="animation-direction:reverse">
+    <div class="strip-item">★ ESCUCHA <span class="s">★</span></div>
+    <div class="strip-item">★ COMPARTE <span class="s">★</span></div>
+    <div class="strip-item">★ SIGUE <span class="s">★</span></div>
+    <div class="strip-item">★ PERKY MAFIA <span class="s">★</span></div>
+    <div class="strip-item">★ ESCUCHA <span class="s">★</span></div>
+    <div class="strip-item">★ COMPARTE <span class="s">★</span></div>
+    <div class="strip-item">★ SIGUE <span class="s">★</span></div>
+    <div class="strip-item">★ PERKY MAFIA <span class="s">★</span></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     ABOUT — informacion
+     ============================================================ -->
+<section id="about">
+  <!-- [EDITAR] Imagen de fondo — cambia assets/foto-selfie.jpeg -->
+  <img class="about-bg" src="assets/foto-selfie.jpeg" alt="">
+
+  <div class="sec-head reveal">
+    <div class="sec-tag">&lt;KLK&gt;</div>
+    <h2 class="sec-title"klk con nosotro</h2>
+    <div class="sec-line"></div>
+  </div>
+
+  <div class="about-box reveal">
+    <!--
+      [EDITAR] Texto del about
+      Usa <span class="hl"> para texto rosa
+      Usa <span class="yl"> para texto amarillo
+    -->
+    <p class="about-text">
+      &gt; <span class="hl">PERKY MAFIA</span> es una secta<br>
+      &gt; nacida en SoundCloud.<br>
+      &gt; <span class="yl">58 BANGERS</span> CERTIFICADOS.<br>
+      &gt; una comunidad de <span class="hl">HACEDORES DE EFECTIVO</span><br>
+      &gt; que no para de crecer.<br>
+      &gt; esto va mas alla de la musica.<br>
+      &gt; es CULTURA.<br>
+      &gt; USA EL QR. <span style="animation:blink 1s step-end infinite">_</span>
+    </p>
+  </div>
+
+  <!-- [EDITAR] Redes sociales -->
+  <div class="social-row reveal">
+    <!-- [LINK] SoundCloud -->
+    <a href="https://soundcloud.com/perky-labs" target="_blank" rel="noopener" class="soc-btn">
+      <svg viewBox="0 0 24 24"><path d="M1.175 12.225c-.051 0-.094.046-.101.1l-.233 2.154.233 2.105c.007.058.05.098.101.098.05 0 .09-.04.099-.098l.255-2.105-.27-2.154c-.009-.06-.05-.1-.1-.1m-.899.828c-.06 0-.091.037-.104.094L0 14.479l.172 1.282c.013.06.045.094.09.094.042 0 .076-.038.09-.094l.196-1.282-.196-1.332c-.014-.057-.048-.094-.09-.094m1.83-1.229c-.063 0-.109.053-.116.116l-.213 2.539.213 2.453c.007.066.053.116.116.116.065 0 .109-.05.116-.116l.241-2.453-.241-2.539c-.008-.066-.052-.116-.116-.116m.862-.207c-.073 0-.121.06-.128.129l-.2 2.723.2 2.512c.008.073.056.129.128.129.073 0 .12-.056.129-.129l.226-2.512-.226-2.723c-.009-.073-.057-.129-.129-.129m3.474 2.326c-.139 0-.255.034-.364.09-.078-.79-.736-1.404-1.548-1.404-.196 0-.383.04-.556.1-.073.027-.092.055-.092.11v5.312c0 .058.043.108.098.116.002 0 2.463.002 2.463.002.68 0 1.231-.556 1.231-1.236 0-.682-.551-1.09-1.232-1.09"/></svg>
+      [SOUNDCLOUD]
+    </a>
+    <!-- [LINK] Instagram -->
+    <a href="https://www.instagram.com/francisconocorazon" target="_blank" rel="noopener" class="soc-btn">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      [INSTAGRAM]
+    </a>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     WHATSAPP — grupo de la mafia
+     ============================================================ -->
+<section id="whatsapp">
+  <div class="sec-head reveal">
+    <div class="sec-tag">&lt;unete_al_grupo&gt;</div>
+    <h2 class="sec-title">GRUPO WHATSAPP</h2>
+    <div class="sec-line"></div>
+  </div>
+
+  <div class="wa-box reveal">
+    <div class="wa-qr-wrap">
+      <img class="wa-qr" src="assets/whatsapp-qr.jpeg" alt="QR WhatsApp grupo PERKY MAFIA">
+    </div>
+    <p class="wa-txt">escanea y metete en el grupo ☠</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     EVENTOS — calendario de proximos eventos
+     [EDITAR] Cambia/añade eventos en la lista de abajo
+     [EDITAR] Cambia assets/eventos.mp4 por tu video de fondo
+     ============================================================ -->
+<section id="eventos" class="eventos-section">
+  <!-- [EDITAR] Video de fondo — cambia assets/eventos.mp4 -->
+  <video class="eventos-bg-vid" autoplay muted loop playsinline>
+    <source src="assets/eventos.mp4" type="video/mp4">
+  </video>
+
+  <div class="sec-head reveal">
+    <div class="sec-tag">&lt;proximos_eventos&gt;</div>
+    <h2 class="sec-title">CALENDARIO</h2>
+    <div class="sec-line"></div>
+  </div>
+
+  <div class="eventos-grid">
+    <!--
+      [EDITAR] EVENTOS — copia este bloque para añadir mas eventos
+      Cambia la fecha, titulo, lugar y descripcion
+    -->
+    <div class="evento-card reveal">
+      <div class="evento-fecha">
+        <span class="evento-dia">15</span>
+        <span class="evento-mes">ABR</span>
+      </div>
+      <div class="evento-info">
+        <h3 class="evento-titulo">NOMBRE DEL EVENTO</h3>
+        <p class="evento-lugar">📍 Lugar del evento</p>
+        <p class="evento-desc">Descripcion corta del evento</p>
+      </div>
+    </div>
+
+    <div class="evento-card reveal">
+      <div class="evento-fecha">
+        <span class="evento-dia">22</span>
+        <span class="evento-mes">ABR</span>
+      </div>
+      <div class="evento-info">
+        <h3 class="evento-titulo">OTRO EVENTO</h3>
+        <p class="evento-lugar">📍 Otro lugar</p>
+        <p class="evento-desc">Otra descripcion</p>
+      </div>
+    </div>
+
+    <div class="evento-card reveal">
+      <div class="evento-fecha">
+        <span class="evento-dia">05</span>
+        <span class="evento-mes">MAY</span>
+      </div>
+      <div class="evento-info">
+        <h3 class="evento-titulo">EVENTO FUTURO</h3>
+        <p class="evento-lugar">📍 Sitio por confirmar</p>
+        <p class="evento-desc">Mas detalles pronto...</p>
+      </div>
+    </div>
+    <!-- [EDITAR] Copia un bloque evento-card de arriba y pegalo aqui para mas eventos -->
+  </div>
+</section>
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer>
+  <!-- [EDITAR] Texto del footer -->
+  <div class="ft-logo">
+    <img src="assets/logo.png" alt="">
+    <svg class="footer-metal-logo" viewBox="0 0 260 42" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="ftG" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="b"/>
+          <feFlood flood-color="#ff2a6d" flood-opacity="0.5"/>
+          <feComposite in2="b" operator="in" result="g"/>
+          <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <text x="4" y="32" font-family="'UnifrakturMaguntia',cursive" font-size="32" fill="none" stroke="#ff2a6d" stroke-width="2" opacity="0.3" filter="url(#ftG)">Perky Mafia</text>
+      <text x="4" y="32" font-family="'UnifrakturMaguntia',cursive" font-size="32" fill="#f0f0f0">Perky Mafia</text>
+    </svg>
+  </div>
+  <p class="ft-txt">for perky pakos · <a href="https://soundcloud.com/perky-labs" target="_blank">soundcloud</a></p>
+  <div class="ft-counter">visitors: <span id="vc">000</span> | last update: 2026</div>
+</footer>
+
+<!-- ============================================================
+     JAVASCRIPT — funcionalidad
+     ============================================================ -->
+<script>
+/*
+ * ================================================================
+ * [EDITAR] CONFIGURACION — cambia estos valores
+ * ================================================================
+ */
+const CONFIG = {
+  // Tu usuario de SoundCloud (lo que va despues de soundcloud.com/)
+  soundcloudUser: 'perky-labs',
+
+  // Color del reproductor de SoundCloud (hex sin #)
+  playerColor: 'ff2a6d',
+
+  // Tracks individuales que quieres destacar (el "slug" de la URL)
+  // Ejemplo: si tu track es soundcloud.com/perky-labs/elean-musk → pon 'elean-musk'
+  featuredTracks: [
+    'elean-musk',
+  ],
+
+  // Tiempo del loader en milisegundos
+  loaderTime: 1400,
+};
+
+/* ================================================================
+   A PARTIR DE AQUI NO TOCAR (salvo que sepas lo que haces)
+   ================================================================ */
+
+// LOADER
+window.addEventListener('load', () => {
+  setTimeout(() => document.getElementById('loader').classList.add('hidden'), CONFIG.loaderTime);
+});
+
+// FAKE VISITOR COUNTER
+document.getElementById('vc').textContent = String(Math.floor(Math.random() * 9000) + 1000).padStart(5, '0');
+
+// SCROLL REVEAL
+const revEls = document.querySelectorAll('.reveal');
+const revObs = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); revObs.unobserve(e.target); }
+  });
+}, { threshold: 0.15 });
+revEls.forEach(el => revObs.observe(el));
+
+// NAV HIDE ON SCROLL
+let lastS = 0;
+const nav = document.querySelector('nav');
+window.addEventListener('scroll', () => {
+  const c = window.pageYOffset;
+  nav.style.transform = c > lastS && c > 80 ? 'translateY(-100%)' : 'translateY(0)';
+  lastS = c;
+});
+
+// LOAD SOUNDCLOUD TRACKS
+const tg = document.getElementById('tracksGrid');
+function loadTracks() {
+  // Embed completo del perfil
+  const c = document.createElement('div');
+  c.className = 'track-item reveal';
+  c.innerHTML = `<iframe width="100%" height="800" scrolling="yes" frameborder="no" allow="autoplay" loading="lazy" style="display:block" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/${CONFIG.soundcloudUser}&color=%23${CONFIG.playerColor}&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false"></iframe>`;
+  tg.appendChild(c);
+  revObs.observe(c);
+
+  // Tracks destacados individuales
+  CONFIG.featuredTracks.forEach(slug => {
+    const i = document.createElement('div');
+    i.className = 'track-item reveal';
+    i.innerHTML = `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" loading="lazy" style="display:block" src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/${CONFIG.soundcloudUser}/${slug}&color=%23${CONFIG.playerColor}&auto_play=false&hide_related=true&show_comments=false&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>`;
+    tg.appendChild(i);
+    revObs.observe(i);
+  });
+}
+loadTracks();
+
+// SMOOTH SCROLL + BACK BUTTON
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', function(e) {
+    const h = this.getAttribute('href');
+    if (h === '#') return;
+    const t = document.querySelector(h);
+    if (t) {
+      e.preventDefault();
+      t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.pushState(null, '', h);
+    }
+  });
+});
+window.addEventListener('popstate', () => {
+  const h = window.location.hash;
+  if (h) {
+    const t = document.querySelector(h);
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+</script>
+
+</body>
+</html>
