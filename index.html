@@ -1398,6 +1398,48 @@ footer{
 }
 
 </style>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBYgm7qsCALftnqb2zgvA7xqPH4m0IzaHw",
+    authDomain: "raval-b440f.firebaseapp.com",
+    projectId: "raval-b440f",
+    storageBucket: "raval-b440f.firebasestorage.app",
+    messagingSenderId: "9933650893",
+    appId: "1:9933650893:web:f322e8f6d435d56a8c2284"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const scoresCol = collection(db, "scores");
+
+  // Carga top 50 ordenado por puntos desc
+  window.fbLoadScores = async function() {
+    const q = query(scoresCol, orderBy("score", "desc"), limit(50));
+    const snap = await getDocs(q);
+    const out = [];
+    snap.forEach(d => {
+      const v = d.data();
+      out.push({ name: v.name || '???', points: v.score || 0, wave: v.wave || 0 });
+    });
+    return out;
+  };
+
+  // Sube una puntuación
+  window.fbSubmitScore = async function(name, score, wave) {
+    await addDoc(scoresCol, {
+      name: String(name).toUpperCase().slice(0, 14),
+      score: Number(score) || 0,
+      wave: Number(wave) || 0,
+      ts: serverTimestamp()
+    });
+  };
+
+  window.__fbReady = true;
+  window.dispatchEvent(new Event('fb-ready'));
+</script>
 </head>
 <body>
 
@@ -5734,18 +5776,15 @@ window.addEventListener('popstate', () => {
     renderer.render(scene, camera);
   }
 
-  // ===== LEADERBOARD (window.storage) =====
+  // ===== LEADERBOARD (Firebase Firestore — global) =====
   async function loadLeaderboard() {
     try {
-      if (!window.storage) {
-        leaderboardList.innerHTML = '<div class="leaderboard-empty">el leaderboard necesita guardado activado</div>';
+      if (!window.fbLoadScores) {
+        leaderboardList.innerHTML = '<div class="leaderboard-empty">conectando con servidor...</div>';
+        window.addEventListener('fb-ready', () => loadLeaderboard(), { once:true });
         return;
       }
-      let entries = [];
-      try {
-        const res = await window.storage.get('perky_scores', true);
-        if (res && res.value) entries = JSON.parse(res.value);
-      } catch(e) { /* no existe aún */ }
+      const entries = await window.fbLoadScores();
       renderLeaderboard(entries);
     } catch(e) {
       console.warn('leaderboard load err', e);
@@ -5754,17 +5793,9 @@ window.addEventListener('popstate', () => {
   }
   async function submitScore(username, points, wv) {
     try {
-      if (!window.storage) return;
-      let entries = [];
-      try {
-        const res = await window.storage.get('perky_scores', true);
-        if (res && res.value) entries = JSON.parse(res.value);
-      } catch(e) {}
-      entries.push({ name:username.toUpperCase().slice(0,14), points, wave:wv, ts:Date.now() });
-      entries.sort((a,b) => b.points - a.points);
-      entries = entries.slice(0, 50);
-      await window.storage.set('perky_scores', JSON.stringify(entries), true);
-      renderLeaderboard(entries);
+      if (!window.fbSubmitScore) return;
+      await window.fbSubmitScore(username, points, wv);
+      await loadLeaderboard();
     } catch(e) { console.warn('submit err', e); }
   }
   function renderLeaderboard(entries) {
@@ -5858,7 +5889,7 @@ window.addEventListener('popstate', () => {
     // leer nombre
     const name = (usernameInput && usernameInput.value.trim()) || 'PAKO';
     player.username = name.toUpperCase().slice(0, 14);
-    try { if (window.storage) window.storage.set('perky_username', player.username); } catch(e){}
+    try { localStorage.setItem('perky_username', player.username); } catch(e){}
 
     overlay.classList.add('active');
     startScreen.classList.remove('active');
@@ -5905,10 +5936,9 @@ window.addEventListener('popstate', () => {
     if (!initialized) init();
     // cargar nombre previo si existe
     try {
-      if (window.storage && usernameInput && !usernameInput.value) {
-        window.storage.get('perky_username').then(res => {
-          if (res && res.value) usernameInput.value = res.value;
-        }).catch(()=>{});
+      if (usernameInput && !usernameInput.value) {
+        const saved = localStorage.getItem('perky_username');
+        if (saved) usernameInput.value = saved;
       }
     } catch(e){}
   });
