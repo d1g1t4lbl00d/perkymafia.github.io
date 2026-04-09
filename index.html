@@ -2663,18 +2663,18 @@ window.addEventListener('popstate', () => {
       const ectx = envCanvas.getContext('2d');
       // gradiente vertical: oscuro arriba, rosa/morado abajo (ambiente del juego)
       const grad = ectx.createLinearGradient(0, 0, 0, 256);
-      grad.addColorStop(0.0, '#1a0820');
-      grad.addColorStop(0.5, '#3a0a30');
-      grad.addColorStop(1.0, '#0a0612');
+      grad.addColorStop(0.0, '#3a3a42');
+      grad.addColorStop(0.5, '#5a5258');
+      grad.addColorStop(1.0, '#1a1820');
       ectx.fillStyle = grad;
       ectx.fillRect(0, 0, 256, 256);
-      // unos puntos de luz para que haya highlights
+      // pequeños highlights de color para dar carácter a los reflejos metálicos
       ectx.fillStyle = '#ff2a6d';
-      ectx.beginPath(); ectx.arc(60, 80, 18, 0, Math.PI*2); ectx.fill();
+      ectx.beginPath(); ectx.arc(60, 80, 10, 0, Math.PI*2); ectx.fill();
       ectx.fillStyle = '#00e5ff';
-      ectx.beginPath(); ectx.arc(190, 110, 14, 0, Math.PI*2); ectx.fill();
+      ectx.beginPath(); ectx.arc(190, 110, 8, 0, Math.PI*2); ectx.fill();
       ectx.fillStyle = '#ffe600';
-      ectx.beginPath(); ectx.arc(130, 60, 10, 0, Math.PI*2); ectx.fill();
+      ectx.beginPath(); ectx.arc(130, 60, 6, 0, Math.PI*2); ectx.fill();
 
       const envTex = new TH.CanvasTexture(envCanvas);
       envTex.mapping = TH.EquirectangularReflectionMapping;
@@ -2740,7 +2740,7 @@ window.addEventListener('popstate', () => {
     buildWorld();
     if (window.__envMap) {
       scene.environment = window.__envMap;
-      scene.environmentIntensity = 0.6;
+      scene.environmentIntensity = 0.15;
     }
     setupInput();
     initAudio();
