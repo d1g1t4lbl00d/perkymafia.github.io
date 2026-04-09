@@ -2111,6 +2111,7 @@ footer{
 
 <!-- Three.js para el minijuego (cargado antes del script principal) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <!-- ============================================================
      JAVASCRIPT — funcionalidad
@@ -2713,13 +2714,21 @@ window.addEventListener('popstate', () => {
           t.anisotropy = 8;
           return t;
         };
+        const tryLoad = (file) => {
+          return cfg(loader.load(
+            'textures/' + file,
+            () => console.log('[PBR OK]', file),
+            undefined,
+            (err) => console.error('[PBR FAIL]', file, err)
+          ));
+        };
         const out = {
-          color: cfg(loader.load('textures/' + name + '_color.jpg')),
-          normal: cfg(loader.load('textures/' + name + '_normal.jpg')),
-          rough: cfg(loader.load('textures/' + name + '_rough.jpg')),
+          color: tryLoad(name + '_color.jpg'),
+          normal: tryLoad(name + '_normal.jpg'),
+          rough: tryLoad(name + '_rough.jpg'),
         };
         if (hasMetalness) {
-          out.metal = cfg(loader.load('textures/' + name + '_metalness.jpg'));
+          out.metal = tryLoad(name + '_metalness.jpg');
         }
         return out;
       }
@@ -2742,6 +2751,7 @@ window.addEventListener('popstate', () => {
       scene.environment = window.__envMap;
       scene.environmentIntensity = 0.15;
     }
+    preloadWeaponModels();
     setupInput();
     initAudio();
     // === OPTIMIZACIÓN: caché de wall meshes para raycasting ===
@@ -4228,16 +4238,116 @@ window.addEventListener('popstate', () => {
   function buildWeaponMesh() {
     if (weaponMesh) {
       camera.remove(weaponMesh);
-      weaponMesh.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+      weaponMesh.traverse(o => { if (o.geometry && !o.userData.keepGeo) o.geometry.dispose(); });
     }
-    const grp = createWeaponModel(currentWeapon, 1);
-    grp.position.set(0.32, -0.3, -0.55);
-    grp.rotation.set(0, -0.05, 0);
+    // Si existe un modelo 3D cargado para esta arma, úsalo. Si no, fallback procedural.
+    let grp;
+    const loaded = WEAPON_MODEL_CACHE[currentWeapon];
+    if (loaded) {
+      grp = loaded.clone(true);
+      const override = WEAPON_MODEL_OVERRIDES[currentWeapon] || {};
+      grp.position.set(
+        override.x != null ? override.x : 0.32,
+        override.y != null ? override.y : -0.3,
+        override.z != null ? override.z : -0.55
+      );
+      grp.rotation.set(
+        override.rx != null ? override.rx : 0,
+        override.ry != null ? override.ry : -0.05,
+        override.rz != null ? override.rz : 0
+      );
+    } else {
+      grp = createWeaponModel(currentWeapon, 1);
+      grp.position.set(0.32, -0.3, -0.55);
+      grp.rotation.set(0, -0.05, 0);
+    }
     camera.add(grp);
     if (!scene.children.includes(camera)) scene.add(camera);
     weaponMesh = grp;
     weaponBasePos = grp.position.clone();
     weaponBaseRot = grp.rotation.clone();
+  }
+
+  // ===== SISTEMA DE MODELOS 3D DE ARMAS (GLTF) =====
+  // Mapa arma → archivo .glb. Las armas no listadas usan el modelo procedural.
+  const WEAPON_MODEL_FILES = {
+    pistol:  'usp_psx.glb',
+    shotgun: 'm1897_psx.glb',
+    smg:     'low-poly_hk_mp5k.glb',
+    lmg:     'low-poly_hk_mg5.glb',
+    sniper:  'low-poly_gepard_smg.glb',
+    rifle:   'low_poly_gun_model.glb',
+    minigun: 'low-poly_m134_minigun.glb',
+  };
+  // Ajustes finos por arma (posición/rotación respecto a la cámara).
+  // Si algo se ve torcido o demasiado grande, tocas estos valores.
+  const WEAPON_MODEL_OVERRIDES = {
+    pistol:  { x: 0.28, y:-0.28, z:-0.50, ry: Math.PI },
+    shotgun: { x: 0.30, y:-0.30, z:-0.60, ry: Math.PI },
+    smg:     { x: 0.28, y:-0.28, z:-0.55, ry: Math.PI },
+    lmg:     { x: 0.32, y:-0.32, z:-0.65, ry: Math.PI },
+    sniper:  { x: 0.30, y:-0.30, z:-0.70, ry: Math.PI },
+    rifle:   { x: 0.30, y:-0.30, z:-0.60, ry: Math.PI },
+    minigun: { x: 0.35, y:-0.35, z:-0.70, ry: Math.PI },
+  };
+  const WEAPON_MODEL_CACHE = {};
+  // Tamaño objetivo (ancho aprox. del arma en unidades del mundo)
+  const WEAPON_TARGET_SIZE = {
+    pistol: 0.35, shotgun: 0.75, smg: 0.6, lmg: 0.85,
+    sniper: 0.95, rifle: 0.7, minigun: 0.9,
+  };
+  function normalizeWeaponModel(root, weaponId) {
+    // Centrar y escalar el modelo a un tamaño estándar
+    const box = new TH.Box3().setFromObject(root);
+    const size = new TH.Vector3(); box.getSize(size);
+    const center = new TH.Vector3(); box.getCenter(center);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const target = WEAPON_TARGET_SIZE[weaponId] || 0.6;
+    const scale = maxDim > 0 ? target / maxDim : 1;
+    // Envolver en un grupo para poder escalar y centrar sin tocar jerarquía original
+    const wrap = new TH.Group();
+    root.position.set(-center.x, -center.y, -center.z);
+    const inner = new TH.Group();
+    inner.add(root);
+    inner.scale.setScalar(scale);
+    wrap.add(inner);
+    // Asegurar materiales no-transparentes raros
+    wrap.traverse(o => {
+      if (o.isMesh) {
+        o.castShadow = false;
+        o.receiveShadow = false;
+        if (o.material) {
+          // dejar que refleje el environment ligeramente
+          if (o.material.isMeshStandardMaterial) {
+            o.material.envMapIntensity = 0.4;
+          }
+        }
+      }
+    });
+    return wrap;
+  }
+  function preloadWeaponModels() {
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) {
+      console.warn('[GLTF] GLTFLoader no disponible');
+      return;
+    }
+    const loader = new THREE.GLTFLoader();
+    Object.entries(WEAPON_MODEL_FILES).forEach(([weaponId, file]) => {
+      loader.load(
+        'models/' + file,
+        (gltf) => {
+          const normalized = normalizeWeaponModel(gltf.scene, weaponId);
+          WEAPON_MODEL_CACHE[weaponId] = normalized;
+          console.log('[GLTF OK]', weaponId, file);
+          // Si el arma actual es esta, reconstruir el viewmodel para que aparezca ya
+          if (currentWeapon === weaponId && weaponMesh) {
+            buildWeaponMesh();
+          }
+        },
+        undefined,
+        (err) => console.error('[GLTF FAIL]', file, err)
+      );
+    });
   }
 
   // ===== INPUT =====
