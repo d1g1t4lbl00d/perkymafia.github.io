@@ -2652,6 +2652,40 @@ window.addEventListener('popstate', () => {
     renderer = new TH.WebGLRenderer({ canvas, antialias:true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    if ('SRGBColorSpace' in TH) renderer.outputColorSpace = TH.SRGBColorSpace;
+    else if ('sRGBEncoding' in TH) renderer.outputEncoding = TH.sRGBEncoding;
+
+    // ===== ENVIRONMENT MAP procedural para que los metales reflejen algo =====
+    // Sin esto, los materiales con metalness > 0 se ven completamente negros.
+    {
+      const envCanvas = document.createElement('canvas');
+      envCanvas.width = 256; envCanvas.height = 256;
+      const ectx = envCanvas.getContext('2d');
+      // gradiente vertical: oscuro arriba, rosa/morado abajo (ambiente del juego)
+      const grad = ectx.createLinearGradient(0, 0, 0, 256);
+      grad.addColorStop(0.0, '#1a0820');
+      grad.addColorStop(0.5, '#3a0a30');
+      grad.addColorStop(1.0, '#0a0612');
+      ectx.fillStyle = grad;
+      ectx.fillRect(0, 0, 256, 256);
+      // unos puntos de luz para que haya highlights
+      ectx.fillStyle = '#ff2a6d';
+      ectx.beginPath(); ectx.arc(60, 80, 18, 0, Math.PI*2); ectx.fill();
+      ectx.fillStyle = '#00e5ff';
+      ectx.beginPath(); ectx.arc(190, 110, 14, 0, Math.PI*2); ectx.fill();
+      ectx.fillStyle = '#ffe600';
+      ectx.beginPath(); ectx.arc(130, 60, 10, 0, Math.PI*2); ectx.fill();
+
+      const envTex = new TH.CanvasTexture(envCanvas);
+      envTex.mapping = TH.EquirectangularReflectionMapping;
+      if ('SRGBColorSpace' in TH) envTex.colorSpace = TH.SRGBColorSpace;
+      const pmrem = new TH.PMREMGenerator(renderer);
+      pmrem.compileEquirectangularShader();
+      const envRT = pmrem.fromEquirectangular(envTex);
+      window.__envMap = envRT.texture;
+      envTex.dispose();
+      pmrem.dispose();
+    }
 
     raycaster = new TH.Raycaster();
     clock = new TH.Clock();
@@ -2667,7 +2701,47 @@ window.addEventListener('popstate', () => {
     textures.wallOutdoor   = makeWallTex('outdoor');
     textures.crate         = makeCrateTex();
 
+    // ===== CARGA DE TEXTURAS PBR REALES (ambientCG) =====
+    // Cada set: color + normal + roughness. Si los archivos no existen,
+    // los procedurales de arriba siguen como respaldo.
+    {
+      const loader = new TH.TextureLoader();
+      function loadPBR(name, repeat, hasMetalness) {
+        const cfg = (t) => {
+          t.wrapS = t.wrapT = TH.RepeatWrapping;
+          t.repeat.set(repeat, repeat);
+          t.anisotropy = 8;
+          return t;
+        };
+        const out = {
+          color: cfg(loader.load('textures/' + name + '_color.jpg')),
+          normal: cfg(loader.load('textures/' + name + '_normal.jpg')),
+          rough: cfg(loader.load('textures/' + name + '_rough.jpg')),
+        };
+        if (hasMetalness) {
+          out.metal = cfg(loader.load('textures/' + name + '_metalness.jpg'));
+        }
+        return out;
+      }
+      // Set color como sRGB para que no se vea lavado
+      const setSRGB = (pbr) => {
+        if ('SRGBColorSpace' in TH) pbr.color.colorSpace = TH.SRGBColorSpace;
+        else if ('sRGBEncoding' in TH) pbr.color.encoding = TH.sRGBEncoding;
+      };
+      textures.pbrConcrete = loadPBR('concrete', 4, false);
+      textures.pbrBricks   = loadPBR('bricks',   3, false);
+      textures.pbrMetal    = loadPBR('metal',    3, true);
+      textures.pbrGrass    = loadPBR('grass',    8, false);
+      textures.pbrPaving   = loadPBR('paving',   4, false);
+      [textures.pbrConcrete, textures.pbrBricks, textures.pbrMetal,
+       textures.pbrGrass, textures.pbrPaving].forEach(setSRGB);
+    }
+
     buildWorld();
+    if (window.__envMap) {
+      scene.environment = window.__envMap;
+      scene.environmentIntensity = 0.6;
+    }
     setupInput();
     initAudio();
     // === OPTIMIZACIÓN: caché de wall meshes para raycasting ===
@@ -2859,16 +2933,39 @@ window.addEventListener('popstate', () => {
     // =========================================================
     // MATERIALES
     // =========================================================
-    const fConcrete = new TH.MeshStandardMaterial({ map:textures.floorConcrete, roughness:0.92 });
-    const fNeon     = new TH.MeshStandardMaterial({ map:textures.floorNeon,     roughness:0.75 });
-    const fGrass    = new TH.MeshStandardMaterial({ map:textures.floorGrass,    roughness:0.95 });
-    const fMetal    = new TH.MeshStandardMaterial({ map:textures.floorMetal,    roughness:0.55, metalness:0.5 });
-    const fBrick    = new TH.MeshStandardMaterial({ map:textures.floorBrick,    roughness:0.9 });
+    const fConcrete = new TH.MeshStandardMaterial({
+      map: textures.pbrConcrete.color, normalMap: textures.pbrConcrete.normal,
+      roughnessMap: textures.pbrConcrete.rough, roughness: 1.0
+    });
+    const fNeon     = new TH.MeshStandardMaterial({ map:textures.floorNeon, roughness:0.75 });
+    const fGrass    = new TH.MeshStandardMaterial({
+      map: textures.pbrGrass.color, normalMap: textures.pbrGrass.normal,
+      roughnessMap: textures.pbrGrass.rough, roughness: 1.0
+    });
+    const fMetal    = new TH.MeshStandardMaterial({
+      map: textures.pbrMetal.color, normalMap: textures.pbrMetal.normal,
+      roughnessMap: textures.pbrMetal.rough, metalnessMap: textures.pbrMetal.metal,
+      roughness: 1.0, metalness: 1.0
+    });
+    const fBrick    = new TH.MeshStandardMaterial({
+      map: textures.pbrPaving.color, normalMap: textures.pbrPaving.normal,
+      roughnessMap: textures.pbrPaving.rough, roughness: 1.0
+    });
 
-    const wBrick    = new TH.MeshStandardMaterial({ map:textures.wallBrick,   roughness:0.95 });
-    const wNeon     = new TH.MeshStandardMaterial({ map:textures.wallNeon,    roughness:0.75 });
-    const wMetal    = new TH.MeshStandardMaterial({ map:textures.wallMetal,   roughness:0.55, metalness:0.55 });
-    const wOutdoor  = new TH.MeshStandardMaterial({ map:textures.wallOutdoor, roughness:0.9 });
+    const wBrick    = new TH.MeshStandardMaterial({
+      map: textures.pbrBricks.color, normalMap: textures.pbrBricks.normal,
+      roughnessMap: textures.pbrBricks.rough, roughness: 1.0
+    });
+    const wNeon     = new TH.MeshStandardMaterial({ map:textures.wallNeon, roughness:0.75 });
+    const wMetal    = new TH.MeshStandardMaterial({
+      map: textures.pbrMetal.color, normalMap: textures.pbrMetal.normal,
+      roughnessMap: textures.pbrMetal.rough, metalnessMap: textures.pbrMetal.metal,
+      roughness: 1.0, metalness: 1.0
+    });
+    const wOutdoor  = new TH.MeshStandardMaterial({
+      map: textures.pbrBricks.color, normalMap: textures.pbrBricks.normal,
+      roughnessMap: textures.pbrBricks.rough, roughness: 1.0
+    });
 
     const crateMat  = new TH.MeshStandardMaterial({ map:textures.crate, roughness:0.85 });
     const darkMetal = new TH.MeshStandardMaterial({ color:0x1a1c22, roughness:0.4, metalness:0.85 });
