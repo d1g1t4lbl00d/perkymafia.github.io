@@ -604,9 +604,43 @@ footer{
 .game-dmg-vignette{
   position:absolute;inset:0;
   pointer-events:none;
-  box-shadow:inset 0 0 180px 60px rgba(255,0,0,0.85);
-  opacity:0;transition:opacity 0.25s;
+  box-shadow:inset 0 0 220px 80px rgba(255,0,0,0.9);
+  opacity:0;transition:opacity 0.3s;
 }
+/* flash de pantalla cuando recibes daño */
+.game-hit-flash{
+  position:absolute;inset:0;
+  pointer-events:none;
+  background:radial-gradient(circle at center, transparent 30%, rgba(255,0,0,0.55) 100%);
+  opacity:0;
+  mix-blend-mode:screen;
+}
+.game-hit-flash.flash{
+  animation:hitFlash 0.45s ease-out;
+}
+@keyframes hitFlash{
+  0%{opacity:0;transform:scale(0.92)}
+  15%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.06)}
+}
+/* indicadores direccionales de daño (chevrones) */
+.game-dmg-indicators{
+  position:absolute;top:50%;left:50%;
+  width:300px;height:300px;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+.game-dmg-arrow{
+  position:absolute;top:50%;left:50%;
+  width:80px;height:80px;
+  margin:-40px 0 0 -40px;
+  background:radial-gradient(ellipse at top, rgba(255,0,0,0.85), transparent 65%);
+  opacity:0;
+  transform-origin:center 150px;
+  transition:opacity 0.4s ease-out;
+  clip-path:polygon(50% 0%, 100% 60%, 50% 40%, 0% 60%);
+}
+.game-dmg-arrow.show{ opacity:1 }
 
 .game-stat{
   background:rgba(0,0,0,0.6);
@@ -623,17 +657,103 @@ footer{
 .game-top-right{position:absolute;top:1rem;right:1rem;display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end}
 .game-bot-right{position:absolute;bottom:1rem;right:1rem;display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end}
 
-.game-health-wrap{
-  width:160px;height:14px;
-  border:2px solid var(--green);
-  background:rgba(255,0,0,0.15);
+/* ===== Health UI moderna ===== */
+.game-healthbox{
+  background:rgba(0,0,0,0.78);
+  border:3px solid var(--green);
+  padding:0.55rem 0.75rem 0.6rem;
+  min-width:250px;
   position:relative;
+  box-shadow:0 0 14px rgba(57,255,20,0.25), 4px 4px 0 var(--pink);
+  font-family:'Press Start 2P',monospace;
 }
-.game-health-bar{
-  height:100%;width:100%;
-  background:linear-gradient(90deg,var(--green),var(--yellow));
-  box-shadow:0 0 10px var(--green);
-  transition:width 0.2s;
+.game-healthbox::before{
+  content:'/* vital.sys */';position:absolute;top:-0.65rem;left:0.6rem;
+  font-size:0.38rem;color:var(--bg);background:var(--green);padding:0.12rem 0.4rem;
+}
+.game-healthbox.hit{ animation:hboxShake 0.28s; }
+.game-healthbox.critical{
+  border-color:var(--red);
+  box-shadow:0 0 18px rgba(255,0,0,0.6), 4px 4px 0 var(--pink);
+  animation:hboxPulse 0.6s ease-in-out infinite;
+}
+@keyframes hboxShake{
+  0%,100%{transform:translate(0,0)}
+  15%{transform:translate(-4px,2px)}
+  30%{transform:translate(4px,-2px)}
+  45%{transform:translate(-3px,-3px)}
+  60%{transform:translate(3px,2px)}
+  80%{transform:translate(-1px,1px)}
+}
+@keyframes hboxPulse{
+  0%,100%{box-shadow:0 0 18px rgba(255,0,0,0.6), 4px 4px 0 var(--pink)}
+  50%{box-shadow:0 0 30px rgba(255,0,0,0.95), 4px 4px 0 var(--pink)}
+}
+.hbox-row{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:0.5rem;color:var(--green);text-shadow:0 0 5px var(--green);
+  margin-bottom:0.4rem;
+}
+.hbox-row .hb-num{
+  color:var(--white);font-size:0.7rem;
+  text-shadow:0 0 6px var(--green),2px 2px 0 var(--bg);
+}
+.game-healthbox.critical .hb-num{color:var(--red);text-shadow:0 0 8px var(--red),2px 2px 0 var(--bg)}
+.hbox-bar{
+  height:20px;background:#1a0505;
+  border:2px solid var(--bg);
+  position:relative;overflow:hidden;
+}
+.hbox-fill{
+  position:absolute;top:0;left:0;height:100%;
+  background:linear-gradient(90deg,#0a4b05,var(--green) 40%,var(--yellow) 80%,#ffffff);
+  box-shadow:0 0 14px var(--green);
+  transition:width 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+.game-healthbox.critical .hbox-fill{
+  background:linear-gradient(90deg,#5a0000,var(--red) 60%,#ffaaaa);
+  box-shadow:0 0 18px var(--red);
+}
+.hbox-ghost{
+  position:absolute;top:0;left:0;height:100%;
+  background:rgba(255,80,80,0.55);
+  transition:width 0.55s ease-out 0.18s;
+}
+.hbox-notches{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  display:flex;pointer-events:none;
+}
+.hbox-notches span{
+  flex:1;border-right:1px solid rgba(0,0,0,0.45);
+}
+.hbox-notches span:last-child{border-right:none}
+.hbox-scan{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,0.18) 0px,rgba(0,0,0,0.18) 1px,transparent 1px,transparent 3px);
+  pointer-events:none;
+}
+
+/* Indicador de daño direccional */
+.dmg-indicator{
+  position:absolute;left:50%;top:50%;
+  width:0;height:0;
+  pointer-events:none;
+  opacity:0;
+}
+.dmg-indicator.show{
+  animation:dmgInd 0.7s ease-out forwards;
+}
+.dmg-indicator::before{
+  content:'';position:absolute;
+  left:-40px;top:-140px;
+  width:80px;height:100px;
+  background:linear-gradient(180deg,rgba(255,0,0,0.85),transparent);
+  clip-path:polygon(50% 0,100% 100%,0 100%);
+}
+@keyframes dmgInd{
+  0%{opacity:0;transform:scale(0.6)}
+  15%{opacity:1;transform:scale(1)}
+  100%{opacity:0;transform:scale(1.2)}
 }
 
 .game-prompt{
@@ -735,7 +855,153 @@ footer{
   .game-controls{font-size:0.75rem;max-width:70%}
   .game-stat{min-width:100px;font-size:0.45rem}
   .game-stat .lbl{font-size:0.38rem}
-  .game-health-wrap{width:120px}
+}
+
+/* ================================================================
+   GAME — Leaderboard + input de usuario + power-ups HUD
+   ================================================================ */
+.game-username-row{
+  display:flex;flex-direction:column;gap:0.6rem;align-items:center;
+  margin:0.8rem 0 0.2rem;
+}
+.game-username-row label{
+  font-family:'VT323',monospace;font-size:1.1rem;color:var(--green);
+  text-shadow:0 0 6px var(--green);
+}
+.game-username-row input{
+  font-family:'Press Start 2P',monospace;font-size:0.6rem;
+  padding:0.6rem 0.8rem;
+  background:#000;color:var(--yellow);
+  border:3px solid var(--green);
+  outline:none;
+  text-align:center;
+  width:220px;max-width:80vw;
+  text-transform:uppercase;
+  caret-color:var(--pink);
+}
+.game-username-row input:focus{border-color:var(--yellow);box-shadow:0 0 10px rgba(255,230,0,0.3)}
+
+.leaderboard-wrap{
+  max-width:640px;margin:2rem auto 0;
+  border:3px solid var(--green);
+  background:rgba(10,10,10,0.95);
+  box-shadow:0 0 18px rgba(57,255,20,0.15),5px 5px 0 var(--pink);
+  position:relative;
+}
+.leaderboard-wrap::before{
+  content:'/* leaderboard.dat */';position:absolute;top:-0.7rem;left:0.8rem;
+  font-family:'Press Start 2P',monospace;font-size:0.4rem;
+  color:var(--bg);background:var(--green);padding:0.18rem 0.5rem;
+}
+.leaderboard-head{
+  padding:0.8rem 1rem 0.4rem;
+  font-family:'Press Start 2P',monospace;font-size:0.65rem;
+  color:var(--pink);text-shadow:2px 2px 0 var(--yellow);
+  text-align:center;
+  border-bottom:2px dashed var(--green);
+}
+.leaderboard-list{
+  max-height:340px;overflow-y:auto;
+  font-family:'VT323',monospace;font-size:1.2rem;
+}
+.leaderboard-list::-webkit-scrollbar{width:10px}
+.leaderboard-list::-webkit-scrollbar-thumb{background:var(--pink)}
+.leaderboard-row{
+  display:grid;
+  grid-template-columns:40px 1fr 80px 60px;
+  gap:0.6rem;
+  padding:0.35rem 0.9rem;
+  border-bottom:1px dashed rgba(57,255,20,0.15);
+  align-items:center;
+}
+.leaderboard-row:nth-child(odd){background:rgba(57,255,20,0.04)}
+.leaderboard-row .rk{
+  font-family:'Press Start 2P',monospace;font-size:0.55rem;
+  color:var(--yellow);text-shadow:0 0 4px var(--yellow);
+}
+.leaderboard-row .nm{
+  color:var(--white);
+  text-transform:uppercase;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.leaderboard-row .pt{
+  color:var(--pink);text-align:right;
+  font-family:'Press Start 2P',monospace;font-size:0.5rem;
+}
+.leaderboard-row .wv{
+  color:var(--green);text-align:right;
+  font-family:'Press Start 2P',monospace;font-size:0.45rem;
+}
+.leaderboard-row.top1 .rk{color:#ffe600}
+.leaderboard-row.top1 .nm{color:var(--yellow);text-shadow:0 0 6px var(--yellow)}
+.leaderboard-row.top2 .nm{color:#e0e0e0}
+.leaderboard-row.top3 .nm{color:#ffa577}
+.leaderboard-empty{
+  padding:1.5rem;text-align:center;
+  color:var(--green);font-family:'VT323',monospace;font-size:1.1rem;
+  opacity:0.7;
+}
+.leaderboard-foot{
+  padding:0.4rem 0.8rem;
+  border-top:2px dashed var(--green);
+  font-family:'VT323',monospace;font-size:0.95rem;
+  color:var(--yellow);text-align:center;opacity:0.7;
+}
+.leaderboard-hdr{
+  display:grid;grid-template-columns:40px 1fr 80px 60px;gap:0.6rem;
+  padding:0.4rem 0.9rem;
+  font-family:'Press Start 2P',monospace;font-size:0.4rem;
+  color:var(--green);
+  border-bottom:2px solid var(--green);
+  background:rgba(57,255,20,0.08);
+}
+.leaderboard-hdr .c3,.leaderboard-hdr .c4{text-align:right}
+
+/* Power-ups HUD */
+.game-powerups{
+  position:absolute;top:50%;left:1rem;
+  transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:0.5rem;
+  pointer-events:none;
+}
+.game-powerup{
+  background:rgba(0,0,0,0.7);
+  border:2px solid var(--yellow);
+  padding:0.4rem 0.6rem;
+  font-family:'Press Start 2P',monospace;font-size:0.45rem;
+  color:var(--yellow);text-shadow:0 0 5px var(--yellow);
+  display:flex;flex-direction:column;gap:0.2rem;
+  min-width:110px;
+  animation:puPulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes puPulse{
+  from{box-shadow:0 0 0 0 rgba(255,230,0,0.4)}
+  to{box-shadow:0 0 10px 2px rgba(255,230,0,0.6)}
+}
+.game-powerup .pu-time{
+  height:3px;background:var(--yellow);
+  box-shadow:0 0 4px var(--yellow);
+}
+
+/* Notificaciones de pickup */
+.game-pickup-feed{
+  position:absolute;left:1rem;bottom:30%;
+  display:flex;flex-direction:column-reverse;gap:0.35rem;
+  pointer-events:none;
+}
+.game-pickup-msg{
+  font-family:'Press Start 2P',monospace;font-size:0.55rem;
+  color:var(--yellow);text-shadow:0 0 6px var(--yellow),2px 2px 0 var(--bg);
+  background:rgba(0,0,0,0.5);
+  padding:0.3rem 0.5rem;
+  border-left:3px solid var(--pink);
+  animation:pickupFade 2.4s ease-out forwards;
+}
+@keyframes pickupFade{
+  0%{opacity:0;transform:translateX(-20px)}
+  12%{opacity:1;transform:translateX(0)}
+  80%{opacity:1;transform:translateX(0)}
+  100%{opacity:0;transform:translateY(-10px)}
 }
 
 /* ================================================================
@@ -1515,7 +1781,7 @@ footer{
 <section id="spotify">
   <div class="sec-head reveal">
     <div class="sec-tag">&lt;la_mafia_en_spotify&gt;</div>
-    <h2 class="sec-title">MIEMBROS</h2>
+    <h2 class="sec-title">LOS ARTISTAS</h2>
     <div class="sec-line"></div>
   </div>
 
@@ -1526,33 +1792,32 @@ footer{
       <div class="spotify-head">
         <span class="name">KIKH</span>
         <span class="live">ON AIR</span>
-      </div><iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/artist/7leHoAGs3uiJ2rGMPgJvhX?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      </div>
       <div class="spotify-embed-wrap">
-        
-      
+        <iframe src="https://open.spotify.com/embed/artist/7leHoAGs3uiJ2rGMPgJvhX?utm_source=generator" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      </div>
     </div>
 
     <!-- [EDITAR] KAYLIREX -->
     <div class="spotify-card reveal" data-tag="/* artista_02 */">
       <div class="spotify-head">
-        <span class="name">KAYLIREX</span>
+        <span class="name">JETEA</span>
         <span class="live">ON AIR</span>
-      </div><iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/artist/24HXgDXKZQmNWU4uL6IjrO?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      </div>
       <div class="spotify-embed-wrap">
-       
+        <iframe src="https://open.spotify.com/embed/artist/0yOq5MzsEsytXSN0Z0vU1n?utm_source=generator" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
       </div>
     </div>
 
     <!-- [EDITAR] JETEA -->
     <div class="spotify-card reveal" data-tag="/* artista_03 */">
       <div class="spotify-head">
-        <span class="name">JETEA</span>
+        <span class="name">SKIIDZO</span>
         <span class="live">ON AIR</span>
       </div>
-    <iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/artist/0yOq5MzsEsytXSN0Z0vU1n?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
       <div class="spotify-embed-wrap">
-      
-  
+        <iframe src="https://open.spotify.com/embed/artist/79CmKBuVewevsSRTRLcPz1?utm_source=generator" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      </div>
     </div>
 
     <!-- [EDITAR] RUHH -->
@@ -1560,24 +1825,23 @@ footer{
       <div class="spotify-head">
         <span class="name">RUHH</span>
         <span class="live">ON AIR</span>
-      </div><iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/artist/7sYBrAuwXowODm6QI0vegj?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      </div>
       <div class="spotify-embed-wrap">
-       
-      
+        <iframe src="https://open.spotify.com/embed/artist/7sYBrAuwXowODm6QI0vegj?utm_source=generator" height="352" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      </div>
     </div>
 
     <!-- [EDITAR] SKIIDZO -->
     <div class="spotify-card reveal" data-tag="/* artista_05 */">
       <div class="spotify-head">
-        <span class="name">SKIIDZO</span>
+        <span class="name">KAYLIREX</span>
         <span class="live">ON AIR</span>
-      </div><iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/artist/79CmKBuVewevsSRTRLcPz1?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-      
-        
       </div>
-    
+      <div class="spotify-embed-wrap">
+<iframe data-testid="embed-iframe" style="border-radius:12px" src="https://open.spotify.com/embed/artist/24HXgDXKZQmNWU4uL6IjrO?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>      </div>
+    </div>
 
-
+  </div>
 </section>
 
 <!-- ============================================================
@@ -1670,10 +1934,21 @@ footer{
   </div>
   <div class="game-launch-card reveal">
     <p class="game-launch-desc">
-      Sobrevive a las oleadas en el piso franco de la mafia.<br>
-      Compra armas, abre la caja, mata amegos, no la palmes.
+      Sobrevive a las oleadas zombie en las calles de El Raval.<br>
+      Compra bebidas, mejora armas, mata mucho. Es lo que hay.
     </p>
     <button class="game-launch-btn" id="gameLaunchBtn" type="button">▶ JUGAR</button>
+  </div>
+
+  <div class="leaderboard-wrap reveal">
+    <div class="leaderboard-head">★ TOP PERKY PAKOS ★</div>
+    <div class="leaderboard-hdr">
+      <span>#</span><span>NOMBRE</span><span class="c3">PUNTOS</span><span class="c4">OLEADA</span>
+    </div>
+    <div class="leaderboard-list" id="leaderboardList">
+      <div class="leaderboard-empty">cargando...</div>
+    </div>
+    <div class="leaderboard-foot">palmala con estilo y sal aqui arriba ☠</div>
   </div>
 </section>
 
@@ -1685,11 +1960,18 @@ footer{
     <div class="game-dmg-vignette" id="gameDmgVignette"></div>
 
     <div class="game-top-left">
-      <div class="game-stat">
-        <span class="lbl">VIDA</span>
-        <div class="game-health-wrap"><div class="game-health-bar" id="gameHealthBar"></div></div>
+      <div class="game-healthbox" id="gameHealthbox">
+        <div class="hbox-row"><span>VIDA</span><span class="hb-num"><span id="gameHealthNum">100</span>/100</span></div>
+        <div class="hbox-bar">
+          <div class="hbox-ghost" id="gameHealthGhost"></div>
+          <div class="hbox-fill" id="gameHealthBar"></div>
+          <div class="hbox-notches"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="hbox-scan"></div>
+        </div>
       </div>
+      <div class="game-stat"><span class="lbl">ZONA</span><span id="gameZone">LOBBY</span></div>
     </div>
+    <div class="dmg-indicator" id="gameDmgIndicator"></div>
     <div class="game-top-right">
       <div class="game-stat"><span class="lbl">PUNTOS</span><span id="gamePoints">500</span></div>
       <div class="game-stat"><span class="lbl">OLEADA</span><span id="gameWave">1</span></div>
@@ -1702,22 +1984,30 @@ footer{
     <div class="game-prompt" id="gamePrompt"></div>
     <div class="game-wave-banner" id="gameWaveBanner">OLEADA 1</div>
 
+    <div class="game-powerups" id="gamePowerups"></div>
+    <div class="game-pickup-feed" id="gamePickupFeed"></div>
+
     <div class="game-controls">
-      WASD movimiento · MOUSE camara · CLICK disparar · CLICK DER apuntar · SPACE saltar · E interactuar · G granada · SHIFT correr · ESC pausa
+      WASD movimiento · MOUSE camara · CLICK disparar · CLICK DER apuntar · SPACE saltar · E interactuar · R recargar · G granada · SHIFT correr · ESC pausa
     </div>
   </div>
 
   <div class="game-start-screen active" id="gameStartScreen">
-    <h2>Perky Outbreak</h2>
-    <p class="game-sub">sobrevive a las oleadas ☠</p>
+    <h2>El Raval Simulator</h2>
+    <p class="game-sub">sobrevive a la noche del barrio ☠</p>
     <ul class="game-instr">
       <li>WASD — moverte</li>
       <li>RATON — mirar</li>
       <li>CLICK — disparar / CLICK DER — apuntar</li>
-      <li>E — caja misteriosa / armas en pared</li>
-      <li>G — granada · SHIFT — correr · SPACE — saltar</li>
+      <li>E — comprar puertas / caja / armas / electricidad</li>
+      <li>R — RECARGAR · G — granada · SHIFT — correr · SPACE — saltar</li>
+      <li>1-9 — cambiar arma · F — melee</li>
       <li>ESC — pausa</li>
     </ul>
+    <div class="game-username-row">
+      <label for="gameUsername">nombre de perky pako:</label>
+      <input id="gameUsername" type="text" maxlength="14" placeholder="TU NOMBRE" autocomplete="off">
+    </div>
     <button class="game-btn" id="gameStartBtn" type="button">▶ EMPEZAR</button>
     <button class="game-btn game-btn-alt" id="gameQuitBtn" type="button">SALIR</button>
   </div>
@@ -1751,7 +2041,7 @@ footer{
       <text x="4" y="32" font-family="'UnifrakturMaguntia',cursive" font-size="32" fill="#f0f0f0">Perky Mafia</text>
     </svg>
   </div>
-  <p class="ft-txt">@francisconocorazon · <a href="https://soundcloud.com/perky-labs" target="_blank">soundcloud</a></p>
+  <p class="ft-txt">for perky pakos · <a href="https://soundcloud.com/perky-labs" target="_blank">soundcloud</a></p>
   <div class="ft-counter">visitors: <span id="vc">000</span> | last update: 2026</div>
 </footer>
 
@@ -1765,7 +2055,7 @@ footer{
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
     </div>
     <h3 class="wa-modal-title" id="waModalTitle">PERKY MAFIA</h3>
-    <p class="wa-modal-desc">grupo privado<br>entra ya</p>
+    <p class="wa-modal-desc">grupo privado<br>solo para perky pakos ☠</p>
     <!-- [LINK] Enlace al grupo de WhatsApp -->
     <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="wa-modal-join">
       <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M.057 24l1.687-6.163a11.867 11.867 0 0 1-1.587-5.946C.16 5.335 5.495 0 12.05 0a11.817 11.817 0 0 1 8.413 3.488 11.824 11.824 0 0 1 3.48 8.414c-.003 6.557-5.338 11.892-11.893 11.892a11.9 11.9 0 0 1-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z"/></svg>
@@ -1897,6 +2187,7 @@ window.addEventListener('popstate', () => {
 })();
 
 // ================================================================
+// ================================================================
 // PERKY OUTBREAK — minijuego FPS zombies (Three.js)
 // ================================================================
 (function(){
@@ -1923,12 +2214,28 @@ window.addEventListener('popstate', () => {
   const dmgVignette  = document.getElementById('gameDmgVignette');
   const overWaveEl   = document.getElementById('gameOverWave');
   const overPointsEl = document.getElementById('gameOverPoints');
+  const powerupsEl   = document.getElementById('gamePowerups');
+  const pickupFeedEl = document.getElementById('gamePickupFeed');
+  const usernameInput= document.getElementById('gameUsername');
+  const leaderboardList = document.getElementById('leaderboardList');
   if (!overlay || !canvas || !launchBtn) return;
+
+  // ===== COLORES PERKY MAFIA =====
+  const COLS = {
+    bg:     0x0a0a0a,
+    green:  0x39ff14,
+    pink:   0xff2a6d,
+    yellow: 0xffe600,
+    cyan:   0x293435,
+    red:    0xff0000,
+    orange: 0xff6600,
+  };
 
   // ===== Estado =====
   let scene, camera, renderer, raycaster, clock;
   let initialized=false, running=false, paused=false;
   let lastShotTime=0, isAds=false, adsLerp=0;
+  let lastMeleeTime=0;
 
   const player = {
     height:1.7, radius:0.45,
@@ -1938,27 +2245,91 @@ window.addEventListener('popstate', () => {
     lastDmg:0, pitch:0, yaw:0,
     velY:0, onGround:true,
     bobT:0,
+    inventory: ['pistol','knife'],
+    username: 'PAKO',
+    jumpsUsed: 0,
+    ammo: {}, // { weaponId: { mag:X, reserve:Y } }
+    reloading: false,
+    reloadEnd: 0,
   };
 
+  function initAmmoFor(weaponId) {
+    const w = WEAPONS[weaponId];
+    if (!w || w.type === 'melee') return;
+    if (!player.ammo[weaponId]) {
+      player.ammo[weaponId] = { mag: w.mag, reserve: w.reserve };
+    }
+  }
+  function addReserveAmmo(weaponId, amount) {
+    const w = WEAPONS[weaponId];
+    if (!w || w.type === 'melee') return;
+    initAmmoFor(weaponId);
+    const maxReserve = w.reserve * 3;
+    player.ammo[weaponId].reserve = Math.min(maxReserve, player.ammo[weaponId].reserve + amount);
+  }
+
+  // Power-ups activos {type, until, multiplier} (temporales con duración)
+  const activePowerups = {};
+  // Buffs PERSISTENTES de las máquinas de bebidas (hasta que mueres)
+  // ej: persistentBuffs.juice = true;
+  const persistentBuffs = {};
+
+  // ===== ARMAS =====
+  // mag = munición en el cargador | reserve = munición de reserva | reload = ms de recarga
   const WEAPONS = {
-    pistol:  { name:'PISTOLA', dmg:32, fireRate:340, recoil:0.012, isAuto:false, spread:0.005, soundFreq:800 },
-    smg:     { name:'SMG',     dmg:18, fireRate:90,  recoil:0.018, isAuto:true,  spread:0.025, soundFreq:600 },
-    shotgun: { name:'ESCOPETA',dmg:22, fireRate:780, recoil:0.045, isAuto:false, pellets:6, spread:0.09, soundFreq:200 },
-    rifle:   { name:'RIFLE',   dmg:60, fireRate:200, recoil:0.025, isAuto:true,  spread:0.012, soundFreq:400 },
+    knife:    { name:'CUCHILLO',  type:'melee',   dmg:55,  fireRate:420, reach:2.2, color:0xcccccc, soundFreq:900 },
+    bat:      { name:'BATE',      type:'melee',   dmg:90,  fireRate:520, reach:2.6, color:0x6a3a18, soundFreq:300 },
+    machete:  { name:'MACHETE',   type:'melee',   dmg:120, fireRate:560, reach:2.8, color:0xaaaaaa, soundFreq:550 },
+    pistol:   { name:'PISTOLA',   type:'gun',     dmg:32,  fireRate:340, recoil:0.012, isAuto:false, spread:0.005, soundFreq:800, mag:12, reserve:72, reload:1100 },
+    magnum:   { name:'MAGNUM',    type:'gun',     dmg:120, fireRate:520, recoil:0.05,  isAuto:false, spread:0.004, soundFreq:180, mag:6,  reserve:36, reload:1500 },
+    smg:      { name:'SMG',       type:'gun',     dmg:18,  fireRate:90,  recoil:0.018, isAuto:true,  spread:0.025, soundFreq:600, mag:32, reserve:192,reload:1400 },
+    shotgun:  { name:'ESCOPETA',  type:'gun',     dmg:22,  fireRate:780, recoil:0.045, isAuto:false, pellets:7, spread:0.10, soundFreq:200, mag:6,  reserve:42, reload:1800 },
+    rifle:    { name:'RIFLE',     type:'gun',     dmg:60,  fireRate:200, recoil:0.025, isAuto:true,  spread:0.012, soundFreq:400, mag:30, reserve:180,reload:1600 },
+    sniper:   { name:'SNIPER',    type:'gun',     dmg:260, fireRate:1100,recoil:0.08,  isAuto:false, spread:0.001, soundFreq:150, mag:5,  reserve:30, reload:2200 },
+    lmg:      { name:'LMG',       type:'gun',     dmg:26,  fireRate:75,  recoil:0.022, isAuto:true,  spread:0.035, soundFreq:480, mag:80, reserve:320,reload:2600 },
+    minigun:  { name:'MINIGUN',   type:'gun',     dmg:22,  fireRate:55,  recoil:0.012, isAuto:true,  spread:0.04,  soundFreq:520, mag:200,reserve:600,reload:3500 },
+    flamer:   { name:'LANZALLAMAS',type:'gun',    dmg:14,  fireRate:60,  recoil:0.005, isAuto:true,  spread:0.07,  soundFreq:90, color:0xff6600, glow:true, mag:100,reserve:300,reload:2600 },
+    perkygun: { name:'PERKY RAY', type:'gun',     dmg:140, fireRate:260, recoil:0.02,  isAuto:true,  spread:0.003, soundFreq:1400, color:0xff2a6d, glow:true, mag:25, reserve:125,reload:2000 },
+    // ===== NUEVAS ARMAS PREMIUM =====
+    katana:   { name:'KATANA',    type:'melee',   dmg:180, fireRate:480, reach:3.0, color:0xeeeeee, soundFreq:1200 },
+    chainsaw: { name:'MOTOSIERRA',type:'melee',   dmg:240, fireRate:280, reach:2.8, color:0xff6600, soundFreq:140 },
+    deagle:   { name:'DEAGLE',    type:'gun',     dmg:160, fireRate:440, recoil:0.06, isAuto:false, spread:0.003, soundFreq:220, mag:7,  reserve:49, reload:1600 },
+    ak47:     { name:'AK-47',     type:'gun',     dmg:48,  fireRate:110, recoil:0.024, isAuto:true, spread:0.018, soundFreq:360, mag:30, reserve:180,reload:1800 },
+    burst:    { name:'BURST RIFLE',type:'gun',    dmg:55,  fireRate:170, recoil:0.022, isAuto:true, spread:0.008, soundFreq:520, mag:30, reserve:180,reload:1700 },
+    autoshot: { name:'AUTO-ESCOPETA',type:'gun',  dmg:18,  fireRate:260, recoil:0.04, isAuto:true, pellets:6, spread:0.11, soundFreq:240, mag:10, reserve:60, reload:2200 },
+    crossbow: { name:'BALLESTA',  type:'gun',     dmg:320, fireRate:900, recoil:0.03, isAuto:false, spread:0.002, soundFreq:660, color:0x884400, mag:1, reserve:18, reload:1800 },
+    rpg:      { name:'RPG',       type:'gun',     dmg:600, fireRate:1400,recoil:0.10, isAuto:false, spread:0.001, soundFreq:80,  color:0x553322, explosive:true, mag:1, reserve:8, reload:2800 },
+    plasma:   { name:'PLASMA',    type:'gun',     dmg:90,  fireRate:140, recoil:0.01, isAuto:true, spread:0.005, soundFreq:1700, color:0x44ddff, glow:true, mag:40, reserve:160,reload:2200 },
+    tesla:    { name:'TESLA GUN', type:'gun',     dmg:70,  fireRate:90,  recoil:0.005,isAuto:true, spread:0.04,  soundFreq:1900, color:0x88ddff, glow:true, chain:true, mag:50, reserve:150,reload:2400 },
+    railgun:  { name:'RAILGUN',   type:'gun',     dmg:480, fireRate:1300,recoil:0.07, isAuto:false, spread:0.0,   soundFreq:1500, color:0xaa55ff, glow:true, mag:4, reserve:24, reload:2500 },
+    perkynuke:{ name:'PERKY NUKE',type:'gun',     dmg:1200,fireRate:2000,recoil:0.12, isAuto:false, spread:0.0,   soundFreq:60,   color:0xff2a6d, glow:true, explosive:true, mag:1, reserve:4, reload:3500 },
   };
   let currentWeapon='pistol';
   let weaponMesh=null, weaponBaseRot=null, weaponBasePos=null;
-  let weaponKickT=0;
+  let weaponKickT=0, meleeAnimT=0;
 
   const keys={};
   let mouseLeft=false;
 
-  const zombies=[], walls=[], grenades=[], wallBuys=[], spawnPoints=[], lights=[], swingLamps=[], tracers=[];
+  // ===== COLECCIONES =====
+  const zombies=[], walls=[], grenades=[], wallBuys=[], lights=[], swingLamps=[], tracers=[];
+  const buffZones=[], traps=[];
+  const dynamicRefs={};
+  const spawners=[];     // {mesh, pos, roomId}
+  const doors=[];        // {mesh, cost, pos, unlocked, connectsRoom}
+  const powerupDrops=[]; // {mesh, type, pos, t}
+  const rooms=[];        // {id, bounds, unlocked}
+  const drinkMachines=[]; // {group, pos, cost, buffId, name, color, bought:false}
   let mysteryBox=null;
+  let upgradeMachine=null; // { group, crystal, ring1, ring2, pos, cost, upgradedWeapons }
+  let wallMeshesCache=[]; // OPTIMIZACIÓN: caché de meshes de paredes para raycasts
+  // ===== ELECTRICIDAD =====
+  let powerOn = false;
+  let powerSwitch = null; // { group, lever, pos }
 
   let wave=0, zombiesToSpawn=0, zombiesAlive=0, maxAliveAtOnce=4, nextSpawnTime=0, waveBreakUntil=0;
 
-  // ===== AUDIO procedural (WebAudio) =====
+  // ===== AUDIO =====
   let audioCtx=null, masterGain=null;
   function initAudio() {
     if (audioCtx) return;
@@ -1994,6 +2365,19 @@ window.addEventListener('popstate', () => {
     osc.connect(og).connect(masterGain);
     osc.start(t); osc.stop(t+0.12);
   }
+  function playMelee() {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type='square';
+    osc.frequency.setValueAtTime(440, t);
+    osc.frequency.exponentialRampToValueAtTime(120, t+0.08);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.12, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+0.1);
+    osc.connect(g).connect(masterGain);
+    osc.start(t); osc.stop(t+0.12);
+  }
   function playHit() {
     if (!audioCtx) return;
     const t = audioCtx.currentTime;
@@ -2010,15 +2394,15 @@ window.addEventListener('popstate', () => {
     const t = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     osc.type='sawtooth';
-    osc.frequency.setValueAtTime(80+Math.random()*30, t);
-    osc.frequency.linearRampToValueAtTime(50, t+0.4);
+    osc.frequency.setValueAtTime(70+Math.random()*40, t);
+    osc.frequency.linearRampToValueAtTime(45, t+0.45);
     const lp = audioCtx.createBiquadFilter();
     lp.type='lowpass'; lp.frequency.value = 380;
     const g = audioCtx.createGain();
     g.gain.setValueAtTime(0.1, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t+0.5);
+    g.gain.exponentialRampToValueAtTime(0.001, t+0.55);
     osc.connect(lp).connect(g).connect(masterGain);
-    osc.start(t); osc.stop(t+0.55);
+    osc.start(t); osc.stop(t+0.6);
   }
   function playExplosion() {
     if (!audioCtx) return;
@@ -2063,49 +2447,127 @@ window.addEventListener('popstate', () => {
     osc.connect(g).connect(masterGain);
     osc.start(t); osc.stop(t+0.16);
   }
+  function playPickup(freq) {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type='square';
+    osc.frequency.setValueAtTime(freq||660, t);
+    osc.frequency.linearRampToValueAtTime((freq||660)*1.6, t+0.15);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.15, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+0.2);
+    osc.connect(g).connect(masterGain);
+    osc.start(t); osc.stop(t+0.22);
+  }
+  function playDoorOpen() {
+    if (!audioCtx) return;
+    const t = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type='sawtooth';
+    osc.frequency.setValueAtTime(120, t);
+    osc.frequency.exponentialRampToValueAtTime(60, t+0.6);
+    const g = audioCtx.createGain();
+    g.gain.setValueAtTime(0.15, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t+0.8);
+    osc.connect(g).connect(masterGain);
+    osc.start(t); osc.stop(t+0.85);
+  }
 
-  // ===== TEXTURAS PROCEDURALES (canvas) =====
-  function makeFloorTex() {
+  // ===== TEXTURAS PROCEDURALES =====
+  function makeFloorTex(variant) {
     const c = document.createElement('canvas');
     c.width=c.height=256;
     const x = c.getContext('2d');
-    x.fillStyle='#1f1812'; x.fillRect(0,0,256,256);
+    const palettes = {
+      concrete: ['#1f1812','#2a2018','#0a0805'],
+      neon:     ['#0d0618','#1a0a2a','#050210'],
+      grass:    ['#0f2a0f','#1a3a1a','#050f05'],
+      metal:    ['#1a1c22','#25272e','#0a0c10'],
+      brick:    ['#3a1a12','#4a2218','#1a0a05'],
+    };
+    const p = palettes[variant] || palettes.concrete;
+    x.fillStyle = p[0]; x.fillRect(0,0,256,256);
     for (let i=0;i<2500;i++) {
-      x.fillStyle = 'rgba('+(20+Math.random()*40)+','+(15+Math.random()*30)+','+(10+Math.random()*25)+','+(0.3+Math.random()*0.4)+')';
+      x.fillStyle = Math.random()<0.5 ? p[1] : p[2];
+      x.globalAlpha = 0.3+Math.random()*0.5;
       x.fillRect(Math.random()*256, Math.random()*256, 2, 2);
     }
-    x.strokeStyle='#0a0805'; x.lineWidth=2;
-    for (let i=0;i<=256;i+=64) {
-      x.beginPath(); x.moveTo(0,i); x.lineTo(256,i); x.stroke();
-      x.beginPath(); x.moveTo(i,0); x.lineTo(i,256); x.stroke();
-    }
-    x.strokeStyle='#000'; x.lineWidth=1;
-    for (let i=0;i<8;i++) {
-      x.beginPath(); x.moveTo(Math.random()*256, Math.random()*256);
-      for (let j=0;j<5;j++) x.lineTo(Math.random()*256, Math.random()*256);
-      x.stroke();
+    x.globalAlpha = 1;
+    if (variant === 'grass') {
+      for (let i=0;i<500;i++) {
+        x.fillStyle = 'rgba(80,'+(120+Math.random()*60)+',40,'+(0.3+Math.random()*0.4)+')';
+        x.fillRect(Math.random()*256, Math.random()*256, 1, 3);
+      }
+    } else {
+      x.strokeStyle = p[2]; x.lineWidth = 2;
+      for (let i=0;i<=256;i+=64) {
+        x.beginPath(); x.moveTo(0,i); x.lineTo(256,i); x.stroke();
+        x.beginPath(); x.moveTo(i,0); x.lineTo(i,256); x.stroke();
+      }
     }
     const tex = new TH.CanvasTexture(c);
     tex.wrapS = tex.wrapT = TH.RepeatWrapping;
     tex.repeat.set(8,8);
     return tex;
   }
-  function makeWallTex() {
+  function makeWallTex(variant) {
     const c = document.createElement('canvas');
     c.width=c.height=256;
     const x = c.getContext('2d');
-    x.fillStyle='#2a1f15'; x.fillRect(0,0,256,256);
-    for (let row=0; row<8; row++) {
-      const off = (row%2)*32;
-      for (let col=-1; col<8; col++) {
-        const bx = col*64+off, by = row*32;
-        x.fillStyle = 'rgb('+(35+Math.random()*30)+','+(25+Math.random()*25)+','+(18+Math.random()*20)+')';
-        x.fillRect(bx+2, by+2, 60, 28);
+    if (variant === 'neon') {
+      x.fillStyle = '#0a0515'; x.fillRect(0,0,256,256);
+      x.strokeStyle = '#ff2a6d'; x.lineWidth = 2;
+      x.shadowColor = '#ff2a6d'; x.shadowBlur = 8;
+      for (let i=0; i<6; i++) {
+        const y = 30+i*45;
+        x.beginPath(); x.moveTo(0,y); x.lineTo(256,y); x.stroke();
       }
-    }
-    for (let i=0;i<200;i++) {
-      x.fillStyle = 'rgba(0,0,0,'+(0.1+Math.random()*0.3)+')';
-      x.fillRect(Math.random()*256, Math.random()*256, Math.random()*8+2, Math.random()*8+2);
+      x.shadowBlur = 0;
+      for (let i=0;i<60;i++) {
+        x.fillStyle = 'rgba(57,255,20,'+(0.2+Math.random()*0.3)+')';
+        x.fillRect(Math.random()*256, Math.random()*256, 2, 2);
+      }
+    } else if (variant === 'brick') {
+      x.fillStyle='#2a1a10'; x.fillRect(0,0,256,256);
+      for (let row=0; row<8; row++) {
+        const off = (row%2)*32;
+        for (let col=-1; col<8; col++) {
+          const bx = col*64+off, by = row*32;
+          x.fillStyle = 'rgb('+(55+Math.random()*30)+','+(30+Math.random()*20)+','+(20+Math.random()*15)+')';
+          x.fillRect(bx+2, by+2, 60, 28);
+        }
+      }
+      for (let i=0;i<200;i++) {
+        x.fillStyle = 'rgba(0,0,0,'+(0.1+Math.random()*0.3)+')';
+        x.fillRect(Math.random()*256, Math.random()*256, Math.random()*8+2, Math.random()*8+2);
+      }
+    } else if (variant === 'metal') {
+      const grd = x.createLinearGradient(0,0,0,256);
+      grd.addColorStop(0,'#3a3a40'); grd.addColorStop(0.5,'#252528'); grd.addColorStop(1,'#1a1a1c');
+      x.fillStyle=grd; x.fillRect(0,0,256,256);
+      for (let i=20; i<256; i+=48) {
+        for (let j=20; j<256; j+=48) {
+          x.fillStyle='#0a0a0c';
+          x.beginPath(); x.arc(i,j,3,0,Math.PI*2); x.fill();
+          x.fillStyle='#555';
+          x.beginPath(); x.arc(i-1,j-1,1.5,0,Math.PI*2); x.fill();
+        }
+      }
+    } else if (variant === 'outdoor') {
+      const grd = x.createLinearGradient(0,0,0,256);
+      grd.addColorStop(0,'#0a0618'); grd.addColorStop(1,'#1a0f28');
+      x.fillStyle = grd; x.fillRect(0,0,256,256);
+      for (let i=0;i<120;i++) {
+        x.fillStyle = 'rgba(255,230,0,'+(Math.random()*0.5)+')';
+        x.fillRect(Math.random()*256, Math.random()*256, 1.5, 1.5);
+      }
+    } else {
+      x.fillStyle='#2a201a'; x.fillRect(0,0,256,256);
+      for (let i=0;i<500;i++) {
+        x.fillStyle = 'rgba(0,0,0,'+(0.1+Math.random()*0.4)+')';
+        x.fillRect(Math.random()*256, Math.random()*256, 3, 3);
+      }
     }
     const tex = new TH.CanvasTexture(c);
     tex.wrapS = tex.wrapT = TH.RepeatWrapping;
@@ -2130,38 +2592,16 @@ window.addEventListener('popstate', () => {
     }
     return new TH.CanvasTexture(c);
   }
-  function makeMetalTex() {
-    const c = document.createElement('canvas');
-    c.width=c.height=128;
-    const x = c.getContext('2d');
-    const grd = x.createLinearGradient(0,0,0,128);
-    grd.addColorStop(0,'#3a3a40'); grd.addColorStop(0.5,'#252528'); grd.addColorStop(1,'#1a1a1c');
-    x.fillStyle=grd; x.fillRect(0,0,128,128);
-    for (let i=20; i<128; i+=40) {
-      for (let j=20; j<128; j+=40) {
-        x.fillStyle='#0a0a0c';
-        x.beginPath(); x.arc(i,j,3,0,Math.PI*2); x.fill();
-        x.fillStyle='#444';
-        x.beginPath(); x.arc(i-1,j-1,1.5,0,Math.PI*2); x.fill();
-      }
-    }
-    x.strokeStyle='rgba(80,80,90,0.3)'; x.lineWidth=1;
-    for (let i=0;i<15;i++) {
-      x.beginPath(); x.moveTo(Math.random()*128, Math.random()*128);
-      x.lineTo(Math.random()*128, Math.random()*128); x.stroke();
-    }
-    return new TH.CanvasTexture(c);
-  }
 
   let textures = {};
 
   // ===== INIT =====
   function init() {
     scene = new TH.Scene();
-    scene.background = new TH.Color(0x0a0810);
-    scene.fog = new TH.Fog(0x0a0810, 8, 38);
+    scene.background = new TH.Color(0x05030a);
+    scene.fog = new TH.Fog(0x05030a, 10, 55);
 
-    camera = new TH.PerspectiveCamera(75, canvas.clientWidth/canvas.clientHeight, 0.1, 100);
+    camera = new TH.PerspectiveCamera(75, canvas.clientWidth/canvas.clientHeight, 0.1, 200);
     camera.rotation.order = 'YXZ';
     camera.position.set(0, player.height, 0);
 
@@ -2172,215 +2612,951 @@ window.addEventListener('popstate', () => {
     raycaster = new TH.Raycaster();
     clock = new TH.Clock();
 
-    textures.floor = makeFloorTex();
-    textures.wall  = makeWallTex();
-    textures.crate = makeCrateTex();
-    textures.metal = makeMetalTex();
+    textures.floorConcrete = makeFloorTex('concrete');
+    textures.floorNeon     = makeFloorTex('neon');
+    textures.floorGrass    = makeFloorTex('grass');
+    textures.floorMetal    = makeFloorTex('metal');
+    textures.floorBrick    = makeFloorTex('brick');
+    textures.wallBrick     = makeWallTex('brick');
+    textures.wallNeon      = makeWallTex('neon');
+    textures.wallMetal     = makeWallTex('metal');
+    textures.wallOutdoor   = makeWallTex('outdoor');
+    textures.crate         = makeCrateTex();
 
     buildWorld();
     setupInput();
     initAudio();
+    // === OPTIMIZACIÓN: caché de wall meshes para raycasting ===
+    wallMeshesCache = [];
+    walls.forEach(w => { if (w.mesh) wallMeshesCache.push(w.mesh); });
+    // Guardar estado original de WEAPONS para poder restaurarlo al reiniciar
+    if (!window.__weaponsOriginal) {
+      window.__weaponsOriginal = JSON.parse(JSON.stringify(WEAPONS));
+    }
     initialized = true;
   }
 
-  // ===== WORLD =====
+  // ===== HELPERS DE CONSTRUCCION =====
+  function addWall(px,py,pz, sx,sy,sz, mat) {
+    const m = new TH.Mesh(new TH.BoxGeometry(sx,sy,sz), mat);
+    m.position.set(px,py,pz);
+    scene.add(m);
+    walls.push({
+      min: new TH.Vector3(px-sx/2, py-sy/2, pz-sz/2),
+      max: new TH.Vector3(px+sx/2, py+sy/2, pz+sz/2),
+      mesh: m,
+    });
+    return m;
+  }
+  function addDecor(mesh) { scene.add(mesh); return mesh; }
+
+  function addFloorPlane(cx, cz, w, d, mat) {
+    const f = new TH.Mesh(new TH.PlaneGeometry(w, d), mat);
+    f.rotation.x = -Math.PI/2;
+    f.position.set(cx, 0, cz);
+    scene.add(f);
+  }
+  function addCeilingPlane(cx, cz, w, d, h, mat) {
+    const c = new TH.Mesh(new TH.PlaneGeometry(w, d), mat);
+    c.rotation.x = Math.PI/2;
+    c.position.set(cx, h, cz);
+    scene.add(c);
+  }
+
+  // Pared con HUECO (para puertas/pasos): crea 2 o 3 trozos con hueco en el medio
+  function addWallWithGap(axis, fixed, from, to, y, h, thickness, mat, gapStart, gapEnd) {
+    // axis: 'x' (pared horizontal, fixed = z) | 'z' (pared vertical, fixed = x)
+    // from, to = extremos en el eje variable
+    // gapStart, gapEnd = posiciones del hueco en ese eje (o null si no hay)
+    if (gapStart === null || gapStart === undefined) {
+      // pared completa
+      const len = Math.abs(to - from);
+      const mid = (from+to)/2;
+      if (axis === 'x') addWall(mid, y, fixed, len, h, thickness, mat);
+      else              addWall(fixed, y, mid, thickness, h, len, mat);
+      return;
+    }
+    // pared izquierda del hueco
+    if (gapStart > from) {
+      const len1 = gapStart - from;
+      const mid1 = (from + gapStart) / 2;
+      if (axis === 'x') addWall(mid1, y, fixed, len1, h, thickness, mat);
+      else              addWall(fixed, y, mid1, thickness, h, len1, mat);
+    }
+    // pared derecha del hueco
+    if (gapEnd < to) {
+      const len2 = to - gapEnd;
+      const mid2 = (gapEnd + to) / 2;
+      if (axis === 'x') addWall(mid2, y, fixed, len2, h, thickness, mat);
+      else              addWall(fixed, y, mid2, thickness, h, len2, mat);
+    }
+  }
+
+  // ===== PUERTA DESBLOQUEABLE =====
+  function addDoor(px, pz, rotY, cost, unlocksRoomId, label) {
+    const grp = new TH.Group();
+    // marco amarillo
+    const frameMat = new TH.MeshStandardMaterial({ color:COLS.yellow, emissive:COLS.yellow, emissiveIntensity:0.5 });
+    const frameT = new TH.Mesh(new TH.BoxGeometry(3.2, 0.15, 0.2), frameMat);
+    frameT.position.y = 3;
+    grp.add(frameT);
+    const frameL = new TH.Mesh(new TH.BoxGeometry(0.15, 3, 0.2), frameMat);
+    frameL.position.set(-1.5, 1.5, 0); grp.add(frameL);
+    const frameR = new TH.Mesh(new TH.BoxGeometry(0.15, 3, 0.2), frameMat);
+    frameR.position.set( 1.5, 1.5, 0); grp.add(frameR);
+    // tablas de madera (la puerta sellada)
+    const boardMat = new TH.MeshStandardMaterial({ color:0x3a1808, emissive:COLS.pink, emissiveIntensity:0.15 });
+    for (let i=0;i<5;i++) {
+      const y = 0.3 + i*0.55;
+      const b = new TH.Mesh(new TH.BoxGeometry(2.9, 0.45, 0.12), boardMat);
+      b.position.y = y;
+      b.rotation.z = (i%2===0 ? 0.04 : -0.04);
+      grp.add(b);
+    }
+    // tablas diagonales
+    const d1 = new TH.Mesh(new TH.BoxGeometry(3.5, 0.2, 0.1), boardMat);
+    d1.position.set(0, 1.5, 0.08); d1.rotation.z = 0.5; grp.add(d1);
+    const d2 = new TH.Mesh(new TH.BoxGeometry(3.5, 0.2, 0.1), boardMat);
+    d2.position.set(0, 1.5, 0.08); d2.rotation.z = -0.5; grp.add(d2);
+    // cartel con precio
+    const signMat = new TH.MeshBasicMaterial({ color:COLS.green });
+    const sign = new TH.Mesh(new TH.PlaneGeometry(1.2, 0.35), signMat);
+    sign.position.set(0, 2.4, 0.18);
+    grp.add(sign);
+
+    grp.position.set(px, 0, pz);
+    grp.rotation.y = rotY;
+    scene.add(grp);
+
+    // collider (pared bloqueante)
+    const col = (rotY === 0 || Math.abs(rotY) === Math.PI)
+      ? { min: new TH.Vector3(px-1.6, 0, pz-0.2), max: new TH.Vector3(px+1.6, 3.2, pz+0.2) }
+      : { min: new TH.Vector3(px-0.2, 0, pz-1.6), max: new TH.Vector3(px+0.2, 3.2, pz+1.6) };
+
+    doors.push({
+      group: grp,
+      pos: new TH.Vector3(px, 1.5, pz),
+      cost: cost,
+      unlocked: false,
+      unlocksRoomId: unlocksRoomId,
+      label: label || ('PUERTA'),
+      collider: col,
+    });
+    walls.push({ ...col, mesh: grp, isDoor: true, doorIdx: doors.length-1 });
+  }
+
+  function unlockDoor(door) {
+    door.unlocked = true;
+    // quitar del array walls
+    for (let i=walls.length-1;i>=0;i--) {
+      if (walls[i].isDoor && walls[i].doorIdx === doors.indexOf(door)) {
+        walls.splice(i, 1);
+        break;
+      }
+    }
+    // animación: descender
+    door.openT = 0;
+    playDoorOpen();
+    // activar spawners de esa sala
+    spawners.forEach(sp => {
+      if (sp.roomId === door.unlocksRoomId) sp.active = true;
+    });
+  }
+
+  // ===== SPAWNER (grieta en pared) =====
+  function addSpawner(px,py,pz, rotY, roomId) {
+    const grp = new TH.Group();
+    const mat = new TH.MeshBasicMaterial({ color:COLS.red, transparent:true, opacity:0.85 });
+    // grieta jagged con varios boxes pequeños
+    for (let i=0;i<8;i++) {
+      const w = 0.15 + Math.random()*0.2;
+      const h = 0.3 + Math.random()*0.35;
+      const b = new TH.Mesh(new TH.BoxGeometry(w, h, 0.04), mat);
+      b.position.set((Math.random()-0.5)*0.7, 0.3+(i*0.18), 0.05);
+      b.rotation.z = (Math.random()-0.5)*0.6;
+      grp.add(b);
+    }
+    // aura roja
+    const aura = new TH.Mesh(
+      new TH.PlaneGeometry(1.6, 2.4),
+      new TH.MeshBasicMaterial({ color:0xff0022, transparent:true, opacity:0.22 })
+    );
+    aura.position.z = 0.02;
+    grp.add(aura);
+
+    grp.position.set(px, py, pz);
+    grp.rotation.y = rotY;
+    scene.add(grp);
+
+    const light = new TH.PointLight(0xff1122, 0.6, 6, 2);
+    light.position.set(px, py+0.5, pz);
+    scene.add(light);
+
+    spawners.push({
+      group: grp,
+      pos: new TH.Vector3(px, 0, pz),
+      light: light,
+      roomId: roomId,
+      active: (roomId === 0),
+      pulseT: Math.random()*10,
+    });
+  }
+
+  // ===== WORLD BUILD — 7 salas grandes temáticas =====
+  // Layout (coordenadas mundiales, X→este, Z→sur):
+  //   [2 OFICINAS] —————— [0 LOBBY] —————— [5 LAB]
+  //        |                 |                  |
+  //        |            [1 CLUB PASILLO]        |
+  //        |                 |                  |
+  //   [3 ALMACEN] ——————— [4 PATIO JARDIN] ——— [6 SALA PERKY VIP]
+  //
+  // Rooms: ~20×20 cada una, conectadas por pasillos
   function buildWorld() {
-    // Floor
-    const floor = new TH.Mesh(
-      new TH.PlaneGeometry(40, 40),
-      new TH.MeshStandardMaterial({ map:textures.floor, roughness:0.92 })
-    );
-    floor.rotation.x = -Math.PI/2;
-    scene.add(floor);
+    // =========================================================
+    // MATERIALES
+    // =========================================================
+    const fConcrete = new TH.MeshStandardMaterial({ map:textures.floorConcrete, roughness:0.92 });
+    const fNeon     = new TH.MeshStandardMaterial({ map:textures.floorNeon,     roughness:0.75 });
+    const fGrass    = new TH.MeshStandardMaterial({ map:textures.floorGrass,    roughness:0.95 });
+    const fMetal    = new TH.MeshStandardMaterial({ map:textures.floorMetal,    roughness:0.55, metalness:0.5 });
+    const fBrick    = new TH.MeshStandardMaterial({ map:textures.floorBrick,    roughness:0.9 });
 
-    // Ceiling
-    const ceil = new TH.Mesh(
-      new TH.PlaneGeometry(40, 40),
-      new TH.MeshStandardMaterial({ color:0x0a0808, roughness:1 })
-    );
-    ceil.rotation.x = Math.PI/2;
-    ceil.position.y = 5;
-    scene.add(ceil);
+    const wBrick    = new TH.MeshStandardMaterial({ map:textures.wallBrick,   roughness:0.95 });
+    const wNeon     = new TH.MeshStandardMaterial({ map:textures.wallNeon,    roughness:0.75 });
+    const wMetal    = new TH.MeshStandardMaterial({ map:textures.wallMetal,   roughness:0.55, metalness:0.55 });
+    const wOutdoor  = new TH.MeshStandardMaterial({ map:textures.wallOutdoor, roughness:0.9 });
 
-    const wallMat  = new TH.MeshStandardMaterial({ map:textures.wall,  roughness:0.95 });
-    const metalMat = new TH.MeshStandardMaterial({ map:textures.metal, roughness:0.6, metalness:0.5 });
-    const crateMat = new TH.MeshStandardMaterial({ map:textures.crate, roughness:0.85 });
+    const crateMat  = new TH.MeshStandardMaterial({ map:textures.crate, roughness:0.85 });
+    const darkMetal = new TH.MeshStandardMaterial({ color:0x1a1c22, roughness:0.4, metalness:0.85 });
+    const platMat   = new TH.MeshStandardMaterial({ color:0x2a2a30, roughness:0.7, metalness:0.5 });
+    const stairMat  = new TH.MeshStandardMaterial({ color:0x222024, roughness:0.8, metalness:0.4 });
+    const railMat   = new TH.MeshStandardMaterial({ color:COLS.yellow, emissive:COLS.yellow, emissiveIntensity:0.4 });
 
-    const W=30, H=5;
-    const specs = [
-      // perimetro
-      { p:[0, H/2, -W/2], s:[W, H, 0.5], mat:wallMat },
-      { p:[0, H/2,  W/2], s:[W, H, 0.5], mat:wallMat },
-      { p:[-W/2, H/2, 0], s:[0.5, H, W], mat:wallMat },
-      { p:[ W/2, H/2, 0], s:[0.5, H, W], mat:wallMat },
-      // pilares metalicos
-      { p:[-7, H/2, -7], s:[1.4, H, 1.4], mat:metalMat },
-      { p:[ 7, H/2, -7], s:[1.4, H, 1.4], mat:metalMat },
-      { p:[-7, H/2,  7], s:[1.4, H, 1.4], mat:metalMat },
-      { p:[ 7, H/2,  7], s:[1.4, H, 1.4], mat:metalMat },
-      // crates
-      { p:[ 0, 0.8, -10], s:[2, 1.6, 1.5], mat:crateMat },
-      { p:[ 4, 0.6,  6],  s:[1.5,1.2, 1.5], mat:crateMat },
-      { p:[-5, 0.6,  3],  s:[1.3,1.2, 1.3], mat:crateMat },
-      { p:[ 10,0.5, -3],  s:[1.2,1, 2.2],   mat:crateMat },
-      { p:[-11,0.7, -1],  s:[1.4,1.4,1.4],  mat:crateMat },
-      // mesa larga (top + 4 patas)
-      { p:[ 11, 0.85, 9],   s:[3, 0.15, 1.4], mat:crateMat },
-      { p:[ 9.7, 0.4, 9.6], s:[0.15, 0.85, 0.15], mat:crateMat },
-      { p:[ 12.3, 0.4, 9.6],s:[0.15, 0.85, 0.15], mat:crateMat },
-      { p:[ 9.7, 0.4, 8.4], s:[0.15, 0.85, 0.15], mat:crateMat },
-      { p:[ 12.3, 0.4, 8.4],s:[0.15, 0.85, 0.15], mat:crateMat },
-    ];
-    specs.forEach(sp => {
-      const m = new TH.Mesh(new TH.BoxGeometry(sp.s[0], sp.s[1], sp.s[2]), sp.mat);
-      m.position.set(sp.p[0], sp.p[1], sp.p[2]);
-      scene.add(m);
-      walls.push({
-        min: new TH.Vector3(sp.p[0]-sp.s[0]/2, sp.p[1]-sp.s[1]/2, sp.p[2]-sp.s[2]/2),
-        max: new TH.Vector3(sp.p[0]+sp.s[0]/2, sp.p[1]+sp.s[1]/2, sp.p[2]+sp.s[2]/2),
-        mesh: m,
+    const H  = 6;   // altura sala estándar
+    const OH = 8;   // altura del muro perimetral del patio
+
+    // =========================================================
+    // LAYOUT GLOBAL — el barrio del Raval
+    //
+    //                     [4 PATIO RAMBLAS] (exterior 40×30)
+    //                              ▲
+    //                              ║ puerta
+    //                              ║
+    //  [2 ALMACEN]        [0 PLAZA REAL]      [5 LAB BIOQUIM]
+    //  30×24                20×20                30×24
+    //  (oeste)              (centro/spawn)       (este)
+    //                              ║
+    //                              ║ puerta
+    //                              ║
+    //                       [1 BAR PINK]
+    //                       30×25 (sur)
+    //                              ║
+    //                              ║ puerta
+    //                              ║
+    //                    [6 LAB MEJORAS]
+    //                    30×20 (más sur)
+    //
+    //  Encima del PLAZA REAL y BAR PINK hay un PISO 2:
+    //  [7 AZOTEA] — accesible por escalera dentro del BAR PINK
+    //
+    // Cada pared se construye UNA VEZ. Si una sala comparte
+    // pared con otra, sólo la "dueña" la añade.
+    // Convención: la sala con id menor es la dueña.
+    // =========================================================
+
+    // ----- IMPORTANTE: paredes compartidas (cada una sólo se añade una vez) -----
+    // Compartidas con SPAWN:
+    //   - SPAWN sur (z=10)  ↔ PINK norte    → la añade SPAWN
+    //   - SPAWN norte (z=-10) ↔ PATIO sur   → la añade SPAWN
+    //   - SPAWN oeste (x=-10) ↔ ALMACEN este → la añade SPAWN
+    //   - SPAWN este (x=10) ↔ LAB oeste     → la añade SPAWN
+    // Compartidas con PINK:
+    //   - PINK sur (z=35) ↔ UPGRADE norte   → la añade PINK
+    //
+    // Cuando una sala "vecina" tiene un boundary diferente al de spawn (ej: pink
+    // mide x:-15..15 pero spawn x:-10..10), las extensiones laterales sí las añade
+    // la sala vecina porque no se solapan con la pared compartida.
+
+    // =========================================================
+    // SALA 0 — PLAZA REAL / SPAWN (20×20 concreto)
+    // =========================================================
+    rooms.push({ id:0, name:'PLAZA', bounds:{minX:-10,maxX:10,minZ:-10,maxZ:10}, unlocked:true });
+    addFloorPlane(0, 0, 20, 20, fConcrete);
+    addCeilingPlane(0, 0, 20, 20, H, new TH.MeshStandardMaterial({ color:0x0a0606 }));
+
+    // 4 paredes perimetrales de SPAWN (todas con hueco central de 4u para puerta)
+    addWallWithGap('x', -10, -10, 10, H/2, H, 0.5, wBrick, -2, 2); // norte
+    addWallWithGap('x',  10, -10, 10, H/2, H, 0.5, wBrick, -2, 2); // sur
+    addWallWithGap('z', -10, -10, 10, H/2, H, 0.5, wBrick, -2, 2); // oeste
+    addWallWithGap('z',  10, -10, 10, H/2, H, 0.5, wBrick, -2, 2); // este
+
+    // Puertas
+    addDoor( 0,  10, 0,          500, 1, 'BAR PINK');
+    addDoor( 0, -10, Math.PI,   1500, 4, 'PATIO RAMBLAS');
+    addDoor(-10,  0, Math.PI/2,  750, 2, 'ALMACEN');
+    addDoor( 10,  0,-Math.PI/2,  750, 5, 'LAB BIOQUIM');
+
+    // Caja misteriosa esquina NW
+    {
+      const mbGrp = new TH.Group();
+      const mbBody = new TH.Mesh(
+        new TH.BoxGeometry(1.4, 1, 1),
+        new TH.MeshStandardMaterial({ color:0x4a2a05, emissive:COLS.orange, emissiveIntensity:0.4 })
+      );
+      mbGrp.add(mbBody);
+      const bandMat = new TH.MeshStandardMaterial({ color:COLS.yellow, emissive:COLS.yellow, emissiveIntensity:0.5 });
+      const b1 = new TH.Mesh(new TH.BoxGeometry(1.42, 0.1, 1.02), bandMat); b1.position.y = 0.35; mbGrp.add(b1);
+      const b2 = new TH.Mesh(new TH.BoxGeometry(1.42, 0.1, 1.02), bandMat); b2.position.y = -0.35; mbGrp.add(b2);
+      const qMark = new TH.Mesh(new TH.BoxGeometry(0.2, 0.4, 0.2), new TH.MeshBasicMaterial({ color:COLS.pink }));
+      qMark.position.y = 0.85;
+      mbGrp.add(qMark);
+      mbGrp.position.set(-7.5, 0.5, -7.5);
+      scene.add(mbGrp);
+      mysteryBox = { mesh:mbBody, group:mbGrp, qMark, pos:mbGrp.position, cost:950, busy:false };
+    }
+
+    // Wall buys de spawn: pistola y cuchillo
+    addWallBuy(-9.85, 1.6,  5, 0, Math.PI/2, 0, 'pistol', 150);
+    addWallBuy( 9.85, 1.6, -5, 0,-Math.PI/2, 0, 'knife',  100);
+
+    // Spawners sala 0 (activos al empezar)
+    addSpawner(-9.9, 1.2, -4, Math.PI/2, 0);
+    addSpawner( 9.9, 1.2,  4,-Math.PI/2, 0);
+
+    // === MÁQUINA DE BEBIDA #1 — CAFELITO (sala spawn, esquina NE, mira al centro) ===
+    addDrinkMachine(7.5, -7.5, -Math.PI/4, 'cafelito');
+    // === NUEVA: REDBULL en spawn (esquina NW, mira al centro) ===
+    addDrinkMachine(-7.5, 7.5, 3*Math.PI/4, 'redbull');
+
+    // ===== TRAMPAS DE LOS PASILLOS (UNA POR TRANSICIÓN) =====
+    // SPAWN ↔ BAR PINK (puerta sur, z=10): trampa justo pasada la puerta en bar pink
+    addBuyableTrap(0, 13, 'sawblade');
+    // SPAWN ↔ ALMACEN (puerta oeste, x=-10): trampa justo pasada la puerta en almacen
+    addBuyableTrap(-13, 0, 'fire');
+    // SPAWN ↔ LAB BIOQUIM (puerta este, x=10): trampa justo pasada la puerta en lab
+    addBuyableTrap(13, 0, 'spikes');
+    // BAR PINK ↔ UPGRADE (puerta sur del bar, z=35): trampa justo pasada la puerta en upgrade
+    addBuyableTrap(0, 38, 'tesla');
+    // === NUEVA: DEAGLE wall buy (pared sur, rotY=π para que mire al centro) ===
+    addWallBuy(7, 1.6, 9.85, 0, Math.PI, 0, 'deagle', 1750);
+
+    // Luz cenital de spawn (única point light, sin malla colgante)
+    {
+      const lt = new TH.PointLight(COLS.orange, 2.0, 18, 1.5);
+      lt.position.set(0, H-1.45, 0); scene.add(lt);
+      lt.userData.f = { base:2.0, t:Math.random()*10 };
+      lights.push(lt);
+    }
+
+    // =========================================================
+    // SALA 1 — BAR PINK (30×25 ladrillo, sur)
+    // bounds: x:-15..15 z:10..35
+    // Pared norte (z=10) compartida con SPAWN, pero SPAWN sólo cubre x:-10..10
+    // → PINK añade los TROZOS LATERALES x:-15..-10 y x:10..15 a z=10
+    // =========================================================
+    rooms.push({ id:1, name:'BAR PINK', bounds:{minX:-15,maxX:15,minZ:10,maxZ:35}, unlocked:false });
+    addFloorPlane(0, 22.5, 30, 25, fBrick);
+    addCeilingPlane(0, 22.5, 30, 25, H, new TH.MeshStandardMaterial({ color:0x120408 }));
+
+    // Trozos laterales del muro norte (NO solapan con el de spawn)
+    addWallWithGap('x', 10, -15, -10, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('x', 10,  10,  15, H/2, H, 0.5, wBrick, null, null);
+    // Pared sur (z=35) compartida con UPGRADE → pink la añade entera con hueco
+    addWallWithGap('x', 35, -15, 15, H/2, H, 0.5, wBrick, -2, 2);
+    // Paredes este y oeste enteras
+    addWallWithGap('z',-15,  10, 35, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z', 15,  10, 35, H/2, H, 0.5, wBrick, null, null);
+
+    addDoor(0, 35, 0, 3000, 6, 'LAB MEJORAS');
+
+    addSpawner(-14.9, 1.2, 22, Math.PI/2, 1);
+    addSpawner( 14.9, 1.2, 22,-Math.PI/2, 1);
+
+    // Wall buys
+    addWallBuy(-14.85, 1.6, 15, 0, Math.PI/2, 0, 'smg',      1000);
+    addWallBuy( 14.85, 1.6, 15, 0,-Math.PI/2, 0, 'shotgun',  1500);
+    // PERKY RAY — rotY=π para que mire al centro del bar pink
+    addWallBuy( 10,    1.6, 34.85, 0, Math.PI, 0, 'perkygun', 7000);
+    // Bate de béisbol pegado a la pared este (cuerpo a cuerpo barato)
+    addWallBuy( 14.85, 1.6, 28, 0,-Math.PI/2, 0, 'bat', 800);
+
+    // 2 luces rosas (reducidas para optimizar)
+    for (let i=0;i<2;i++) {
+      const l = new TH.PointLight(0xff2a6d, 1.6, 16, 1.7);
+      l.position.set(-7 + i*14, H-0.5, 22);
+      scene.add(l);
+      lights.push(l);
+    }
+
+    // === MÁQUINA DE BEBIDA #2 — KATXORRO (esquina SW del BAR PINK, mira al centro) ===
+    addDrinkMachine(-13, 33, Math.atan2(13, -10.5), 'katxorro');
+
+    // === MACHETE en pared sur del BAR PINK (rotY=π para que mire al centro) ===
+    addWallBuy(-10, 1.6, 34.85, 0, Math.PI, 0, 'machete', 1800);
+
+    // === NUEVO: AK-47 wall buy (pared este, lejos de la barra/door) ===
+    addWallBuy(14.85, 1.6, 18, 0, -Math.PI/2, 0, 'ak47', 2200);
+    // === NUEVO: CHUPITO bebida (esquina NE, mira al centro) ===
+    addDrinkMachine(13, 13, Math.atan2(-13, 9.5), 'chupito');
+
+    // =========================================================
+    // SALA 2 — ALMACEN (30×24 oeste)
+    // bounds: x:-40..-10 z:-12..12
+    // Pared este (x=-10) ya existe (la añadió SPAWN). Almacén añade los trozos
+    // que SOBRESALEN: z:-12..-10 y z:10..12 (los huecos verticales).
+    // =========================================================
+    rooms.push({ id:2, name:'ALMACEN', bounds:{minX:-40,maxX:-10,minZ:-12,maxZ:12}, unlocked:false });
+    addFloorPlane(-25, 0, 30, 24, fConcrete);
+    addCeilingPlane(-25, 0, 30, 24, H, new TH.MeshStandardMaterial({ color:0x0a0605 }));
+
+    // Trozos laterales del muro este (x=-10) que extienden el de spawn
+    addWallWithGap('z',-10, -12, -10, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z',-10,  10,  12, H/2, H, 0.5, wBrick, null, null);
+    // Pared oeste, norte, sur enteras
+    addWallWithGap('z', -40, -12, 12, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('x', -12, -40, -10, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('x',  12, -40, -10, H/2, H, 0.5, wBrick, null, null);
+
+    addSpawner(-39.9, 1.2, -5, Math.PI/2, 2);
+    addSpawner(-39.9, 1.2,  5, Math.PI/2, 2);
+
+    // Wall buys
+    addWallBuy(-39.85, 1.6,  0, 0, Math.PI/2, 0, 'rifle', 2500);
+    // SMG movida a x=-18 (antes estaba a x=-25 detrás de la máquina de MOJITO)
+    addWallBuy(-18,    1.6,-11.85, 0, 0,      0, 'smg',   1000);
+    // LMG en pared sur (lado este)
+    addWallBuy(-13,    1.6, 11.85, 0, Math.PI, 0, 'lmg',  3000);
+
+    // === MÁQUINA DE BEBIDA #3 — MOJITO (centro de la pared norte, mira al centro) ===
+    addDrinkMachine(-25, -10.5, 0, 'mojito');
+
+    // === MAGNUM en pared sur del almacén, lado oeste ===
+    addWallBuy(-32, 1.6, 11.85, 0, Math.PI, 0, 'magnum', 2200);
+
+    // === NUEVO: BURST RIFLE wall buy ===
+    addWallBuy(-25, 1.6, -11.85, 0, 0, 0, 'burst', 2400);
+    // === NUEVO: AUTO-ESCOPETA wall buy (separada de LMG) ===
+    addWallBuy(-22, 1.6, 11.85, 0, Math.PI, 0, 'autoshot', 3000);
+    // === NUEVO: ABSENTA bebida (pared oeste, mira al centro) ===
+    addDrinkMachine(-37, 9, Math.atan2(12, -9), 'absenta');
+    // === NUEVO: KATANA cuerpo a cuerpo en almacén ===
+    addWallBuy(-39.85, 1.6, 8, 0, Math.PI/2, 0, 'katana', 2500);
+
+    // Luces amarillas (reducidas)
+    for (let i=0;i<2;i++) {
+      const l = new TH.PointLight(0xffcc44, 1.6, 18, 1.6);
+      l.position.set(-32 + i*16, H-0.5, 0);
+      scene.add(l);
+      lights.push(l);
+    }
+
+    // =========================================================
+    // SALA 5 — LAB BIOQUIMICO (30×24 este)
+    // bounds: x:10..40 z:-12..12
+    // Pared oeste (x=10) ya añadida por SPAWN. LAB añade los trozos verticales
+    // que sobresalen: z:-12..-10 y z:10..12.
+    // =========================================================
+    rooms.push({ id:5, name:'LAB', bounds:{minX:10,maxX:40,minZ:-12,maxZ:12}, unlocked:false });
+    addFloorPlane(25, 0, 30, 24, fMetal);
+    addCeilingPlane(25, 0, 30, 24, H, new TH.MeshStandardMaterial({ color:0x080a10 }));
+
+    addWallWithGap('z', 10, -12, -10, H/2, H, 0.5, wMetal, null, null);
+    addWallWithGap('z', 10,  10,  12, H/2, H, 0.5, wMetal, null, null);
+    addWallWithGap('z', 40, -12, 12, H/2, H, 0.5, wMetal, null, null);
+    addWallWithGap('x',-12,  10, 40, H/2, H, 0.5, wMetal, null, null);
+    addWallWithGap('x', 12,  10, 40, H/2, H, 0.5, wMetal, null, null);
+
+    addSpawner(39.9, 1.2, -5,-Math.PI/2, 5);
+    addSpawner(39.9, 1.2,  5,-Math.PI/2, 5);
+
+    addWallBuy(39.85, 1.6,  0, 0,-Math.PI/2, 0, 'sniper', 3500);
+    addWallBuy(30,    1.6,-11.85, 0, 0,      0, 'rifle',  2500);
+    // Lanzallamas como arma "experimental" del lab
+    addWallBuy(39.85, 1.6, -8, 0,-Math.PI/2, 0, 'flamer', 3200);
+    // === NUEVO: PLASMA wall buy (lab tech) ===
+    addWallBuy(39.85, 1.6, 8, 0,-Math.PI/2, 0, 'plasma', 4500);
+    // === NUEVO: TESLA GUN wall buy (pared NORTE del lab bioquim, totalmente despejada) ===
+    addWallBuy(20, 1.6, -11.85, 0, 0, 0, 'tesla', 4000);
+    // === NUEVO: BLOODY bebida (pared sur, mira al centro) ===
+    addDrinkMachine(30, 10.5, Math.atan2(-5, -10.5), 'bloody');
+
+    // Luces cyan (reducidas)
+    for (let i=0;i<2;i++) {
+      const l = new TH.PointLight(0x44ddff, 1.6, 18, 1.8);
+      l.position.set(18 + i*14, H-0.5, 0);
+      scene.add(l);
+      lights.push(l);
+    }
+
+    // =========================================================
+    // SALA 4 — PATIO RAMBLAS (40×30 hierba, exterior, norte)
+    // bounds: x:-20..20 z:-40..-10
+    // Pared sur (z=-10) ya añadida por SPAWN. Patio añade los trozos que sobresalen
+    // x:-20..-10 y x:10..20 a z=-10, ALTOS (OH).
+    // =========================================================
+    rooms.push({ id:4, name:'PATIO', bounds:{minX:-20,maxX:20,minZ:-40,maxZ:-10}, unlocked:false });
+    addFloorPlane(0, -25, 40, 30, fGrass);
+
+    // Cielo dome
+    {
+      const skyGeo = new TH.SphereGeometry(140, 24, 12, 0, Math.PI*2, 0, Math.PI/2);
+      const skyMat = new TH.MeshBasicMaterial({ color:0x0a0618, side:TH.BackSide });
+      const sky = new TH.Mesh(skyGeo, skyMat);
+      sky.position.set(0, 0, 0);
+      scene.add(sky);
+    }
+    // Estrellas
+    {
+      const starGeo = new TH.BufferGeometry();
+      const starsArr = [];
+      for (let i=0;i<150;i++) {
+        const r = 55 + Math.random()*12;
+        const theta = Math.random()*Math.PI*2;
+        const phi = Math.random()*Math.PI/2;
+        starsArr.push(Math.sin(phi)*Math.cos(theta)*r, Math.cos(phi)*r+1, Math.sin(phi)*Math.sin(theta)*r - 25);
+      }
+      starGeo.setAttribute('position', new TH.Float32BufferAttribute(starsArr, 3));
+      scene.add(new TH.Points(starGeo, new TH.PointsMaterial({ color:0xffe8aa, size:0.35 })));
+    }
+    // Luna
+    {
+      const moon = new TH.Mesh(
+        new TH.SphereGeometry(3, 16, 16),
+        new TH.MeshBasicMaterial({ color:0xfff4d0 })
+      );
+      moon.position.set(25, 35, -55);
+      scene.add(moon);
+      const moonL = new TH.DirectionalLight(0x8090ff, 0.55);
+      moonL.position.set(25, 35, -55);
+      scene.add(moonL);
+    }
+
+    // Trozos laterales del muro sur (z=-10) que extienden el de spawn
+    addWallWithGap('x', -10, -20, -10, OH/2, OH, 0.5, wOutdoor, null, null);
+    addWallWithGap('x', -10,  10,  20, OH/2, OH, 0.5, wOutdoor, null, null);
+    // Resto del perímetro del patio
+    addWallWithGap('x', -40, -20, 20, OH/2, OH, 0.5, wOutdoor, null, null);
+    addWallWithGap('z', -20, -40, -10, OH/2, OH, 0.5, wOutdoor, null, null);
+    addWallWithGap('z',  20, -40, -10, OH/2, OH, 0.5, wOutdoor, null, null);
+
+    addSpawner(-19.9, 1.2, -25, Math.PI/2, 4);
+    addSpawner( 19.9, 1.2, -25,-Math.PI/2, 4);
+    addSpawner(  0,   1.2, -39.9, 0, 4);
+
+    addWallBuy(-19.85, 1.8, -20, 0, Math.PI/2, 0, 'lmg',     3000);
+    addWallBuy( 19.85, 1.8, -30, 0,-Math.PI/2, 0, 'shotgun', 1500);
+    // Minigun en el patio (más cara, posición visible)
+    addWallBuy(  0,    1.8, -39.85, 0, 0, 0, 'minigun', 5500);
+
+    // === MÁQUINA DE BEBIDA #4 — QUINTOS (en una esquina del patio) ===
+    addDrinkMachine(-17, -38, Math.PI/4, 'quintos');
+
+    // === NUEVO: CUBATA bebida (granadas+) ===
+    addDrinkMachine(17, -38, Math.atan2(-17, 13), 'cubata');
+    // === NUEVO: CHARTREUSE bebida — pared este del patio ===
+    addDrinkMachine(18, -20, Math.atan2(-18, -5), 'chartreuse');
+    // === NUEVO: BALLESTA wall buy ===
+    addWallBuy(-19.85, 1.6, -30, 0, Math.PI/2, 0, 'crossbow', 3800);
+    // === NUEVO: RPG wall buy (caro pero brutal) ===
+    addWallBuy(19.85, 1.6, -20, 0, -Math.PI/2, 0, 'rpg', 6500);
+    // === NUEVO: MOTOSIERRA premium ===
+    addWallBuy(-10, 1.6, -39.85, 0, 0, 0, 'chainsaw', 3500);
+    // ===== TRAMPA DEL PASILLO SPAWN ↔ PATIO (única en esta zona) =====
+    addBuyableTrap(0, -12, 'electric');
+
+    // 2 luces ambiente exterior (sin postes ni mallas)
+    for (const [fx, fz] of [[-15, -25], [15, -25]]) {
+      const l = new TH.PointLight(0xffd088, 1.6, 22, 1.5);
+      l.position.set(fx, 4, fz); scene.add(l);
+      lights.push(l);
+    }
+
+    // =========================================================
+    // SALA 6 — LAB MEJORAS (30×20 neón, sala especial sur)
+    // bounds: x:-15..15 z:35..55
+    // Pared norte (z=35) ya añadida por PINK. UPGRADE añade los trozos que
+    // sobresalen: NINGUNO, porque pink y upgrade tienen el mismo ancho (-15..15).
+    // =========================================================
+    rooms.push({ id:6, name:'UPGRADE', bounds:{minX:-15,maxX:15,minZ:35,maxZ:55}, unlocked:false });
+
+    // ====== SANCTUM REDISEÑADO — simple pero icónico ======
+    // Suelo: obsidiana pulida oscura con reflejo sutil
+    const sanctumFloorMat = new TH.MeshStandardMaterial({
+      color:0x0a0612, metalness:0.85, roughness:0.18, emissive:0x1a0420, emissiveIntensity:0.25
+    });
+    addFloorPlane(0, 45, 30, 20, sanctumFloorMat);
+
+    // Círculo ritual rosa en el centro del suelo (decor, sin colisión)
+    {
+      const ringFloor = new TH.Mesh(
+        new TH.RingGeometry(3.4, 3.7, 48),
+        new TH.MeshBasicMaterial({ color:0xff2a6d, transparent:true, opacity:0.9, side:TH.DoubleSide })
+      );
+      ringFloor.rotation.x = -Math.PI/2;
+      ringFloor.position.set(0, 0.02, 45);
+      scene.add(ringFloor);
+      const ringFloor2 = new TH.Mesh(
+        new TH.RingGeometry(4.2, 4.35, 48),
+        new TH.MeshBasicMaterial({ color:0x00e5ff, transparent:true, opacity:0.7, side:TH.DoubleSide })
+      );
+      ringFloor2.rotation.x = -Math.PI/2;
+      ringFloor2.position.set(0, 0.02, 45);
+      scene.add(ringFloor2);
+    }
+
+    // Techo: bóveda oscura
+    addCeilingPlane(0, 45, 30, 20, H, new TH.MeshStandardMaterial({ color:0x05010a }));
+
+    // Cruz luminosa en el techo (decor)
+    {
+      const beamMat = new TH.MeshBasicMaterial({ color:0xff2a6d, transparent:true, opacity:0.85 });
+      const beamMat2 = new TH.MeshBasicMaterial({ color:0x00e5ff, transparent:true, opacity:0.85 });
+      const b1 = new TH.Mesh(new TH.BoxGeometry(28, 0.08, 0.18), beamMat);
+      b1.position.set(0, H-0.05, 45); scene.add(b1);
+      const b2 = new TH.Mesh(new TH.BoxGeometry(0.18, 0.08, 18), beamMat2);
+      b2.position.set(0, H-0.05, 45); scene.add(b2);
+    }
+
+    // Paredes base oscuras (sustituyen al wNeon original)
+    const sanctumWallMat = new TH.MeshStandardMaterial({
+      color:0x0c0818, metalness:0.5, roughness:0.55
+    });
+    addWallWithGap('x', 55, -15, 15, H/2, H, 0.5, sanctumWallMat, null, null);
+    addWallWithGap('z',-15,  35, 55, H/2, H, 0.5, sanctumWallMat, null, null);
+    addWallWithGap('z', 15,  35, 55, H/2, H, 0.5, sanctumWallMat, null, null);
+
+    // Tiras de neón verticales en las paredes (decor, sin colisión)
+    {
+      const stripPink = new TH.MeshBasicMaterial({ color:0xff2a6d });
+      const stripCyan = new TH.MeshBasicMaterial({ color:0x00e5ff });
+      const stripPositions = [
+        // pared sur (z=55)
+        { x:-10, z:54.7, mat:stripCyan }, { x:-3, z:54.7, mat:stripPink },
+        { x: 3,  z:54.7, mat:stripPink }, { x:10, z:54.7, mat:stripCyan },
+        // pared oeste (x=-15)
+        { x:-14.7, z:38, mat:stripCyan, rot:true }, { x:-14.7, z:48, mat:stripCyan, rot:true },
+        // pared este (x=15)
+        { x: 14.7, z:38, mat:stripPink, rot:true }, { x: 14.7, z:48, mat:stripPink, rot:true },
+        // pared norte interior (z=35)
+        { x:-10, z:35.3, mat:stripPink }, { x:10, z:35.3, mat:stripPink },
+      ];
+      stripPositions.forEach(s => {
+        const geo = s.rot
+          ? new TH.BoxGeometry(0.06, H-1.2, 0.12)
+          : new TH.BoxGeometry(0.12, H-1.2, 0.06);
+        const m = new TH.Mesh(geo, s.mat);
+        m.position.set(s.x, (H-1.2)/2 + 0.3, s.z);
+        scene.add(m);
       });
-    });
+    }
 
-    // Barriles rojos (decorativos + colisionables)
-    const barrelMat = new TH.MeshStandardMaterial({ color:0x6a2020, roughness:0.6, metalness:0.4 });
-    const barrelPos = [[-3,-13],[3,-13],[13,3],[-13,-3],[12,-12],[-12,12]];
-    barrelPos.forEach(([bx,bz]) => {
-      const b = new TH.Mesh(new TH.CylinderGeometry(0.5, 0.5, 1.2, 12), barrelMat);
-      b.position.set(bx, 0.6, bz);
-      scene.add(b);
-      walls.push({
-        min: new TH.Vector3(bx-0.5, 0, bz-0.5),
-        max: new TH.Vector3(bx+0.5, 1.2, bz+0.5),
-        mesh: b,
+    // Cuatro pilares decorativos en las esquinas del círculo ritual (sin colisión)
+    {
+      const pillarMat = new TH.MeshStandardMaterial({
+        color:0x14081c, metalness:0.7, roughness:0.3, emissive:0xff2a6d, emissiveIntensity:0.35
       });
-      const ring = new TH.Mesh(new TH.TorusGeometry(0.5, 0.04, 6, 16), new TH.MeshStandardMaterial({ color:0x222222, metalness:0.8 }));
-      ring.position.set(bx, 1.18, bz); ring.rotation.x = Math.PI/2; scene.add(ring);
-    });
+      const capMat = new TH.MeshBasicMaterial({ color:0x00e5ff });
+      const corners = [[-5,40],[5,40],[-5,50],[5,50]];
+      corners.forEach(([x,z]) => {
+        const p = new TH.Mesh(new TH.CylinderGeometry(0.18, 0.22, H-0.4, 8), pillarMat);
+        p.position.set(x, (H-0.4)/2, z);
+        scene.add(p);
+        const cap = new TH.Mesh(new TH.SphereGeometry(0.15, 10, 8), capMat);
+        cap.position.set(x, H-0.4, z);
+        scene.add(cap);
+      });
+    }
 
-    // Sillas tiradas decorativas
-    [[10, 8.2, Math.PI/3], [12.5, 7.8, -Math.PI/4]].forEach(([cx,cz,cr]) => {
-      const seat = new TH.Mesh(new TH.BoxGeometry(0.6, 0.1, 0.6), crateMat);
-      seat.position.set(cx, 0.5, cz); seat.rotation.y = cr; scene.add(seat);
-      const back = new TH.Mesh(new TH.BoxGeometry(0.6, 0.7, 0.08), crateMat);
-      back.position.set(cx-Math.sin(cr)*0.28, 0.85, cz-Math.cos(cr)*0.28);
-      back.rotation.y = cr; scene.add(back);
-    });
+    addSpawner(-14.9, 1.2, 45, Math.PI/2, 6);
+    addSpawner( 14.9, 1.2, 45,-Math.PI/2, 6);
 
-    // Spawn points
-    spawnPoints.push(new TH.Vector3(-13, 0, -13));
-    spawnPoints.push(new TH.Vector3( 13, 0, -13));
-    spawnPoints.push(new TH.Vector3(-13, 0,  13));
-    spawnPoints.push(new TH.Vector3( 13, 0,  13));
+    // === MÁQUINA DE BEBIDA #5 — CHUCHUWA (SW del lab mejoras, fuera del centro) ===
+    addDrinkMachine(-13, 50, Math.atan2(13, -5), 'chuchuwa');
 
-    // Caja misteriosa decorada
-    const mbGrp = new TH.Group();
-    const mbBody = new TH.Mesh(
-      new TH.BoxGeometry(1.4, 1, 1),
-      new TH.MeshStandardMaterial({ color:0x4a2a05, emissive:0xff8800, emissiveIntensity:0.4, roughness:0.6 })
-    );
-    mbGrp.add(mbBody);
-    const bandMat = new TH.MeshStandardMaterial({ color:0xffcc00, emissive:0xffaa00, emissiveIntensity:0.5, metalness:0.7 });
-    const b1 = new TH.Mesh(new TH.BoxGeometry(1.42, 0.1, 1.02), bandMat); b1.position.y = 0.35; mbGrp.add(b1);
-    const b2 = new TH.Mesh(new TH.BoxGeometry(1.42, 0.1, 1.02), bandMat); b2.position.y = -0.35; mbGrp.add(b2);
-    const qMark = new TH.Mesh(
-      new TH.BoxGeometry(0.2, 0.4, 0.2),
-      new TH.MeshBasicMaterial({ color:0xff00ff })
-    );
-    qMark.position.y = 0.85;
-    mbGrp.add(qMark);
-    mbGrp.position.set(-12, 0.5, 12);
-    scene.add(mbGrp);
-    mysteryBox = { mesh:mbBody, group:mbGrp, qMark, pos:mbGrp.position, cost:950, busy:false, t:0 };
+    // === NUEVO: RAILGUN wall buy (pared oeste, altura norte) ===
+    addWallBuy(-14.85, 1.6, 42, 0, Math.PI/2, 0, 'railgun', 8000);
+    // === NUEVO: PERKY NUKE wall buy (pared este, altura norte) ===
+    addWallBuy(14.85, 1.6, 42, 0, -Math.PI/2, 0, 'perkynuke', 12000);
 
-    // Compras de pared con MODELO de arma encima
-    const buys = [
-      { weapon:'smg',     pos:[-14.7, 1.6,  0], cost:1000, rot:[0, Math.PI/2, 0] },
-      { weapon:'shotgun', pos:[ 14.7, 1.6,  0], cost:1500, rot:[0,-Math.PI/2, 0] },
-      { weapon:'rifle',   pos:[ 0, 1.6, -14.7], cost:2500, rot:[0, 0, 0] },
-    ];
-    buys.forEach(b => {
+    // ========= INTERRUPTOR DE LA ELECTRICIDAD =========
+    // Pegado a la pared sur del lab de mejoras, cerca de la máquina de mejoras
+    {
+      const psGrp = new TH.Group();
+      const boxMat = new TH.MeshStandardMaterial({ color:0x2a1a00, metalness:0.7, roughness:0.4 });
+      const box = new TH.Mesh(new TH.BoxGeometry(1.0, 1.3, 0.3), boxMat);
+      box.position.y = 1.5; psGrp.add(box);
+      // marco interior amarillo
+      const frameMat = new TH.MeshStandardMaterial({ color:0xffe600, emissive:0xffe600, emissiveIntensity:0.4 });
+      const fr = new TH.Mesh(new TH.BoxGeometry(0.85, 1.15, 0.32), frameMat);
+      fr.position.y = 1.5; psGrp.add(fr);
+      // palanca roja (apunta abajo = OFF)
+      const leverMat = new TH.MeshStandardMaterial({ color:0xff2222, emissive:0xff2222, emissiveIntensity:0.6, metalness:0.7 });
+      const leverPivot = new TH.Group();
+      leverPivot.position.set(0, 1.5, 0.18);
+      const lever = new TH.Mesh(new TH.CylinderGeometry(0.04, 0.04, 0.55, 8), leverMat);
+      lever.position.y = -0.27;
+      leverPivot.add(lever);
+      const knob = new TH.Mesh(new TH.SphereGeometry(0.07, 10, 8), leverMat);
+      knob.position.y = -0.55;
+      leverPivot.add(knob);
+      psGrp.add(leverPivot);
+      // Símbolo ⚡
+      const boltMat = new TH.MeshBasicMaterial({ color:0xffe600 });
+      const bolt = new TH.Mesh(new TH.BoxGeometry(0.15, 0.35, 0.04), boltMat);
+      bolt.position.set(0, 2.1, 0.18); psGrp.add(bolt);
+
+      psGrp.position.set(0, 0, 54.7);
+      psGrp.rotation.y = Math.PI;
+      scene.add(psGrp);
+
+      // luz baja hasta que se active
+      const psL = new TH.PointLight(0xff2222, 0.8, 6, 1.8);
+      psL.position.set(0, 1.6, 53.5); scene.add(psL);
+      lights.push(psL);
+
+      powerSwitch = {
+        group: psGrp,
+        leverPivot: leverPivot,
+        lever: lever,
+        knob: knob,
+        light: psL,
+        pos: new TH.Vector3(0, 1.5, 54.0),
+      };
+    }
+
+    // ========= MÁQUINA DE MEJORA DE ARMAS =========
+    // Movida a la esquina NE de la sala para dejar el centro libre (antes estaba en (0,0,45)
+    // y su cartel flotante + collider cortaban la sala en dos)
+    {
       const grp = new TH.Group();
-      const edge = new TH.Mesh(
-        new TH.BoxGeometry(2.1, 1.1, 0.04),
-        new TH.MeshStandardMaterial({ color:0xffe600, emissive:0xffe600, emissiveIntensity:0.6 })
+      const base = new TH.Mesh(
+        new TH.CylinderGeometry(1.4, 1.6, 0.4, 12),
+        new TH.MeshStandardMaterial({ color:0x1a1a22, roughness:0.4, metalness:0.85 })
       );
-      edge.position.z = -0.03;
-      grp.add(edge);
-      const panel = new TH.Mesh(
-        new TH.BoxGeometry(2, 1, 0.08),
-        new TH.MeshStandardMaterial({ color:0x111111, emissive:0x39ff14, emissiveIntensity:0.35 })
+      base.position.y = 0.2;
+      grp.add(base);
+      const pillar = new TH.Mesh(
+        new TH.BoxGeometry(0.9, 1.8, 0.9),
+        new TH.MeshStandardMaterial({ color:0x2a0010, emissive:0xff2a6d, emissiveIntensity:0.8, metalness:0.6 })
       );
-      grp.add(panel);
-      const wm = createWeaponModel(b.weapon, 1.3);
-      wm.position.set(0, 0, 0.15);
-      wm.rotation.y = Math.PI/2;
-      grp.add(wm);
+      pillar.position.y = 1.3;
+      grp.add(pillar);
+      const ring1 = new TH.Mesh(
+        new TH.TorusGeometry(0.75, 0.06, 8, 20),
+        new TH.MeshBasicMaterial({ color:COLS.yellow })
+      );
+      ring1.position.y = 1.3; ring1.rotation.x = Math.PI/2;
+      grp.add(ring1);
+      const ring2 = new TH.Mesh(
+        new TH.TorusGeometry(0.95, 0.05, 8, 20),
+        new TH.MeshBasicMaterial({ color:COLS.green })
+      );
+      ring2.position.y = 1.5; ring2.rotation.x = Math.PI/3;
+      grp.add(ring2);
+      const crystal = new TH.Mesh(
+        new TH.OctahedronGeometry(0.45, 0),
+        new TH.MeshBasicMaterial({ color:0xff2a6d })
+      );
+      crystal.position.y = 2.7;
+      grp.add(crystal);
+      // CARTEL REMOVIDO: el PlaneGeometry flotante a y=3.5 era la causa del "muro sin hitbox".
 
-      grp.position.set(b.pos[0], b.pos[1], b.pos[2]);
-      grp.rotation.set(b.rot[0], b.rot[1], b.rot[2]);
+      // Posición: esquina NE del lab de mejoras, contra la pared este
+      grp.position.set(11, 0, 42);
       scene.add(grp);
-      wallBuys.push({ ...b, mesh:grp, posV:new TH.Vector3(b.pos[0],b.pos[1],b.pos[2]) });
-    });
 
-    // ===== LUCES =====
+      upgradeMachine = {
+        group: grp,
+        crystal: crystal,
+        ring1: ring1,
+        ring2: ring2,
+        pos: new TH.Vector3(11, 1, 42),
+        cost: 5000,
+        upgradedWeapons: new Set(),
+      };
+
+      // Collider ELIMINADO por completo. El pilar es pequeño (0.9m) y no necesita
+      // bloquear al jugador — así nada corta la sala visual o físicamente.
+
+      const upgL = new TH.PointLight(0xff2a6d, 2.5, 12, 1.6);
+      upgL.position.set(11, 3, 42);
+      scene.add(upgL);
+      lights.push(upgL);
+    }
+
+    // Iluminación dual rosa/cyan del sanctum
+    {
+      const l1 = new TH.PointLight(0xff2a6d, 2.0, 16, 1.6);
+      l1.position.set(-6, H-0.5, 42);
+      scene.add(l1); lights.push(l1);
+      const l2 = new TH.PointLight(0x00e5ff, 1.6, 16, 1.6);
+      l2.position.set(6, H-0.5, 48);
+      scene.add(l2); lights.push(l2);
+      const l3 = new TH.PointLight(0xff2a6d, 1.2, 10, 1.8);
+      l3.position.set(0, 2.5, 45);
+      scene.add(l3); lights.push(l3);
+    }
+
+    // Ambient global
     scene.add(new TH.AmbientLight(0x556070, 0.6));
 
-    // 4 lámparas colgantes oscilantes
-    const lampPos = [[0,-9],[0,9],[-9,0],[9,0]];
-    const lampColors = [0xffaa55, 0x55aaff, 0xff55aa, 0xffee99];
-    lampPos.forEach(([lx,lz], i) => {
-      const chain = new TH.Mesh(
-        new TH.CylinderGeometry(0.02, 0.02, 1.2, 4),
-        new TH.MeshStandardMaterial({ color:0x333333 })
-      );
-      chain.position.set(lx, 4.4, lz);
-      scene.add(chain);
-      const shade = new TH.Mesh(
-        new TH.ConeGeometry(0.35, 0.4, 8, 1, true),
-        new TH.MeshStandardMaterial({ color:0x222222, side:TH.DoubleSide })
-      );
-      shade.position.set(lx, 3.7, lz);
-      shade.rotation.x = Math.PI;
-      scene.add(shade);
-      const bulb = new TH.Mesh(
-        new TH.SphereGeometry(0.13, 8, 8),
-        new TH.MeshBasicMaterial({ color:lampColors[i] })
-      );
-      bulb.position.set(lx, 3.55, lz);
-      scene.add(bulb);
-      const lt = new TH.PointLight(lampColors[i], 1.5, 18, 1.6);
-      lt.position.set(lx, 3.55, lz);
-      scene.add(lt);
-      lt.userData.f = { base:1.5, t:Math.random()*10 };
-      lights.push(lt);
-      swingLamps.push({ chain, shade, bulb, light:lt, baseX:lx, baseZ:lz, phase:Math.random()*Math.PI*2 });
-    });
+    // Polvo flotante (reducido para optimizar)
+    {
+      const dustGeo = new TH.BufferGeometry();
+      const dustCount = 80;
+      const dustPos = new Float32Array(dustCount * 3);
+      const dustVel = [];
+      for (let i=0; i<dustCount; i++) {
+        dustPos[i*3]   = (Math.random()-0.5) * 90;
+        dustPos[i*3+1] = Math.random() * 5 + 0.5;
+        dustPos[i*3+2] = (Math.random()-0.5) * 100;
+        dustVel.push({ x:(Math.random()-0.5)*0.08, y:0.03+Math.random()*0.05, z:(Math.random()-0.5)*0.08 });
+      }
+      dustGeo.setAttribute('position', new TH.BufferAttribute(dustPos, 3));
+      const dust = new TH.Points(dustGeo, new TH.PointsMaterial({
+        color:0xccccdd, size:0.06, transparent:true, opacity:0.45, sizeAttenuation:true
+      }));
+      scene.add(dust);
+      if (typeof dynamicRefs !== 'undefined') {
+        dynamicRefs.dust = { points:dust, geo:dustGeo, vel:dustVel, count:dustCount };
+      }
+    }
 
-    // Luz central principal
-    const centerL = new TH.PointLight(0xffeecc, 2.0, 28, 1.4);
-    centerL.position.set(0, 4.7, 0);
-    scene.add(centerL);
-    centerL.userData.f = { base:2.0, t:0 };
-    lights.push(centerL);
+    // =========================================================
+    // ANTI-TRAMPAS
+    // =========================================================
+    // Techo invisible del patio
+    addInvisibleBarrier(0, 11, -25, 44, 0.5, 34);
 
-    // Luz emisiva en la caja
-    const mbL = new TH.PointLight(0xff8800, 1.6, 9, 2);
-    mbL.position.set(-12, 1.5, 12);
-    scene.add(mbL);
-    mbL.userData.f = { base:1.6, t:0 };
-    lights.push(mbL);
+    // Perímetro exterior del mundo
+    addInvisibleBarrier(-55, 10, 10,  0.5, 22, 150);
+    addInvisibleBarrier( 55, 10, 10,  0.5, 22, 150);
+    addInvisibleBarrier(  0, 10,-55, 150, 22,  0.5);
+    addInvisibleBarrier(  0, 10, 70, 150, 22,  0.5);
 
-    // Luces de las wall buys
-    wallBuys.forEach(wb => {
-      const wbl = new TH.PointLight(0x39ff14, 0.9, 6, 2);
-      wbl.position.set(wb.posV.x, wb.posV.y, wb.posV.z);
-      scene.add(wbl);
-      wbl.userData.f = { base:0.9, t:Math.random()*10 };
-      lights.push(wbl);
-    });
+    worldBounds = { minX:-44, maxX:44, minZ:-44, maxZ:59, minY:-2, maxY:14 };
 
     buildWeaponMesh();
+  }
+
+  function makeHangingLamp(lx, lz, color) {
+    const chain = new TH.Mesh(
+      new TH.CylinderGeometry(0.02, 0.02, 1.5, 4),
+      new TH.MeshStandardMaterial({ color:0x333333 })
+    );
+    chain.position.set(lx, 5.25, lz); scene.add(chain);
+    const shade = new TH.Mesh(
+      new TH.ConeGeometry(0.38, 0.45, 8, 1, true),
+      new TH.MeshStandardMaterial({ color:0x222222, side:TH.DoubleSide })
+    );
+    shade.position.set(lx, 4.4, lz); shade.rotation.x = Math.PI; scene.add(shade);
+    const bulb = new TH.Mesh(
+      new TH.SphereGeometry(0.14, 8, 8),
+      new TH.MeshBasicMaterial({ color:color })
+    );
+    bulb.position.set(lx, 4.2, lz); scene.add(bulb);
+    const lt = new TH.PointLight(color, 1.6, 14, 1.6);
+    lt.position.set(lx, 4.2, lz); scene.add(lt);
+    lt.userData.f = { base:1.6, t:Math.random()*10 };
+    lights.push(lt);
+    swingLamps.push({ chain, shade, bulb, light:lt, baseX:lx, baseZ:lz, phase:Math.random()*Math.PI*2 });
+  }
+
+  // ===== WALL BUY (arma en pared) =====
+  function addWallBuy(px, py, pz, rotX, rotY, rotZ, weapon, cost) {
+    const grp = new TH.Group();
+
+    // === MARCO EXTERIOR amarillo grueso (visible desde lejos) ===
+    const frameMat = new TH.MeshStandardMaterial({
+      color: COLS.yellow, emissive: COLS.yellow, emissiveIntensity: 0.9
+    });
+    // 4 barras del marco
+    const fT = new TH.Mesh(new TH.BoxGeometry(2.6, 0.15, 0.12), frameMat);
+    fT.position.set(0, 0.85, -0.04); grp.add(fT);
+    const fB = new TH.Mesh(new TH.BoxGeometry(2.6, 0.15, 0.12), frameMat);
+    fB.position.set(0, -0.85, -0.04); grp.add(fB);
+    const fL = new TH.Mesh(new TH.BoxGeometry(0.15, 1.85, 0.12), frameMat);
+    fL.position.set(-1.225, 0, -0.04); grp.add(fL);
+    const fR = new TH.Mesh(new TH.BoxGeometry(0.15, 1.85, 0.12), frameMat);
+    fR.position.set( 1.225, 0, -0.04); grp.add(fR);
+
+    // === PANEL DE FONDO VERDE EMISIVO grande ===
+    const panel = new TH.Mesh(
+      new TH.BoxGeometry(2.4, 1.7, 0.06),
+      new TH.MeshStandardMaterial({
+        color: 0x0a2a0a,
+        emissive: COLS.green,
+        emissiveIntensity: 0.7
+      })
+    );
+    panel.position.z = -0.05;
+    grp.add(panel);
+
+    // === Líneas decorativas tipo CRT en el panel (textura procedural simple) ===
+    for (let i=0; i<5; i++) {
+      const line = new TH.Mesh(
+        new TH.BoxGeometry(2.2, 0.02, 0.005),
+        new TH.MeshBasicMaterial({ color: COLS.green, transparent: true, opacity: 0.55 })
+      );
+      line.position.set(0, -0.6 + i*0.3, -0.01);
+      grp.add(line);
+    }
+
+    // === VIDRIO frontal sutil (transparente) ===
+    const glass = new TH.Mesh(
+      new TH.BoxGeometry(2.3, 1.6, 0.03),
+      new TH.MeshStandardMaterial({
+        color: 0xaaffcc,
+        transparent: true,
+        opacity: 0.18,
+        emissive: COLS.green,
+        emissiveIntensity: 0.3
+      })
+    );
+    glass.position.z = 0.06;
+    grp.add(glass);
+
+    // === MODELO DEL ARMA grande, despegado del panel para que se vea flotando ===
+    const wm = createWeaponModel(weapon, 1.7);
+    wm.position.set(0, 0.05, 0.28);
+    wm.rotation.y = Math.PI/2;
+    grp.add(wm);
+
+    // === CARTEL DE PRECIO arriba (texto generado en canvas) ===
+    const priceCanvas = document.createElement('canvas');
+    priceCanvas.width = 256; priceCanvas.height = 64;
+    const pctx = priceCanvas.getContext('2d');
+    pctx.fillStyle = '#000';
+    pctx.fillRect(0, 0, 256, 64);
+    pctx.fillStyle = '#ffe600';
+    pctx.font = 'bold 32px monospace';
+    pctx.textAlign = 'center';
+    pctx.textBaseline = 'middle';
+    pctx.fillText(WEAPONS[weapon].name, 128, 22);
+    pctx.fillStyle = '#39ff14';
+    pctx.font = 'bold 26px monospace';
+    pctx.fillText(cost + ' PTS', 128, 48);
+    const priceTex = new TH.CanvasTexture(priceCanvas);
+    const priceMat = new TH.MeshBasicMaterial({ map: priceTex, transparent: true });
+    const priceLabel = new TH.Mesh(new TH.PlaneGeometry(2.0, 0.5), priceMat);
+    priceLabel.position.set(0, -0.5, 0.32);
+    grp.add(priceLabel);
+
+    grp.position.set(px, py, pz);
+    grp.rotation.set(rotX, rotY, rotZ);
+    scene.add(grp);
+
+    // === LUZ propia FUERTE para que destaque desde el otro lado de la sala ===
+    const wbl = new TH.PointLight(0x39ff14, 2.2, 12, 1.6);
+    // Posicionar la luz un poco delante del panel según rotación
+    const offsetX = Math.sin(rotY) * 1.2;
+    const offsetZ = Math.cos(rotY) * 1.2;
+    wbl.position.set(px + offsetX, py, pz + offsetZ);
+    scene.add(wbl);
+    wbl.userData.f = { base: 2.2, t: Math.random()*10 };
+    lights.push(wbl);
+
+    wallBuys.push({ weapon, cost, mesh:grp, posV:new TH.Vector3(px,py,pz) });
   }
 
   // ===== WEAPON MODEL FACTORY =====
@@ -2391,7 +3567,29 @@ window.addEventListener('popstate', () => {
     const grip   = new TH.MeshStandardMaterial({ color:0x2a1810, roughness:0.9 });
     const accent = new TH.MeshStandardMaterial({ color:0x3a3a3d, roughness:0.4, metalness:0.8 });
 
-    if (type === 'pistol') {
+    if (type === 'knife') {
+      const blade = new TH.Mesh(
+        new TH.BoxGeometry(0.04, 0.04, 0.32),
+        new TH.MeshStandardMaterial({ color:0xdddddd, metalness:0.9, roughness:0.15 })
+      );
+      blade.position.z = -0.2;
+      grp.add(blade);
+      const tip = new TH.Mesh(
+        new TH.ConeGeometry(0.028, 0.08, 4),
+        new TH.MeshStandardMaterial({ color:0xdddddd, metalness:0.9, roughness:0.15 })
+      );
+      tip.position.z = -0.4;
+      tip.rotation.x = -Math.PI/2;
+      grp.add(tip);
+      const guard = new TH.Mesh(new TH.BoxGeometry(0.12, 0.03, 0.04), dark);
+      guard.position.z = -0.02;
+      grp.add(guard);
+      const handle = new TH.Mesh(new TH.CylinderGeometry(0.022, 0.02, 0.14, 8), grip);
+      handle.rotation.x = Math.PI/2;
+      handle.position.z = 0.07;
+      grp.add(handle);
+    }
+    else if (type === 'pistol') {
       const body = new TH.Mesh(new TH.BoxGeometry(0.08, 0.16, 0.42), dark);
       grp.add(body);
       const slide = new TH.Mesh(new TH.BoxGeometry(0.09, 0.06, 0.4), accent);
@@ -2420,8 +3618,6 @@ window.addEventListener('popstate', () => {
       g.position.set(0, -0.15, 0.18); grp.add(g);
       const stock = new TH.Mesh(new TH.BoxGeometry(0.04, 0.08, 0.18), dark);
       stock.position.set(0, 0, 0.36); grp.add(stock);
-      const sight = new TH.Mesh(new TH.BoxGeometry(0.025, 0.04, 0.03), dark);
-      sight.position.set(0, 0.13, -0.2); grp.add(sight);
     }
     else if (type === 'shotgun') {
       const body = new TH.Mesh(new TH.BoxGeometry(0.1, 0.13, 0.7), dark);
@@ -2434,10 +3630,8 @@ window.addEventListener('popstate', () => {
       g.position.set(0, -0.18, 0.18); g.rotation.x = -0.2; grp.add(g);
       const stock = new TH.Mesh(new TH.BoxGeometry(0.07, 0.12, 0.28), grip);
       stock.position.set(0, -0.02, 0.42); grp.add(stock);
-      const sight = new TH.Mesh(new TH.BoxGeometry(0.02, 0.02, 0.02), dark);
-      sight.position.set(0, 0.11, -0.45); grp.add(sight);
     }
-    else if (type === 'rifle') {
+    else if (type === 'rifle' || type === 'lmg') {
       const body = new TH.Mesh(new TH.BoxGeometry(0.09, 0.13, 0.75), dark);
       grp.add(body);
       const rail = new TH.Mesh(new TH.BoxGeometry(0.05, 0.025, 0.65), accent);
@@ -2446,16 +3640,444 @@ window.addEventListener('popstate', () => {
       barrel.rotation.x = Math.PI/2; barrel.position.set(0, 0, -0.55); grp.add(barrel);
       const mz = new TH.Mesh(new TH.CylinderGeometry(0.035, 0.035, 0.06, 8), accent);
       mz.rotation.x = Math.PI/2; mz.position.set(0, 0, -0.78); grp.add(mz);
-      const mag = new TH.Mesh(new TH.BoxGeometry(0.07, 0.2, 0.12), dark);
-      mag.position.set(0, -0.17, 0.05); mag.rotation.x = 0.15; grp.add(mag);
+      const magSize = type === 'lmg' ? [0.11, 0.28, 0.14] : [0.07, 0.2, 0.12];
+      const mag = new TH.Mesh(new TH.BoxGeometry(...magSize), dark);
+      mag.position.set(0, -0.2, 0.05); grp.add(mag);
       const g = new TH.Mesh(new TH.BoxGeometry(0.07, 0.17, 0.1), grip);
       g.position.set(0, -0.13, 0.2); grp.add(g);
       const stock = new TH.Mesh(new TH.BoxGeometry(0.06, 0.13, 0.3), dark);
       stock.position.set(0, -0.02, 0.42); grp.add(stock);
-      const scope = new TH.Mesh(new TH.CylinderGeometry(0.035, 0.035, 0.18, 10), accent);
-      scope.rotation.x = Math.PI/2; scope.position.set(0, 0.13, 0.05); grp.add(scope);
-      const mount = new TH.Mesh(new TH.BoxGeometry(0.04, 0.05, 0.04), dark);
-      mount.position.set(0, 0.105, 0.05); grp.add(mount);
+    }
+    else if (type === 'sniper') {
+      const body = new TH.Mesh(new TH.BoxGeometry(0.08, 0.11, 0.95), dark);
+      grp.add(body);
+      const barrel = new TH.Mesh(new TH.CylinderGeometry(0.022, 0.022, 0.55, 8), dark);
+      barrel.rotation.x = Math.PI/2; barrel.position.set(0, 0, -0.65); grp.add(barrel);
+      const scope = new TH.Mesh(new TH.CylinderGeometry(0.05, 0.05, 0.3, 10), accent);
+      scope.rotation.x = Math.PI/2; scope.position.set(0, 0.15, 0); grp.add(scope);
+      const mount1 = new TH.Mesh(new TH.BoxGeometry(0.03, 0.07, 0.03), dark);
+      mount1.position.set(0, 0.1, -0.1); grp.add(mount1);
+      const mount2 = new TH.Mesh(new TH.BoxGeometry(0.03, 0.07, 0.03), dark);
+      mount2.position.set(0, 0.1, 0.1); grp.add(mount2);
+      const mag = new TH.Mesh(new TH.BoxGeometry(0.06, 0.14, 0.08), dark);
+      mag.position.set(0, -0.14, 0.1); grp.add(mag);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.07, 0.16, 0.1), grip);
+      g.position.set(0, -0.12, 0.26); grp.add(g);
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.06, 0.14, 0.35), dark);
+      stock.position.set(0, -0.03, 0.5); grp.add(stock);
+    }
+    else if (type === 'perkygun') {
+      const body = new TH.Mesh(
+        new TH.BoxGeometry(0.11, 0.15, 0.7),
+        new TH.MeshStandardMaterial({ color:0x330010, emissive:COLS.pink, emissiveIntensity:0.6, metalness:0.7 })
+      );
+      grp.add(body);
+      const core = new TH.Mesh(
+        new TH.CylinderGeometry(0.05, 0.05, 0.4, 10),
+        new TH.MeshBasicMaterial({ color:0xff55aa })
+      );
+      core.rotation.x = Math.PI/2; core.position.set(0, 0.04, -0.3); grp.add(core);
+      // anillos en la punta
+      for (let i=0;i<3;i++) {
+        const r = new TH.Mesh(
+          new TH.TorusGeometry(0.08+i*0.02, 0.012, 8, 12),
+          new TH.MeshBasicMaterial({ color:i===0?COLS.yellow:(i===1?COLS.green:COLS.pink) })
+        );
+        r.rotation.y = Math.PI/2;
+        r.position.set(0, 0.04, -0.45-i*0.04);
+        grp.add(r);
+      }
+      const g = new TH.Mesh(new TH.BoxGeometry(0.08, 0.18, 0.1), grip);
+      g.position.set(0, -0.15, 0.18); grp.add(g);
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.05, 0.12, 0.3), body.material);
+      stock.position.set(0, 0, 0.4); grp.add(stock);
+    }
+    else if (type === 'bat') {
+      // Bate de béisbol con clavos
+      const handle = new TH.Mesh(
+        new TH.CylinderGeometry(0.025, 0.03, 0.2, 8),
+        new TH.MeshStandardMaterial({ color:0x2a1810, roughness:0.95 })
+      );
+      handle.rotation.x = Math.PI/2; handle.position.z = 0.05; grp.add(handle);
+      const body = new TH.Mesh(
+        new TH.CylinderGeometry(0.06, 0.04, 0.55, 10),
+        new TH.MeshStandardMaterial({ color:0x6a3a18, roughness:0.85 })
+      );
+      body.rotation.x = Math.PI/2; body.position.z = -0.27; grp.add(body);
+      // Clavos
+      const nailMat = new TH.MeshStandardMaterial({ color:0x999999, metalness:0.9, roughness:0.2 });
+      for (let i=0; i<8; i++) {
+        const ang = (i/8) * Math.PI*2;
+        const nail = new TH.Mesh(new TH.ConeGeometry(0.012, 0.05, 4), nailMat);
+        nail.position.set(Math.cos(ang)*0.06, Math.sin(ang)*0.06, -0.45);
+        nail.rotation.z = ang + Math.PI/2;
+        grp.add(nail);
+      }
+    }
+    else if (type === 'machete') {
+      const blade = new TH.Mesh(
+        new TH.BoxGeometry(0.06, 0.018, 0.5),
+        new TH.MeshStandardMaterial({ color:0xcccccc, metalness:0.95, roughness:0.1 })
+      );
+      blade.position.z = -0.3; grp.add(blade);
+      // filo más fino al frente (cono)
+      const tip = new TH.Mesh(
+        new TH.ConeGeometry(0.04, 0.12, 4),
+        new TH.MeshStandardMaterial({ color:0xcccccc, metalness:0.95, roughness:0.1 })
+      );
+      tip.rotation.x = -Math.PI/2; tip.position.z = -0.6; grp.add(tip);
+      // guardamano
+      const guard = new TH.Mesh(new TH.BoxGeometry(0.14, 0.04, 0.04), grip);
+      guard.position.z = -0.04; grp.add(guard);
+      // mango
+      const handle = new TH.Mesh(
+        new TH.CylinderGeometry(0.025, 0.022, 0.18, 8),
+        grip
+      );
+      handle.rotation.x = Math.PI/2; handle.position.z = 0.08; grp.add(handle);
+    }
+    else if (type === 'magnum') {
+      // Revolver grande
+      const body = new TH.Mesh(
+        new TH.BoxGeometry(0.09, 0.18, 0.45),
+        new TH.MeshStandardMaterial({ color:0x111111, metalness:0.9, roughness:0.25 })
+      );
+      grp.add(body);
+      // tambor cilíndrico
+      const drum = new TH.Mesh(
+        new TH.CylinderGeometry(0.07, 0.07, 0.1, 12),
+        new TH.MeshStandardMaterial({ color:0x222222, metalness:0.9 })
+      );
+      drum.rotation.x = Math.PI/2; drum.position.set(0, 0.02, -0.05); grp.add(drum);
+      // cañón largo grueso
+      const barrel = new TH.Mesh(
+        new TH.CylinderGeometry(0.035, 0.035, 0.28, 12),
+        new TH.MeshStandardMaterial({ color:0x111111, metalness:0.9 })
+      );
+      barrel.rotation.x = Math.PI/2; barrel.position.set(0, 0.04, -0.32); grp.add(barrel);
+      // empuñadura grande
+      const g = new TH.Mesh(new TH.BoxGeometry(0.1, 0.24, 0.14), grip);
+      g.position.set(0, -0.2, 0.1); g.rotation.x = -0.18; grp.add(g);
+      // alza
+      const sight = new TH.Mesh(new TH.BoxGeometry(0.025, 0.04, 0.03), accent);
+      sight.position.set(0, 0.16, -0.18); grp.add(sight);
+    }
+    else if (type === 'minigun') {
+      // Minigun con cañones rotatorios
+      const body = new TH.Mesh(new TH.BoxGeometry(0.16, 0.16, 0.5), dark);
+      grp.add(body);
+      // 6 cañones en círculo
+      const barrelMat = new TH.MeshStandardMaterial({ color:0x222222, metalness:0.9 });
+      const barrelGroup = new TH.Group();
+      for (let i=0; i<6; i++) {
+        const ang = (i/6)*Math.PI*2;
+        const b = new TH.Mesh(new TH.CylinderGeometry(0.022, 0.022, 0.6, 6), barrelMat);
+        b.position.set(Math.cos(ang)*0.05, Math.sin(ang)*0.05, 0);
+        b.rotation.x = Math.PI/2;
+        barrelGroup.add(b);
+      }
+      barrelGroup.position.z = -0.5;
+      grp.add(barrelGroup);
+      grp.userData.spinningPart = barrelGroup;
+      // anillo central de los cañones
+      const ring = new TH.Mesh(
+        new TH.CylinderGeometry(0.08, 0.08, 0.06, 12),
+        accent
+      );
+      ring.rotation.x = Math.PI/2; ring.position.set(0, 0, -0.22); grp.add(ring);
+      // empuñadura tipo pistola
+      const g = new TH.Mesh(new TH.BoxGeometry(0.1, 0.22, 0.12), grip);
+      g.position.set(0, -0.2, 0.16); grp.add(g);
+      // cinta de munición
+      const ammo = new TH.Mesh(new TH.BoxGeometry(0.18, 0.12, 0.1), dark);
+      ammo.position.set(-0.13, -0.05, 0.05); grp.add(ammo);
+    }
+    else if (type === 'flamer') {
+      // Lanzallamas: tanque + boquilla
+      const body = new TH.Mesh(new TH.BoxGeometry(0.1, 0.13, 0.5), dark);
+      grp.add(body);
+      // boquilla cónica al final
+      const nozzle = new TH.Mesh(
+        new TH.CylinderGeometry(0.05, 0.025, 0.18, 8),
+        new TH.MeshStandardMaterial({ color:0x331100, emissive:0xff6600, emissiveIntensity:0.8 })
+      );
+      nozzle.rotation.x = Math.PI/2; nozzle.position.set(0, 0, -0.34); grp.add(nozzle);
+      // pequeña llama piloto
+      const pilot = new TH.Mesh(
+        new TH.SphereGeometry(0.04, 6, 6),
+        new TH.MeshBasicMaterial({ color:0xffaa00 })
+      );
+      pilot.position.set(0, 0.04, -0.42); grp.add(pilot);
+      // tanque cilíndrico debajo
+      const tank = new TH.Mesh(
+        new TH.CylinderGeometry(0.08, 0.08, 0.3, 10),
+        new TH.MeshStandardMaterial({ color:0x6a2020, metalness:0.6 })
+      );
+      tank.rotation.x = Math.PI/2; tank.position.set(0, -0.13, 0.1); grp.add(tank);
+      const tankRing = new TH.Mesh(
+        new TH.TorusGeometry(0.08, 0.012, 6, 12),
+        accent
+      );
+      tankRing.position.set(0, -0.13, -0.04); tankRing.rotation.y = Math.PI/2; grp.add(tankRing);
+      // empuñadura
+      const g = new TH.Mesh(new TH.BoxGeometry(0.08, 0.18, 0.1), grip);
+      g.position.set(0, -0.13, 0.22); grp.add(g);
+    }
+    // ============ NUEVAS ARMAS ============
+    else if (type === 'katana') {
+      const bladeMat = new TH.MeshStandardMaterial({ color:0xeeeeee, metalness:0.95, roughness:0.08 });
+      const blade = new TH.Mesh(new TH.BoxGeometry(0.05, 0.02, 0.7), bladeMat);
+      blade.position.z = -0.38; grp.add(blade);
+      const tip = new TH.Mesh(new TH.ConeGeometry(0.035, 0.12, 4), bladeMat);
+      tip.rotation.x = -Math.PI/2; tip.position.z = -0.78; grp.add(tip);
+      // tsuba (guardamano circular)
+      const guard = new TH.Mesh(new TH.CylinderGeometry(0.07, 0.07, 0.02, 12), accent);
+      guard.position.z = -0.02; grp.add(guard);
+      const handle = new TH.Mesh(new TH.CylinderGeometry(0.025, 0.025, 0.22, 8),
+        new TH.MeshStandardMaterial({ color:0x551111, roughness:0.9 }));
+      handle.rotation.x = Math.PI/2; handle.position.z = 0.1; grp.add(handle);
+    }
+    else if (type === 'chainsaw') {
+      // Cuerpo del motor
+      const body = new TH.Mesh(new TH.BoxGeometry(0.18, 0.2, 0.35),
+        new TH.MeshStandardMaterial({ color:0xff6600, metalness:0.6, roughness:0.4 }));
+      body.position.z = 0.1; grp.add(body);
+      // Espada de la sierra
+      const bar = new TH.Mesh(new TH.BoxGeometry(0.08, 0.05, 0.55),
+        new TH.MeshStandardMaterial({ color:0x999999, metalness:0.9, roughness:0.2 }));
+      bar.position.z = -0.32; grp.add(bar);
+      // Dientes
+      const teethMat = new TH.MeshStandardMaterial({ color:0xcccccc, metalness:0.95 });
+      for (let i=0; i<6; i++) {
+        const t = new TH.Mesh(new TH.ConeGeometry(0.018, 0.05, 3), teethMat);
+        t.position.set(0, 0.05, -0.55 + i*0.1);
+        t.rotation.x = Math.PI;
+        grp.add(t);
+      }
+      // Asa superior
+      const handle = new TH.Mesh(new TH.TorusGeometry(0.1, 0.018, 6, 10, Math.PI),
+        new TH.MeshStandardMaterial({ color:0x222222 }));
+      handle.position.set(0, 0.18, 0.1); handle.rotation.y = Math.PI/2; grp.add(handle);
+      // Mango trasero
+      const g = new TH.Mesh(new TH.BoxGeometry(0.09, 0.18, 0.12), grip);
+      g.position.set(0, -0.15, 0.22); grp.add(g);
+    }
+    else if (type === 'deagle') {
+      // Pistola más grande con cañón largo
+      const body = new TH.Mesh(new TH.BoxGeometry(0.1, 0.18, 0.5),
+        new TH.MeshStandardMaterial({ color:0xcccccc, metalness:0.95, roughness:0.15 }));
+      grp.add(body);
+      const slide = new TH.Mesh(new TH.BoxGeometry(0.11, 0.07, 0.48),
+        new TH.MeshStandardMaterial({ color:0xdddddd, metalness:0.95, roughness:0.1 }));
+      slide.position.set(0, 0.11, 0); grp.add(slide);
+      const barrel = new TH.Mesh(new TH.CylinderGeometry(0.035, 0.035, 0.18, 10), accent);
+      barrel.rotation.x = Math.PI/2; barrel.position.set(0, 0.02, -0.32); grp.add(barrel);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.1, 0.24, 0.14), grip);
+      g.position.set(0, -0.2, 0.1); g.rotation.x = -0.18; grp.add(g);
+      const sight = new TH.Mesh(new TH.BoxGeometry(0.025, 0.04, 0.025), dark);
+      sight.position.set(0, 0.18, -0.2); grp.add(sight);
+    }
+    else if (type === 'ak47') {
+      const woodMat = new TH.MeshStandardMaterial({ color:0x6a3a18, roughness:0.85 });
+      const body = new TH.Mesh(new TH.BoxGeometry(0.09, 0.13, 0.7), dark);
+      grp.add(body);
+      // Guardamanos de madera
+      const fore = new TH.Mesh(new TH.BoxGeometry(0.1, 0.08, 0.25), woodMat);
+      fore.position.set(0, -0.05, -0.2); grp.add(fore);
+      const barrel = new TH.Mesh(new TH.CylinderGeometry(0.022, 0.022, 0.45, 8), dark);
+      barrel.rotation.x = Math.PI/2; barrel.position.set(0, 0, -0.55); grp.add(barrel);
+      // Cargador curvo característico
+      const mag = new TH.Mesh(new TH.BoxGeometry(0.08, 0.28, 0.13), dark);
+      mag.position.set(0, -0.22, 0.05); mag.rotation.x = -0.2; grp.add(mag);
+      // Culata de madera
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.07, 0.13, 0.32), woodMat);
+      stock.position.set(0, -0.02, 0.45); grp.add(stock);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.07, 0.16, 0.1), woodMat);
+      g.position.set(0, -0.13, 0.18); grp.add(g);
+    }
+    else if (type === 'burst') {
+      // Rifle táctico moderno
+      const body = new TH.Mesh(new TH.BoxGeometry(0.09, 0.12, 0.7), dark);
+      grp.add(body);
+      const rail = new TH.Mesh(new TH.BoxGeometry(0.06, 0.03, 0.62), accent);
+      rail.position.set(0, 0.075, 0); grp.add(rail);
+      const scope = new TH.Mesh(new TH.CylinderGeometry(0.035, 0.035, 0.16, 8), accent);
+      scope.rotation.x = Math.PI/2; scope.position.set(0, 0.13, 0); grp.add(scope);
+      const barrel = new TH.Mesh(new TH.CylinderGeometry(0.022, 0.022, 0.32, 8), dark);
+      barrel.rotation.x = Math.PI/2; barrel.position.set(0, 0, -0.5); grp.add(barrel);
+      const mag = new TH.Mesh(new TH.BoxGeometry(0.07, 0.2, 0.12), dark);
+      mag.position.set(0, -0.18, 0.05); grp.add(mag);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.07, 0.16, 0.1), grip);
+      g.position.set(0, -0.13, 0.18); grp.add(g);
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.06, 0.1, 0.22), dark);
+      stock.position.set(0, -0.02, 0.4); grp.add(stock);
+    }
+    else if (type === 'autoshot') {
+      // Escopeta automática (más maciza)
+      const body = new TH.Mesh(new TH.BoxGeometry(0.11, 0.14, 0.65), dark);
+      grp.add(body);
+      const b1 = new TH.Mesh(new TH.CylinderGeometry(0.04, 0.04, 0.45, 8), accent);
+      b1.rotation.x = Math.PI/2; b1.position.set(0, 0.05, -0.25); grp.add(b1);
+      const drum = new TH.Mesh(new TH.CylinderGeometry(0.13, 0.13, 0.13, 12), dark);
+      drum.position.set(0, -0.16, 0.05); grp.add(drum);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.09, 0.18, 0.13), grip);
+      g.position.set(0, -0.15, 0.22); grp.add(g);
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.07, 0.12, 0.25), dark);
+      stock.position.set(0, -0.02, 0.4); grp.add(stock);
+    }
+    else if (type === 'crossbow') {
+      const woodMat = new TH.MeshStandardMaterial({ color:0x553311, roughness:0.9 });
+      // Cuerpo central
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.06, 0.1, 0.7), woodMat);
+      grp.add(stock);
+      // Arco horizontal
+      const bow = new TH.Mesh(new TH.BoxGeometry(0.6, 0.04, 0.06), accent);
+      bow.position.set(0, 0.05, -0.25); grp.add(bow);
+      // Cuerda
+      const string = new TH.Mesh(new TH.CylinderGeometry(0.005, 0.005, 0.6, 4),
+        new TH.MeshBasicMaterial({ color:0xddccaa }));
+      string.rotation.z = Math.PI/2; string.position.set(0, 0.05, -0.18); grp.add(string);
+      // Flecha cargada
+      const arrow = new TH.Mesh(new TH.CylinderGeometry(0.015, 0.015, 0.5, 6),
+        new TH.MeshStandardMaterial({ color:0x884400 }));
+      arrow.rotation.x = Math.PI/2; arrow.position.set(0, 0.06, -0.4); grp.add(arrow);
+      const tip = new TH.Mesh(new TH.ConeGeometry(0.022, 0.06, 4),
+        new TH.MeshStandardMaterial({ color:0xcccccc, metalness:0.9 }));
+      tip.rotation.x = -Math.PI/2; tip.position.set(0, 0.06, -0.68); grp.add(tip);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.06, 0.16, 0.1), grip);
+      g.position.set(0, -0.12, 0.18); grp.add(g);
+    }
+    else if (type === 'rpg') {
+      // Tubo de lanzamiento grande
+      const tube = new TH.Mesh(new TH.CylinderGeometry(0.09, 0.09, 0.95, 12),
+        new TH.MeshStandardMaterial({ color:0x4a3a2a, roughness:0.7, metalness:0.4 }));
+      tube.rotation.x = Math.PI/2; tube.position.z = -0.05; grp.add(tube);
+      // Boca cónica
+      const muzzle = new TH.Mesh(new TH.CylinderGeometry(0.13, 0.09, 0.12, 12),
+        new TH.MeshStandardMaterial({ color:0x2a1a0a }));
+      muzzle.rotation.x = Math.PI/2; muzzle.position.z = -0.55; grp.add(muzzle);
+      // Cabeza del cohete asomando
+      const warhead = new TH.Mesh(new TH.ConeGeometry(0.07, 0.18, 10),
+        new TH.MeshStandardMaterial({ color:0x991100, metalness:0.6 }));
+      warhead.rotation.x = -Math.PI/2; warhead.position.z = -0.7; grp.add(warhead);
+      // Aletas del cohete
+      for (let i=0; i<4; i++) {
+        const fin = new TH.Mesh(new TH.BoxGeometry(0.12, 0.012, 0.06),
+          new TH.MeshStandardMaterial({ color:0x991100 }));
+        fin.position.z = -0.55;
+        fin.rotation.z = (i/4)*Math.PI*2;
+        grp.add(fin);
+      }
+      // Mira lateral
+      const sight = new TH.Mesh(new TH.BoxGeometry(0.04, 0.09, 0.04), dark);
+      sight.position.set(0, 0.13, -0.1); grp.add(sight);
+      // Empuñadura
+      const g = new TH.Mesh(new TH.BoxGeometry(0.08, 0.18, 0.1), grip);
+      g.position.set(0, -0.16, 0.05); grp.add(g);
+      // Asa delantera
+      const g2 = new TH.Mesh(new TH.BoxGeometry(0.08, 0.16, 0.1), grip);
+      g2.position.set(0, -0.16, -0.25); grp.add(g2);
+    }
+    else if (type === 'plasma') {
+      // Cuerpo metálico futurista
+      const body = new TH.Mesh(new TH.BoxGeometry(0.12, 0.16, 0.6),
+        new TH.MeshStandardMaterial({ color:0x001a2a, emissive:0x44ddff, emissiveIntensity:0.4, metalness:0.7 }));
+      grp.add(body);
+      // Núcleo de plasma brillante
+      const core = new TH.Mesh(new TH.SphereGeometry(0.08, 12, 10),
+        new TH.MeshBasicMaterial({ color:0x88ffff }));
+      core.position.set(0, 0.05, -0.25); grp.add(core);
+      // Cañón con anillos
+      const barrel = new TH.Mesh(new TH.CylinderGeometry(0.05, 0.05, 0.3, 10),
+        new TH.MeshStandardMaterial({ color:0x111122, metalness:0.9 }));
+      barrel.rotation.x = Math.PI/2; barrel.position.set(0, 0.05, -0.4); grp.add(barrel);
+      for (let i=0; i<3; i++) {
+        const ring = new TH.Mesh(new TH.TorusGeometry(0.06, 0.012, 6, 12),
+          new TH.MeshBasicMaterial({ color:0x44ddff }));
+        ring.rotation.y = Math.PI/2;
+        ring.position.set(0, 0.05, -0.4 + i*0.1);
+        grp.add(ring);
+      }
+      const g = new TH.Mesh(new TH.BoxGeometry(0.08, 0.18, 0.1), grip);
+      g.position.set(0, -0.15, 0.18); grp.add(g);
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.05, 0.12, 0.25), body.material);
+      stock.position.set(0, 0, 0.4); grp.add(stock);
+    }
+    else if (type === 'tesla') {
+      const body = new TH.Mesh(new TH.BoxGeometry(0.11, 0.15, 0.55),
+        new TH.MeshStandardMaterial({ color:0x111122, metalness:0.85, roughness:0.3 }));
+      grp.add(body);
+      // Bobinas en el cañón
+      for (let i=0; i<4; i++) {
+        const coil = new TH.Mesh(new TH.TorusGeometry(0.07, 0.018, 8, 14),
+          new TH.MeshStandardMaterial({ color:0xaaaaaa, metalness:0.95 }));
+        coil.rotation.y = Math.PI/2;
+        coil.position.set(0, 0.05, -0.15 - i*0.09);
+        grp.add(coil);
+      }
+      // Esfera generadora al final
+      const sphere = new TH.Mesh(new TH.SphereGeometry(0.09, 12, 10),
+        new TH.MeshBasicMaterial({ color:0x88ddff }));
+      sphere.position.set(0, 0.05, -0.55); grp.add(sphere);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.08, 0.18, 0.1), grip);
+      g.position.set(0, -0.15, 0.18); grp.add(g);
+    }
+    else if (type === 'railgun') {
+      // Doble raíl largo y futurista
+      const body = new TH.Mesh(new TH.BoxGeometry(0.1, 0.13, 1.0),
+        new TH.MeshStandardMaterial({ color:0x1a0a2a, emissive:0xaa55ff, emissiveIntensity:0.3, metalness:0.8 }));
+      grp.add(body);
+      // Dos raíles paralelos
+      const railMat2 = new TH.MeshStandardMaterial({ color:0xddccff, metalness:0.95, roughness:0.05 });
+      const r1 = new TH.Mesh(new TH.BoxGeometry(0.025, 0.025, 0.85), railMat2);
+      r1.position.set(0.05, 0.08, -0.15); grp.add(r1);
+      const r2 = new TH.Mesh(new TH.BoxGeometry(0.025, 0.025, 0.85), railMat2);
+      r2.position.set(-0.05, 0.08, -0.15); grp.add(r2);
+      // Núcleo brillante entre los raíles
+      const core = new TH.Mesh(new TH.BoxGeometry(0.04, 0.04, 0.7),
+        new TH.MeshBasicMaterial({ color:0xee99ff }));
+      core.position.set(0, 0.08, -0.18); grp.add(core);
+      // Anillo de aceleración al final
+      const ring = new TH.Mesh(new TH.TorusGeometry(0.09, 0.018, 8, 16),
+        new TH.MeshBasicMaterial({ color:0xaa55ff }));
+      ring.rotation.y = Math.PI/2; ring.position.set(0, 0.08, -0.55); grp.add(ring);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.08, 0.2, 0.1), grip);
+      g.position.set(0, -0.16, 0.2); grp.add(g);
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.06, 0.13, 0.32), body.material);
+      stock.position.set(0, -0.02, 0.46); grp.add(stock);
+    }
+    else if (type === 'perkynuke') {
+      // El arma definitiva: lanzador masivo rosa neón
+      const body = new TH.Mesh(new TH.BoxGeometry(0.16, 0.2, 0.85),
+        new TH.MeshStandardMaterial({ color:0x330010, emissive:0xff2a6d, emissiveIntensity:0.9, metalness:0.7 }));
+      grp.add(body);
+      // Tubo lanzador
+      const tube = new TH.Mesh(new TH.CylinderGeometry(0.11, 0.11, 0.7, 14),
+        new TH.MeshStandardMaterial({ color:0x550022, emissive:0xff2a6d, emissiveIntensity:0.5, metalness:0.8 }));
+      tube.rotation.x = Math.PI/2; tube.position.set(0, 0.04, -0.3); grp.add(tube);
+      // Núcleo nuclear visible
+      const core = new TH.Mesh(new TH.SphereGeometry(0.08, 14, 12),
+        new TH.MeshBasicMaterial({ color:0xffe600 }));
+      core.position.set(0, 0.04, -0.55); grp.add(core);
+      // Anillos energéticos
+      for (let i=0; i<4; i++) {
+        const c = [0xffe600, 0x39ff14, 0xff2a6d, 0x44ddff][i];
+        const ring = new TH.Mesh(new TH.TorusGeometry(0.13 + i*0.02, 0.014, 8, 18),
+          new TH.MeshBasicMaterial({ color:c }));
+        ring.rotation.y = Math.PI/2;
+        ring.position.set(0, 0.04, -0.6 - i*0.05);
+        grp.add(ring);
+      }
+      // Pantalla / detonador
+      const screen = new TH.Mesh(new TH.BoxGeometry(0.08, 0.08, 0.02),
+        new TH.MeshBasicMaterial({ color:0xffe600 }));
+      screen.position.set(0, 0.16, 0.1); grp.add(screen);
+      const g = new TH.Mesh(new TH.BoxGeometry(0.1, 0.22, 0.13), grip);
+      g.position.set(0, -0.2, 0.15); grp.add(g);
+      const g2 = new TH.Mesh(new TH.BoxGeometry(0.1, 0.18, 0.1), grip);
+      g2.position.set(0, -0.18, -0.18); grp.add(g2);
+      const stock = new TH.Mesh(new TH.BoxGeometry(0.07, 0.15, 0.32), body.material);
+      stock.position.set(0, 0, 0.5); grp.add(stock);
     }
 
     if (scale !== 1) grp.scale.setScalar(scale);
@@ -2484,7 +4106,18 @@ window.addEventListener('popstate', () => {
       keys[e.code] = true;
       if (e.code === 'KeyE') tryInteract();
       if (e.code === 'KeyG') throwGrenade();
+      if (e.code === 'KeyR') tryReload();
+      if (e.code === 'KeyF') quickMelee();
       if (e.code === 'Space') { tryJump(); e.preventDefault(); }
+      // cambiar arma
+      if (/^Digit[1-9]$/.test(e.code)) {
+        const idx = parseInt(e.code.slice(5))-1;
+        if (player.inventory[idx]) {
+          currentWeapon = player.inventory[idx];
+          buildWeaponMesh();
+          updateHUD();
+        }
+      }
     });
     document.addEventListener('keyup', e => { keys[e.code] = false; });
 
@@ -2522,26 +4155,188 @@ window.addEventListener('popstate', () => {
 
   function tryJump() {
     if (player.onGround) {
-      player.velY = 5.5;
+      player.velY = 8.5;
       player.onGround = false;
+      player.jumpsUsed = 1;
+      playJump();
+    } else if (persistentBuffs.chupito && (player.jumpsUsed||1) < 2) {
+      player.velY = 8.0;
+      player.jumpsUsed = (player.jumpsUsed||1) + 1;
       playJump();
     }
   }
 
+  function quickMelee() {
+    const now = performance.now();
+    if (now - lastMeleeTime < 500) return;
+    lastMeleeTime = now;
+    meleeAnimT = 1;
+    playMelee();
+    // raycast corto
+    const dir = new TH.Vector3();
+    camera.getWorldDirection(dir);
+    const origin = new TH.Vector3();
+    camera.getWorldPosition(origin);
+    raycaster.set(origin, dir);
+    raycaster.far = 2.5;
+    const targets = [];
+    zombies.forEach(z => { if (z.alive) { targets.push(z.body); targets.push(z.head); } });
+    const hits = raycaster.intersectObjects(targets, false);
+    if (hits.length) {
+      const h = hits[0];
+      const z = zombies.find(zz => zz.body === h.object || zz.head === h.object);
+      if (z) {
+        const dealt = 80;
+        z.health -= dealt;
+        z.flashTime = 0.15;
+        addPoints(15);
+        playHit();
+        if (z.health <= 0) killZombie(z, false);
+      }
+    }
+  }
+
   // ===== SHOOTING =====
+  function tryReload() {
+    const w = WEAPONS[currentWeapon];
+    if (!w || w.type === 'melee') return;
+    if (player.reloading) return;
+    initAmmoFor(currentWeapon);
+    const a = player.ammo[currentWeapon];
+    if (a.mag >= w.mag) return; // cargador lleno
+    if (a.reserve <= 0) return; // sin reserva
+    player.reloading = true;
+    player.reloadEnd = performance.now() + w.reload;
+    playShot(200); // click bajo
+  }
+  function finishReload() {
+    const w = WEAPONS[currentWeapon];
+    const a = player.ammo[currentWeapon];
+    if (!a || !w || w.type === 'melee') { player.reloading = false; return; }
+    const need = w.mag - a.mag;
+    const take = Math.min(need, a.reserve);
+    a.mag += take;
+    a.reserve -= take;
+    player.reloading = false;
+    updateHUD();
+  }
+
   function tryShoot() {
     const now = performance.now();
     const w = WEAPONS[currentWeapon];
-    if (now - lastShotTime < w.fireRate) return;
+    if (w.type === 'melee') { quickMelee(); return; }
+    // comprobar recarga en curso
+    if (player.reloading) {
+      if (now >= player.reloadEnd) finishReload();
+      else return;
+    }
+    initAmmoFor(currentWeapon);
+    const a = player.ammo[currentWeapon];
+    // sin bala en el cargador: intentar recargar automáticamente si hay reserva
+    if (a.mag <= 0) {
+      if (a.reserve > 0) tryReload();
+      return;
+    }
+    let rate = w.fireRate;
+    if (activePowerups.firerate) rate *= 0.5;
+    if (persistentBuffs.katxorro) rate *= 0.7;
+    if (now - lastShotTime < rate) return;
     lastShotTime = now;
+    // consumir munición (escopeta con pellets sigue gastando 1 bala, no N)
+    a.mag -= 1;
     player.pitch = Math.min(Math.PI/2-0.02, player.pitch + w.recoil);
     weaponKickT = 1;
     playShot(w.soundFreq);
 
+    let dmgMult = 1;
+    if (activePowerups.dmg) dmgMult = 2;
+    if (persistentBuffs.chuchuwa) dmgMult *= 1.6;
+
     if (w.pellets) {
-      for (let i=0; i<w.pellets; i++) raycastShot(w.dmg, w.spread);
+      for (let i=0; i<w.pellets; i++) raycastShot(w.dmg*dmgMult, w.spread);
+    } else if (w.explosive) {
+      const radius = (currentWeapon === 'perkynuke') ? 9 : 5;
+      explosiveShot(w.dmg*dmgMult, radius);
+    } else if (w.chain) {
+      chainShot(w.dmg*dmgMult);
     } else {
-      raycastShot(w.dmg, isAds ? w.spread*0.3 : w.spread);
+      raycastShot(w.dmg*dmgMult, isAds ? w.spread*0.3 : w.spread);
+    }
+    updateHUD();
+    // si queda vacío, auto-recarga
+    if (a.mag <= 0 && a.reserve > 0) tryReload();
+  }
+
+  function explosiveShot(dmg, radius) {
+    const dir = new TH.Vector3();
+    camera.getWorldDirection(dir);
+    const origin = new TH.Vector3();
+    camera.getWorldPosition(origin);
+    raycaster.set(origin, dir);
+    raycaster.far = 120;
+    const targets = [];
+    zombies.forEach(z => { if (z.alive) { targets.push(z.body); targets.push(z.head); } });
+    for (let i=0;i<wallMeshesCache.length;i++) targets.push(wallMeshesCache[i]);
+    const hits = raycaster.intersectObjects(targets, true);
+    let endPoint = hits.length ? hits[0].point.clone() : origin.clone().add(dir.clone().multiplyScalar(120));
+    spawnTracer(origin, endPoint);
+    // explosión
+    explode(endPoint);
+    // daño en area
+    for (const z of zombies) {
+      if (!z.alive) continue;
+      const d = z.pos.distanceTo(endPoint);
+      if (d < radius) {
+        const falloff = 1 - d/radius;
+        z.health -= dmg * falloff;
+        z.flashTime = 0.15;
+        if (z.health <= 0) { addPoints(80); killZombie(z, false); }
+      }
+    }
+  }
+
+  function chainShot(dmg) {
+    const dir = new TH.Vector3();
+    camera.getWorldDirection(dir);
+    const origin = new TH.Vector3();
+    camera.getWorldPosition(origin);
+    raycaster.set(origin, dir);
+    raycaster.far = 60;
+    const targets = [];
+    zombies.forEach(z => { if (z.alive) { targets.push(z.body); targets.push(z.head); } });
+    for (let i=0;i<wallMeshesCache.length;i++) targets.push(wallMeshesCache[i]);
+    const hits = raycaster.intersectObjects(targets, true);
+    if (!hits.length) {
+      const ep = origin.clone().add(dir.clone().multiplyScalar(60));
+      spawnTracer(origin, ep);
+      return;
+    }
+    const first = zombies.find(zz => zz.body === hits[0].object || zz.head === hits[0].object);
+    spawnTracer(origin, hits[0].point);
+    if (!first) return;
+    const chained = new Set();
+    let current = first;
+    let curDmg = dmg;
+    let prevPos = first.pos.clone();
+    for (let jump=0; jump<5; jump++) {
+      current.health -= curDmg;
+      current.flashTime = 0.15;
+      chained.add(current);
+      addPoints(15);
+      playHit();
+      if (current.health <= 0) killZombie(current, false);
+      // siguiente
+      let next = null, bestD = 8;
+      for (const z of zombies) {
+        if (!z.alive || chained.has(z)) continue;
+        const d = z.pos.distanceTo(prevPos);
+        if (d < bestD) { bestD = d; next = z; }
+      }
+      if (!next) break;
+      spawnTracer(prevPos.clone().add(new TH.Vector3(0,1.2,0)), next.pos.clone().add(new TH.Vector3(0,1.2,0)));
+      prevPos = next.pos.clone();
+      current = next;
+      curDmg *= 0.7;
     }
   }
 
@@ -2557,12 +4352,12 @@ window.addEventListener('popstate', () => {
     const origin = new TH.Vector3();
     camera.getWorldPosition(origin);
     raycaster.set(origin, dir);
-    raycaster.far = 60;
+    raycaster.far = 80;
 
     const targets = [];
     zombies.forEach(z => { if (z.alive) { targets.push(z.body); targets.push(z.head); } });
-    walls.forEach(w => targets.push(w.mesh));
-    const hits = raycaster.intersectObjects(targets, false);
+    for (let i=0;i<wallMeshesCache.length;i++) targets.push(wallMeshesCache[i]);
+    const hits = raycaster.intersectObjects(targets, true);
 
     let endPoint;
     if (hits.length > 0) {
@@ -2571,15 +4366,24 @@ window.addEventListener('popstate', () => {
       const z = zombies.find(zz => zz.body === h.object || zz.head === h.object);
       if (z) {
         const isHead = (h.object === z.head);
-        const dealt = isHead ? dmg * 2 : dmg;
+        let dealt = isHead ? dmg * 2 : dmg;
+        // CHARTREUSE: 25% crítico x3
+        if (persistentBuffs.chartreuse && Math.random() < 0.25) dealt *= 3;
         z.health -= dealt;
         z.flashTime = 0.12;
         addPoints(isHead ? 20 : 10);
         playHit();
-        if (z.health <= 0) killZombie(z, isHead);
+        if (z.health <= 0) {
+          // BLOODY: vampiro - cura al matar
+          if (persistentBuffs.bloody) {
+            player.health = Math.min(player.maxHealth, player.health + 8);
+            updateHUD();
+          }
+          killZombie(z, isHead);
+        }
       }
     } else {
-      endPoint = origin.clone().add(dir.multiplyScalar(60));
+      endPoint = origin.clone().add(dir.multiplyScalar(80));
     }
 
     spawnTracer(origin, endPoint);
@@ -2590,10 +4394,12 @@ window.addEventListener('popstate', () => {
     if (dist < 0.5) return;
     const dir = new TH.Vector3().subVectors(to, from).normalize();
     const start = from.clone().add(dir.clone().multiplyScalar(0.6));
-    const tracerLen = Math.min(3.5, dist - 0.6);
+    const tracerLen = Math.min(5, dist - 0.6);
+    const w = WEAPONS[currentWeapon];
+    const col = w.glow ? 0xff2a6d : 0xffee44;
     const cyl = new TH.Mesh(
       new TH.CylinderGeometry(0.025, 0.025, tracerLen, 6),
-      new TH.MeshBasicMaterial({ color:0xffee44, transparent:true, opacity:0.95 })
+      new TH.MeshBasicMaterial({ color:col, transparent:true, opacity:0.95 })
     );
     const mid = start.clone().add(dir.clone().multiplyScalar(tracerLen/2));
     cyl.position.copy(mid);
@@ -2618,23 +4424,22 @@ window.addEventListener('popstate', () => {
 
   function updateWeaponAnim(dt) {
     if (!weaponMesh || !weaponBasePos) return;
-
     weaponKickT = Math.max(0, weaponKickT - dt*7);
+    meleeAnimT = Math.max(0, meleeAnimT - dt*5);
     const kick = weaponKickT;
+    const melee = meleeAnimT;
 
-    const targetAds = isAds ? 1 : 0;
+    const targetAds = isAds && WEAPONS[currentWeapon].type !== 'melee' ? 1 : 0;
     adsLerp += (targetAds - adsLerp) * Math.min(1, dt*12);
 
-    const targetFov = isAds ? 48 : 75;
+    const targetFov = (isAds && WEAPONS[currentWeapon].type !== 'melee') ? (currentWeapon==='sniper'?30:48) : 75;
     camera.fov += (targetFov - camera.fov) * Math.min(1, dt*12);
     camera.updateProjectionMatrix();
 
-    // posición: lerp entre cadera y centro (ADS)
     const px = weaponBasePos.x * (1-adsLerp);
     const py = weaponBasePos.y * (1-adsLerp) + (-0.18) * adsLerp;
     const pz = weaponBasePos.z * (1-adsLerp) + (-0.42) * adsLerp;
 
-    // bobbing al andar
     let bobX = 0, bobY = 0;
     const moving = (keys['KeyW']||keys['KeyA']||keys['KeyS']||keys['KeyD']) && player.onGround;
     if (moving) {
@@ -2647,22 +4452,70 @@ window.addEventListener('popstate', () => {
 
     weaponMesh.position.set(
       px + bobX,
-      py + bobY - kick*0.04,
-      pz + kick*0.18
+      py + bobY - kick*0.04 - melee*0.08,
+      pz + kick*0.18 - melee*0.25
     );
     weaponMesh.rotation.set(
-      weaponBaseRot.x - kick*0.25,
+      weaponBaseRot.x - kick*0.25 - melee*0.9,
       weaponBaseRot.y * (1-adsLerp),
       weaponBaseRot.z
     );
+
+    // ==== ANIMACIÓN DE RECARGA: baja el arma y la gira ====
+    if (player.reloading) {
+      const w = WEAPONS[currentWeapon];
+      const total = w.reload || 1500;
+      const elapsed = total - (player.reloadEnd - performance.now());
+      const p = Math.max(0, Math.min(1, elapsed / total));
+      // curva: baja, vuelve
+      const dip = Math.sin(p * Math.PI); // 0→1→0
+      weaponMesh.position.y -= dip * 0.35;
+      weaponMesh.position.x -= dip * 0.1;
+      weaponMesh.rotation.x -= dip * 0.9;
+      weaponMesh.rotation.z -= dip * 0.3;
+    }
+
+    // Minigun: gira los cañones cuando el jugador está disparando o ha disparado hace poco
+    if (weaponMesh.userData.spinningPart) {
+      const spinning = (mouseLeft && currentWeapon === 'minigun') || weaponKickT > 0.05;
+      if (spinning) weaponMesh.userData.spinningPart.rotation.z += dt * 22;
+    }
   }
 
   // ===== ZOMBIES =====
+  // Tipos: normal, fast, tank, runner, spitter
+  const ZOMBIE_TYPES = {
+    normal:  { skin:0x556a2a, cloth:0x2a160a, hpMult:1,    spdMult:1,    scale:1,    atkDmg:12, points:60, loot:0.15 },
+    fast:    { skin:0x4a3a20, cloth:0x2a0a0a, hpMult:0.6,  spdMult:1.85, scale:0.9,  atkDmg:8,  points:80, loot:0.2  },
+    tank:    { skin:0x3a3a1a, cloth:0x1a1a0a, hpMult:3.5,  spdMult:0.65, scale:1.35, atkDmg:22, points:150,loot:0.35 },
+    runner:  { skin:0x6a2a2a, cloth:0x2a1a1a, hpMult:0.9,  spdMult:1.5,  scale:1,    atkDmg:14, points:90, loot:0.2  },
+    spitter: { skin:0x2a5a5a, cloth:0x0a2a2a, hpMult:0.8,  spdMult:0.9,  scale:1,    atkDmg:18, points:110,loot:0.3, ranged:true },
+  };
+
+  function pickZombieType() {
+    const roll = Math.random();
+    if (wave >= 8  && roll < 0.18) return 'tank';
+    if (wave >= 5  && roll < 0.30) return 'tank';
+    if (wave >= 3  && roll < 0.45) return 'fast';
+    if (wave >= 6  && roll < 0.55) return 'spitter';
+    if (wave >= 2  && roll < 0.65) return 'runner';
+    return 'normal';
+  }
+
   function spawnZombie() {
-    const sp = spawnPoints[Math.floor(Math.random()*spawnPoints.length)];
+    // elegir un spawner activo aleatorio (de salas desbloqueadas)
+    const activeSpawners = spawners.filter(s => s.active);
+    if (!activeSpawners.length) return;
+    const sp = activeSpawners[Math.floor(Math.random()*activeSpawners.length)];
+    // flash rojo en el spawner
+    sp.pulseT = 0;
+
+    const typeName = pickZombieType();
+    const type = ZOMBIE_TYPES[typeName];
+
     const grp = new TH.Group();
-    const skinMat  = new TH.MeshStandardMaterial({ color:0x556a2a, roughness:0.85 });
-    const clothMat = new TH.MeshStandardMaterial({ color:0x2a160a, roughness:0.95 });
+    const skinMat  = new TH.MeshStandardMaterial({ color:type.skin, roughness:0.85 });
+    const clothMat = new TH.MeshStandardMaterial({ color:type.cloth, roughness:0.95 });
 
     const body = new TH.Mesh(new TH.BoxGeometry(0.6, 1.0, 0.35), clothMat);
     body.position.y = 1.0; grp.add(body);
@@ -2683,17 +4536,20 @@ window.addEventListener('popstate', () => {
     const rArm = new TH.Mesh(new TH.BoxGeometry(0.18, 0.85, 0.18), skinMat);
     rArm.position.set( 0.42, 1.15, 0.18); rArm.rotation.x = -0.7; grp.add(rArm);
 
-    const eyeMat = new TH.MeshBasicMaterial({ color:0xff2222 });
+    // ojos según tipo
+    const eyeColor = typeName==='spitter'?0x00ffcc:(typeName==='tank'?0xffaa00:(typeName==='fast'?0xff00ff:0xff2222));
+    const eyeMat = new TH.MeshBasicMaterial({ color: eyeColor });
     const lEye = new TH.Mesh(new TH.BoxGeometry(0.07,0.07,0.02), eyeMat);
     lEye.position.set(-0.1, 1.82, 0.21); grp.add(lEye);
     const rEye = new TH.Mesh(new TH.BoxGeometry(0.07,0.07,0.02), eyeMat);
     rEye.position.set( 0.1, 1.82, 0.21); grp.add(rEye);
 
-    grp.position.copy(sp);
+    grp.scale.setScalar(type.scale);
+    grp.position.copy(sp.pos);
     scene.add(grp);
 
-    const baseHp    = 80 + (wave - 1) * 28;
-    const baseSpeed = Math.min(1.2 + (wave - 1) * 0.16, 3.6);
+    const baseHp    = (100 + (wave - 1) * 42 + Math.pow(wave, 1.55) * 6) * type.hpMult;
+    const baseSpeed = Math.min(1.4 + (wave - 1) * 0.18, 4.0) * type.spdMult;
 
     zombies.push({
       group:grp, body, head, lLeg, rLeg, lArm, rArm,
@@ -2701,6 +4557,8 @@ window.addEventListener('popstate', () => {
       health:baseHp, maxHealth:baseHp, speed:baseSpeed,
       alive:true, lastAttack:0, walkT:Math.random()*10,
       flashTime:0, deathTime:0, growlTimer:Math.random()*4+2,
+      type:typeName, typeData:type,
+      lastRanged:0,
     });
     zombiesAlive++;
     if (Math.random() < 0.5) playGrowl();
@@ -2725,13 +4583,22 @@ window.addEventListener('popstate', () => {
       z.growlTimer -= dt;
       if (z.growlTimer <= 0) {
         z.growlTimer = Math.random()*5+3;
-        if (z.pos.distanceTo(pp) < 18) playGrowl();
+        if (z.pos.distanceTo(pp) < 20) playGrowl();
       }
 
       const dx = pp.x - z.pos.x, dz = pp.z - z.pos.z;
       const dist = Math.hypot(dx, dz);
       const nx = dist > 0.001 ? dx/dist : 0;
       const nz = dist > 0.001 ? dz/dist : 0;
+
+      // spitter: ataque a distancia
+      if (z.type === 'spitter' && dist > 3 && dist < 16) {
+        const now = performance.now();
+        if (now - z.lastRanged > 2500) {
+          z.lastRanged = now;
+          spitProjectile(z.pos, pp);
+        }
+      }
 
       if (dist > 1.35) {
         const step = z.speed * dt;
@@ -2747,7 +4614,10 @@ window.addEventListener('popstate', () => {
         const now = performance.now();
         if (now - z.lastAttack > 1100) {
           z.lastAttack = now;
-          damagePlayer(12);
+          let dmg = z.typeData.atkDmg;
+          if (activePowerups.resist) dmg *= 0.4;
+          if (persistentBuffs.mojito) dmg *= 0.6;
+          damagePlayer(dmg, z.pos);
           z.lArm.rotation.x = -1.7;
           z.rArm.rotation.x = -1.7;
           setTimeout(() => { if (z.alive) { z.lArm.rotation.x = -0.7; z.rArm.rotation.x = -0.7; } }, 220);
@@ -2766,27 +4636,278 @@ window.addEventListener('popstate', () => {
     }
   }
 
+  const spitters = [];
+  function spitProjectile(from, to) {
+    const m = new TH.Mesh(
+      new TH.SphereGeometry(0.18, 8, 6),
+      new TH.MeshBasicMaterial({ color:0x00ffaa })
+    );
+    m.position.copy(from);
+    m.position.y = 1.5;
+    scene.add(m);
+    const dir = new TH.Vector3().subVectors(to, from).normalize();
+    spitters.push({ mesh:m, vel:dir.multiplyScalar(9), t:0 });
+  }
+  function updateSpitters(dt) {
+    const pp = camera.position;
+    for (let i=spitters.length-1; i>=0; i--) {
+      const s = spitters[i];
+      s.mesh.position.x += s.vel.x * dt;
+      s.mesh.position.y += s.vel.y * dt;
+      s.mesh.position.z += s.vel.z * dt;
+      s.t += dt;
+      if (s.mesh.position.distanceTo(pp) < 0.8) {
+        let dmg = 15;
+        if (activePowerups.resist) dmg *= 0.4;
+          if (persistentBuffs.mojito) dmg *= 0.6;
+        damagePlayer(dmg);
+        scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mesh.material.dispose();
+        spitters.splice(i, 1);
+      } else if (s.t > 3) {
+        scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mesh.material.dispose();
+        spitters.splice(i, 1);
+      }
+    }
+  }
+
   function killZombie(z, headshot) {
     if (!z.alive) return;
     z.alive = false;
     zombiesAlive--;
-    addPoints(headshot ? 100 : 60);
+    let pts = z.typeData.points + (headshot ? 50 : 0);
+    if (activePowerups.double) pts *= 2;
+    addPoints(pts);
+    // loot
+    if (Math.random() < z.typeData.loot) {
+      dropPowerup(z.pos.clone());
+    }
+  }
+
+  // ===== POWERUPS =====
+  const POWERUP_TYPES = [
+    { id:'health',   color:0x39ff14, label:'+VIDA',      weight:3 },
+    { id:'money',    color:0xffe600, label:'+500 PTS',   weight:3 },
+    { id:'ammo',     color:0x4488ff, label:'+MUNICIÓN',  weight:4 },
+    { id:'dmg',      color:0xff2a6d, label:'DOBLE DAÑO', weight:2, duration:15 },
+    { id:'firerate', color:0xff6600, label:'CADENCIA++', weight:2, duration:15 },
+    { id:'speed',    color:0x44ddff, label:'VELOCIDAD++',weight:2, duration:15 },
+    { id:'resist',   color:0x8844ff, label:'RESISTENTE', weight:2, duration:15 },
+    { id:'double',   color:0xffffff, label:'x2 PUNTOS',  weight:2, duration:20 },
+    { id:'nuke',     color:0xff0000, label:'NUKE ☠',     weight:1 },
+  ];
+
+  function dropPowerup(pos) {
+    // weighted random
+    const total = POWERUP_TYPES.reduce((a,b)=>a+b.weight, 0);
+    let r = Math.random()*total;
+    let pick = POWERUP_TYPES[0];
+    for (const p of POWERUP_TYPES) { r -= p.weight; if (r <= 0) { pick = p; break; } }
+    const m = new TH.Mesh(
+      new TH.IcosahedronGeometry(0.25, 0),
+      new TH.MeshStandardMaterial({ color:pick.color, emissive:pick.color, emissiveIntensity:1 })
+    );
+    m.position.copy(pos);
+    m.position.y = 0.7;
+    scene.add(m);
+    const light = new TH.PointLight(pick.color, 0.8, 4, 2);
+    light.position.copy(m.position);
+    scene.add(light);
+    powerupDrops.push({ mesh:m, pos:m.position, type:pick, t:0, light });
+  }
+
+  function updatePowerupDrops(dt) {
+    const pp = camera.position;
+    for (let i=powerupDrops.length-1; i>=0; i--) {
+      const d = powerupDrops[i];
+      d.t += dt;
+      d.mesh.rotation.y += dt*3;
+      d.mesh.position.y = 0.7 + Math.sin(d.t*3)*0.12;
+      d.light.position.copy(d.mesh.position);
+      if (d.mesh.position.distanceTo(pp) < 1.5) {
+        applyPowerup(d.type);
+        scene.remove(d.mesh); d.mesh.geometry.dispose(); d.mesh.material.dispose();
+        scene.remove(d.light);
+        powerupDrops.splice(i, 1);
+        continue;
+      }
+      if (d.t > 22) {
+        scene.remove(d.mesh); d.mesh.geometry.dispose(); d.mesh.material.dispose();
+        scene.remove(d.light);
+        powerupDrops.splice(i, 1);
+      }
+    }
+  }
+
+  function applyPowerup(p) {
+    playPickup(p.id==='nuke'?220:700);
+    showPickup(p.label);
+    if (p.id === 'health') { player.health = Math.min(player.maxHealth, player.health + 50); updateHUD(); }
+    else if (p.id === 'money') { addPoints(500); }
+    else if (p.id === 'ammo') {
+      // Rellena la reserva de TODAS las armas del inventario
+      for (const wId of player.inventory) {
+        const w = WEAPONS[wId];
+        if (w && w.type !== 'melee') {
+          initAmmoFor(wId);
+          addReserveAmmo(wId, w.reserve); // +1 recarga completa de reserva
+        }
+      }
+      updateHUD();
+    }
+    else if (p.id === 'nuke') {
+      zombies.forEach(z => { if (z.alive) { z.health = -1; killZombie(z, false); } });
+      dmgVignette.style.boxShadow = 'inset 0 0 250px 80px rgba(255,255,0,0.8)';
+      dmgVignette.style.opacity = '1';
+      setTimeout(() => {
+        dmgVignette.style.boxShadow = '';
+        dmgVignette.style.opacity = '0';
+      }, 400);
+    }
+    else if (p.duration) {
+      activePowerups[p.id] = { until: performance.now() + p.duration*1000, data:p };
+      renderPowerups();
+    }
+  }
+
+  // ===== BUFFS PERSISTENTES (bebidas de las máquinas) =====
+  // Cada bebida da un buff hasta que mueres.
+  // Se aplican en tryShoot, updatePlayer y damagePlayer (ya están enganchados).
+  function applyPersistentBuff(buffId, label) {
+    persistentBuffs[buffId] = true;
+    showPickup(label + ' ★');
+    playPickup(1100);
+    // QUINTOS sube vida máxima a 150 y rellena toda la vida
+    if (buffId === 'quintos') {
+      player.maxHealth = 150;
+      player.health = 150;
+      if (healthBar && healthBar.parentElement && healthBar.parentElement.parentElement) {
+        healthBar.parentElement.parentElement.classList.add('buffed');
+      }
+    }
+    if (buffId === 'cubata') {
+      player.grenades += 5;
+    }
+    if (buffId === 'chupito') {
+      player.maxJumps = 2;
+    }
+    updateHUD();
+    renderPersistentBuffs();
+  }
+
+  function renderPersistentBuffs() {
+    // Pintar los buffs persistentes debajo de los powerups temporales
+    // Reusamos el mismo contenedor, los persistentes van al final con estilo distinto.
+    const tempBuffs = Array.from(powerupsEl.querySelectorAll('.game-powerup.persistent'));
+    tempBuffs.forEach(el => el.remove());
+    const persistentLabels = {
+      quintos:  { label:'QUINTOS',  color:'#39ff14' },
+      cafelito: { label:'CAFELITO', color:'#ffe600' },
+      katxorro: { label:'KATXORRO', color:'#ff2a6d' },
+      mojito:   { label:'MOJITO',   color:'#44ddff' },
+      chuchuwa: { label:'CHUCHUWA', color:'#aa55ff' },
+      absenta:  { label:'ABSENTA',  color:'#88ff88' },
+      chupito:  { label:'CHUPITO',  color:'#ff8800' },
+      cubata:   { label:'CUBATA',   color:'#4488ff' },
+      chartreuse:{label:'CHARTREUSE',color:'#ffff44' },
+      bloody:   { label:'BLOODY',   color:'#cc0033' },
+      redbull:  { label:'RED BULL', color:'#0066ff' },
+    };
+    for (const k in persistentBuffs) {
+      if (!persistentBuffs[k]) continue;
+      const info = persistentLabels[k] || { label:k.toUpperCase(), color:'#fff' };
+      const el = document.createElement('div');
+      el.className = 'game-powerup persistent';
+      el.style.borderColor = info.color;
+      el.style.color = info.color;
+      el.style.textShadow = '0 0 5px ' + info.color;
+      el.innerHTML = '<span>★ '+info.label+'</span><span>activo</span>';
+      powerupsEl.appendChild(el);
+    }
+  }
+
+  function updateActivePowerups() {
+    const now = performance.now();
+    let changed = false;
+    for (const k in activePowerups) {
+      if (now > activePowerups[k].until) {
+        delete activePowerups[k];
+        changed = true;
+      }
+    }
+    renderPowerups();
+    renderPersistentBuffs();
+  }
+
+  function renderPowerups() {
+    powerupsEl.innerHTML = '';
+    const now = performance.now();
+    for (const k in activePowerups) {
+      const pu = activePowerups[k];
+      const remaining = Math.max(0, (pu.until - now) / 1000);
+      const totalDur = pu.data.duration;
+      const el = document.createElement('div');
+      el.className = 'game-powerup';
+      el.innerHTML = '<span>'+pu.data.label+'</span><span>'+remaining.toFixed(1)+'s</span><div class="pu-time" style="width:'+((remaining/totalDur)*100)+'%"></div>';
+      powerupsEl.appendChild(el);
+    }
+  }
+
+  function showPickup(label) {
+    const el = document.createElement('div');
+    el.className = 'game-pickup-msg';
+    el.textContent = '+ ' + label;
+    pickupFeedEl.appendChild(el);
+    setTimeout(() => el.remove(), 2400);
   }
 
   // ===== PLAYER =====
-  function damagePlayer(amount) {
+  function damagePlayer(amount, sourcePos) {
     player.health -= amount;
     player.lastDmg = performance.now();
     dmgVignette.style.opacity = '1';
-    setTimeout(() => { dmgVignette.style.opacity = '0'; }, 280);
+    setTimeout(() => { dmgVignette.style.opacity = '0'; }, 400);
+    // hit flash más fuerte
+    const flash = document.getElementById('gameHitFlash');
+    if (flash) {
+      flash.classList.remove('flash'); void flash.offsetWidth; flash.classList.add('flash');
+    }
+    // shake del healthbox
+    const hbox = document.getElementById('gameHealthbox');
+    if (hbox) {
+      hbox.classList.remove('hit'); void hbox.offsetWidth; hbox.classList.add('hit');
+    }
+    // indicador direccional
+    if (sourcePos) {
+      const dx = sourcePos.x - camera.position.x;
+      const dz = sourcePos.z - camera.position.z;
+      const angToSrc = Math.atan2(dx, -dz);
+      const rel = angToSrc - player.yaw;
+      const ind = document.getElementById('gameDmgIndicator');
+      if (ind) {
+        ind.style.transform = 'translate(-50%,-50%) rotate('+rel+'rad)';
+        ind.classList.remove('show'); void ind.offsetWidth; ind.classList.add('show');
+      }
+    }
+    // camera shake MÁS FUERTE
+    camShake = Math.min(0.9, camShake + 0.5);
     if (player.health <= 0) { player.health = 0; gameOver(); }
     updateHUD();
   }
 
   let footstepTimer = 0;
+  let camShake = 0; // intensidad de sacudida de cámara (0..1)
+  // Bounds globales del mundo para anti-trampas (se actualizan en buildWorld)
+  let worldBounds = { minX:-50, maxX:50, minZ:-60, maxZ:90, minY:-2, maxY:25 };
+
   function updatePlayer(dt) {
     if (performance.now() - player.lastDmg > 5000 && player.health < player.maxHealth) {
       player.health = Math.min(player.maxHealth, player.health + 16*dt);
+      updateHUD();
+    }
+    // ABSENTA: regen lenta y SOLO si no te han dado hace 2s (nerfeado para no ser inmortal)
+    if (persistentBuffs.absenta && player.health < player.maxHealth &&
+        performance.now() - player.lastDmg > 2000) {
+      player.health = Math.min(player.maxHealth, player.health + 2*dt);
       updateHUD();
     }
     const sinY = Math.sin(player.yaw), cosY = Math.cos(player.yaw);
@@ -2798,30 +4919,66 @@ window.addEventListener('popstate', () => {
     if (keys['KeyD']) mv.add(rgt);
     if (keys['KeyA']) mv.sub(rgt);
     if (mv.lengthSq() > 0) mv.normalize();
-    const sprinting = keys['ShiftLeft'] || keys['ShiftRight'];
-    const sp = player.speed * (sprinting ? player.sprintMult : 1) * (isAds ? 0.55 : 1);
+    const sprinting = keys['ShiftLeft'] || keys['ShiftRight'] || persistentBuffs.redbull;
+    let sp = player.speed * (sprinting ? player.sprintMult : 1) * (isAds ? 0.55 : 1);
+    if (activePowerups.speed) sp *= 1.45;
+    if (persistentBuffs.cafelito) sp *= 1.35;
+    if (persistentBuffs.redbull) sp *= 1.10;
     mv.multiplyScalar(sp * dt);
 
-    // Gravedad / salto
-    player.velY -= 14 * dt;
+    // ====== MOVIMIENTO HORIZONTAL (X y Z separados, evita pegarse a esquinas) ======
+    const np = camera.position.clone();
+    np.x += mv.x;
+    if (collidesWalls(np, np.y - player.height)) np.x = camera.position.x;
+    np.z += mv.z;
+    if (collidesWalls(np, np.y - player.height)) np.z = camera.position.z;
+
+    // ====== GRAVEDAD + GROUND CHECK CON PLATAFORMAS ======
+    player.velY -= 22 * dt; // gravedad un pelín mayor para que el salto se sienta
     let newY = camera.position.y + player.velY * dt;
-    if (newY <= player.height) {
-      newY = player.height;
+    let newFeetY = newY - player.height;
+
+    // ¿Sobre qué superficie cae el jugador? Recorremos walls y miramos la Y máxima
+    // bajo los pies del jugador (incluyendo suelo a Y=0).
+    let groundY = 0; // suelo base del mundo
+    const px = np.x, pz = np.z;
+    const STEP_UP = 0.35;
+    for (let i=0; i<walls.length; i++) {
+      const w = walls[i];
+      const inX = (px + player.radius > w.min.x && px - player.radius < w.max.x);
+      const inZ = (pz + player.radius > w.min.z && pz - player.radius < w.max.z);
+      if (!inX || !inZ) continue;
+      const top = w.max.y;
+      const currentFeet = camera.position.y - player.height;
+      // suelo válido: top está bajo los pies actuales (con margen de step-up)
+      if (top <= currentFeet + STEP_UP && top > groundY) {
+        groundY = top;
+      }
+    }
+
+    if (newFeetY <= groundY) {
+      // aterriza
+      newY = groundY + player.height;
       player.onGround = true;
       player.velY = 0;
+      player.jumpsUsed = 0;
     } else {
       player.onGround = false;
     }
 
-    const np = camera.position.clone();
-    np.x += mv.x;
-    if (collidesWalls(np)) np.x = camera.position.x;
-    np.z += mv.z;
-    if (collidesWalls(np)) np.z = camera.position.z;
-
     camera.position.x = np.x;
     camera.position.y = newY;
     camera.position.z = np.z;
+
+    // ====== ANTI-TRAMPAS: confinar al mundo ======
+    if (camera.position.x < worldBounds.minX || camera.position.x > worldBounds.maxX ||
+        camera.position.z < worldBounds.minZ || camera.position.z > worldBounds.maxZ ||
+        camera.position.y < worldBounds.minY || camera.position.y > worldBounds.maxY) {
+      // teleport seguro al spawn
+      camera.position.set(0, player.height, 0);
+      player.velY = 0;
+      player.onGround = true;
+    }
 
     // pasos
     if (mv.lengthSq() > 0 && player.onGround) {
@@ -2834,34 +4991,395 @@ window.addEventListener('popstate', () => {
 
     const eu = new TH.Euler(player.pitch, player.yaw, 0, 'YXZ');
     camera.quaternion.setFromEuler(eu);
+
+    // ===== CAMERA SHAKE (decae por frame) =====
+    if (camShake > 0.001) {
+      const s = camShake;
+      camera.position.x += (Math.random()-0.5) * s * 0.4;
+      camera.position.y += (Math.random()-0.5) * s * 0.35;
+      camera.position.z += (Math.random()-0.5) * s * 0.4;
+      // también rotación
+      camera.rotation.z += (Math.random()-0.5) * s * 0.15;
+      camShake = Math.max(0, camShake - dt * 2.8);
+    }
   }
 
-  function collidesWalls(pos) {
+  // collidesWalls: ahora recibe la altura de los PIES y comprueba SOLO walls
+  // que sean obstáculos verticales en ese rango. Las plataformas (suelo elevado)
+  // no bloquean el paso lateral si vienes desde encima.
+  function collidesWalls(pos, feetY) {
+    if (feetY === undefined) feetY = pos.y - player.height;
+    const headY = feetY + player.height;
     const r = player.radius;
+    const STEP_UP = 0.35; // tolerancia para subir escalones automáticamente
     for (let i=0; i<walls.length; i++) {
       const w = walls[i];
-      if (pos.x + r > w.min.x && pos.x - r < w.max.x &&
-          pos.z + r > w.min.z && pos.z - r < w.max.z &&
-          pos.y > w.min.y - 0.1 && pos.y - player.height < w.max.y) {
-        return true;
-      }
+      if (!(pos.x + r > w.min.x && pos.x - r < w.max.x)) continue;
+      if (!(pos.z + r > w.min.z && pos.z - r < w.max.z)) continue;
+      // si el top de la caja está dentro del step-up tolerable: el jugador puede subirse, no bloquea
+      if (w.max.y <= feetY + STEP_UP) continue;
+      // si el wall arranca por encima de la cabeza, no bloquea (es techo)
+      if (w.min.y >= headY - 0.05) continue;
+      // si no, hay solapamiento vertical: bloquea
+      return true;
     }
     return false;
+  }
+
+  // ===== HELPER: PLATAFORMA elevada (stand-on) =====
+  // Crea una caja sólida con material y la registra como wall (será suelo elevado).
+  function addPlatform(cx, cy, cz, sx, sy, sz, mat) {
+    const m = new TH.Mesh(new TH.BoxGeometry(sx, sy, sz), mat);
+    m.position.set(cx, cy, cz);
+    scene.add(m);
+    walls.push({
+      min: new TH.Vector3(cx-sx/2, cy-sy/2, cz-sz/2),
+      max: new TH.Vector3(cx+sx/2, cy+sy/2, cz+sz/2),
+      mesh: m,
+    });
+    return m;
+  }
+
+  // ===== HELPER: ESCALERA (rampa de escalones) =====
+  // dirección: 'x+' / 'x-' / 'z+' / 'z-' indica hacia dónde sube
+  function addStairs(baseX, baseZ, topY, dir, width, mat) {
+    const steps = Math.max(4, Math.round(topY / 0.32));
+    const stepH = topY / steps;
+    const stepD = 0.4;
+    for (let i=0; i<steps; i++) {
+      const sy = stepH/2 + i*stepH;
+      const sd = stepD;
+      const sw = width;
+      const cx = (dir === 'x+') ? baseX + i*stepD + stepD/2
+              : (dir === 'x-') ? baseX - i*stepD - stepD/2
+              : baseX;
+      const cz = (dir === 'z+') ? baseZ + i*stepD + stepD/2
+              : (dir === 'z-') ? baseZ - i*stepD - stepD/2
+              : baseZ;
+      const sx = (dir === 'x+' || dir === 'x-') ? sd : sw;
+      const szFinal = (dir === 'z+' || dir === 'z-') ? sd : sw;
+      // cada escalón: caja desde el suelo (Y=0) hasta su altura — para que no haya "huecos" debajo
+      const h = i*stepH + stepH;
+      const m = new TH.Mesh(new TH.BoxGeometry(sx, h, szFinal), mat);
+      m.position.set(cx, h/2, cz);
+      scene.add(m);
+      walls.push({
+        min: new TH.Vector3(cx-sx/2, 0,   cz-szFinal/2),
+        max: new TH.Vector3(cx+sx/2, h,   cz+szFinal/2),
+        mesh: m,
+      });
+    }
+  }
+
+  // ===== HELPER: BARRERA INVISIBLE de seguridad =====
+  // Caja de colisión sin malla, para tapar huecos sin romper el visual.
+  function addInvisibleBarrier(cx, cy, cz, sx, sy, sz) {
+    walls.push({
+      min: new TH.Vector3(cx-sx/2, cy-sy/2, cz-sz/2),
+      max: new TH.Vector3(cx+sx/2, cy+sy/2, cz+sz/2),
+      mesh: null,
+    });
+  }
+
+  // ===== MÁQUINAS DE BEBIDAS =====
+  // Cada máquina vende una bebida que da un buff PERSISTENTE hasta que mueres.
+  // Inspiradas en máquinas de vending callejeras del Raval.
+  const DRINKS = {
+    quintos:  { name:'QUINTOS',  cost:2500, color:0x39ff14, label:'+VIDA MAX',  desc:'+50% VIDA MAX' },
+    cafelito: { name:'CAFELITO', cost:2000, color:0xffe600, label:'+VELOCIDAD', desc:'+35% VELOCIDAD' },
+    katxorro: { name:'KATXORRO', cost:3000, color:0xff2a6d, label:'+CADENCIA',  desc:'+30% CADENCIA' },
+    mojito:   { name:'MOJITO',   cost:2500, color:0x44ddff, label:'-DAÑO',      desc:'-40% DAÑO RECIBIDO' },
+    chuchuwa: { name:'CHUCHUWA', cost:3500, color:0xaa55ff, label:'+DAÑO',      desc:'+60% DAÑO INFLIGIDO' },
+    // ===== NUEVAS BEBIDAS PREMIUM =====
+    absenta:  { name:'ABSENTA',  cost:4000, color:0x88ff88, label:'REGEN',      desc:'REGEN +5HP/SEG' },
+    chupito:  { name:'CHUPITO',  cost:3000, color:0xff8800, label:'+SALTO',     desc:'DOBLE SALTO' },
+    cubata:   { name:'CUBATA',   cost:3500, color:0x4488ff, label:'+GRANADAS',  desc:'+3 GRANADAS Y MAS DAÑO' },
+    chartreuse:{name:'CHARTREUSE',cost:5000,color:0xffff44, label:'CRIT',       desc:'+25% PROBABILIDAD CRIT x3' },
+    bloody:   { name:'BLOODY',   cost:4500, color:0xcc0033, label:'VAMPIRO',    desc:'ROBA VIDA AL MATAR' },
+    redbull:  { name:'RED BULL', cost:3500, color:0x0066ff, label:'TURBO',      desc:'SPRINT INFINITO' },
+  };
+
+  function addDrinkMachine(cx, cz, rotY, drinkId) {
+    const d = DRINKS[drinkId];
+    if (!d) return;
+    const grp = new TH.Group();
+
+    // Carcasa principal (caja vertical de máquina expendedora)
+    const bodyMat = new TH.MeshStandardMaterial({
+      color: d.color, emissive: d.color, emissiveIntensity: 0.3,
+      roughness: 0.5, metalness: 0.6
+    });
+    const body = new TH.Mesh(new TH.BoxGeometry(1.2, 2.2, 0.7), bodyMat);
+    body.position.y = 1.1;
+    grp.add(body);
+
+    // Marco oscuro perimetral
+    const frameMat = new TH.MeshStandardMaterial({ color:0x111111, metalness:0.7 });
+    const frameTop = new TH.Mesh(new TH.BoxGeometry(1.3, 0.15, 0.75), frameMat);
+    frameTop.position.y = 2.25; grp.add(frameTop);
+    const frameBot = new TH.Mesh(new TH.BoxGeometry(1.3, 0.18, 0.75), frameMat);
+    frameBot.position.y = 0.09; grp.add(frameBot);
+
+    // Pantalla / vidriera frontal con la bebida visible
+    const glassMat = new TH.MeshStandardMaterial({
+      color: 0x0a0a0a, emissive: d.color, emissiveIntensity: 0.5,
+      transparent: true, opacity: 0.55
+    });
+    const glass = new TH.Mesh(new TH.BoxGeometry(1.0, 1.4, 0.05), glassMat);
+    glass.position.set(0, 1.3, 0.36);
+    grp.add(glass);
+
+    // Botellas/latas dentro del expositor
+    for (let row=0; row<3; row++) {
+      for (let col=0; col<3; col++) {
+        const can = new TH.Mesh(
+          new TH.CylinderGeometry(0.08, 0.08, 0.22, 8),
+          new TH.MeshStandardMaterial({ color: d.color, emissive: d.color, emissiveIntensity: 0.6 })
+        );
+        can.position.set(-0.32 + col*0.32, 0.85 + row*0.35, 0.32);
+        grp.add(can);
+      }
+    }
+
+    // Cartel luminoso encima con el nombre
+    const signMat = new TH.MeshBasicMaterial({ color: d.color });
+    const sign = new TH.Mesh(new TH.BoxGeometry(1.1, 0.32, 0.05), signMat);
+    sign.position.set(0, 2.1, 0.35);
+    grp.add(sign);
+
+    // Ranura inferior de salida
+    const slot = new TH.Mesh(
+      new TH.BoxGeometry(0.5, 0.1, 0.05),
+      new TH.MeshStandardMaterial({ color: 0x000000 })
+    );
+    slot.position.set(0, 0.35, 0.36);
+    grp.add(slot);
+
+    // Botón de selección lateral
+    const btn = new TH.Mesh(
+      new TH.CylinderGeometry(0.04, 0.04, 0.05, 8),
+      new TH.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.8 })
+    );
+    btn.rotation.x = Math.PI/2;
+    btn.position.set(0.4, 1.5, 0.36);
+    grp.add(btn);
+
+    grp.position.set(cx, 0, cz);
+    grp.rotation.y = rotY;
+    scene.add(grp);
+
+    // Luz emisiva que envuelve la máquina
+    const ml = new TH.PointLight(d.color, 1.4, 8, 1.8);
+    ml.position.set(cx, 1.5, cz);
+    scene.add(ml);
+    ml.userData.f = { base: 1.4, t: Math.random()*10 };
+    lights.push(ml);
+
+    // Collider (caja sólida 1.2 × 2.2 × 0.7 alineada con la rotación)
+    // Por simplicidad creamos un collider AABB ajustado
+    const halfW = (Math.abs(rotY) < 0.1 || Math.abs(Math.abs(rotY)-Math.PI) < 0.1) ? 0.6 : 0.35;
+    const halfD = (Math.abs(rotY) < 0.1 || Math.abs(Math.abs(rotY)-Math.PI) < 0.1) ? 0.35 : 0.6;
+    walls.push({
+      min: new TH.Vector3(cx-halfW, 0, cz-halfD),
+      max: new TH.Vector3(cx+halfW, 2.4, cz+halfD),
+      mesh: null,
+    });
+
+    drinkMachines.push({
+      group: grp,
+      sign: sign,
+      pos: new TH.Vector3(cx, 1.2, cz),
+      drinkId: drinkId,
+      cost: d.cost,
+      bought: false,
+      pulseT: Math.random()*10,
+    });
+  }
+
+  // ===== TRAMPAS DE PAGO ESTILO COD ZOMBIES =====
+  const buyableTraps = [];
+  const TRAPS = {
+    electric: { name:'TRAMPA ELECTRICA', cost:1000, dmg:180, radius:3.0, duration:14, cooldown:35, color:0x44ddff },
+    sawblade: { name:'SIERRA GIRATORIA', cost:1500, dmg:260, radius:2.5, duration:18, cooldown:40, color:0xff2a6d },
+    fire:     { name:'LANZALLAMAS',      cost:1250, dmg:50,  radius:3.5, duration:12, cooldown:32, color:0xff6600 },
+    spikes:   { name:'PINCHOS',          cost:750,  dmg:120, radius:2.2, duration:10, cooldown:25, color:0xffe600 },
+    tesla:    { name:'TORRE TESLA',      cost:2000, dmg:140, radius:4.0, duration:16, cooldown:42, color:0xaa55ff },
+  };
+
+  function addBuyableTrap(cx, cz, trapId) {
+    const t = TRAPS[trapId];
+    if (!t) return;
+    const grp = new TH.Group();
+    grp.position.set(cx, 0, cz);
+
+    // Base/poste
+    const baseMat = new TH.MeshStandardMaterial({ color:0x222222, metalness:0.8, roughness:0.4 });
+    const base = new TH.Mesh(new TH.BoxGeometry(0.8, 0.2, 0.8), baseMat);
+    base.position.y = 0.1; grp.add(base);
+    const post = new TH.Mesh(new TH.CylinderGeometry(0.08, 0.08, 1.2, 6), baseMat);
+    post.position.y = 0.7; grp.add(post);
+
+    // Elemento principal según tipo
+    let active = null;
+    if (trapId === 'electric' || trapId === 'tesla') {
+      active = new TH.Mesh(
+        new TH.SphereGeometry(0.35, 10, 8),
+        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2 })
+      );
+      active.position.y = 1.5;
+    } else if (trapId === 'sawblade') {
+      active = new TH.Mesh(
+        new TH.CylinderGeometry(0.7, 0.7, 0.06, 16),
+        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2, metalness:0.9 })
+      );
+      active.rotation.x = Math.PI/2;
+      active.position.y = 1.2;
+    } else if (trapId === 'fire') {
+      active = new TH.Mesh(
+        new TH.ConeGeometry(0.3, 0.6, 8),
+        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2 })
+      );
+      active.position.y = 1.5;
+    } else if (trapId === 'spikes') {
+      active = new TH.Mesh(
+        new TH.BoxGeometry(0.7, 0.1, 0.7),
+        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2, metalness:0.7 })
+      );
+      active.position.y = 0.25;
+    }
+    if (active) grp.add(active);
+
+    // Cartel con precio
+    const sign = new TH.Mesh(
+      new TH.BoxGeometry(0.7, 0.2, 0.05),
+      new TH.MeshBasicMaterial({ color:t.color })
+    );
+    sign.position.y = 1.95; grp.add(sign);
+
+    // Luz baja apagada al inicio
+    const tl = new TH.PointLight(t.color, 0.4, 6, 1.8);
+    tl.position.set(0, 1.2, 0); grp.add(tl);
+
+    scene.add(grp);
+
+    buyableTraps.push({
+      id: trapId, group: grp, active: active, sign: sign, light: tl,
+      pos: new TH.Vector3(cx, 1.0, cz),
+      cost: t.cost, dmg: t.dmg, radius: t.radius,
+      duration: t.duration, cooldown: t.cooldown,
+      armedUntil: 0, readyAt: 0, bought: false,
+      damageT: 0,
+    });
+  }
+
+  function activateTrap(tr) {
+    const now = performance.now() / 1000;
+    tr.bought = true;
+    tr.armedUntil = now + tr.duration;
+    tr.readyAt = now + tr.duration + tr.cooldown;
+    tr.light.intensity = 2.6;
+    if (tr.active) {
+      if (tr.active.material) tr.active.material.emissiveIntensity = 1.4;
+    }
+    showPickup('TRAMPA ARMADA');
+    playPickup(700);
+  }
+
+  function updateTraps(dt) {
+    const now = performance.now() / 1000;
+    for (const tr of buyableTraps) {
+      const armed = (now < tr.armedUntil);
+      // Animación
+      if (tr.active) {
+        if (tr.id === 'sawblade' && armed) tr.active.rotation.y += dt * 18;
+        if (tr.id === 'electric' || tr.id === 'tesla') {
+          tr.active.scale.setScalar(1 + (armed ? Math.sin(now*15)*0.15 : 0));
+        }
+        if (tr.id === 'fire') {
+          tr.active.scale.y = armed ? (1 + Math.sin(now*22)*0.4) : 1;
+        }
+      }
+      if (armed) {
+        tr.damageT -= dt;
+        if (tr.damageT <= 0) {
+          tr.damageT = 0.25;
+          // Daño a zombies dentro del radio
+          for (const z of zombies) {
+            if (!z.alive) continue;
+            const d = z.pos.distanceTo(tr.pos);
+            if (d < tr.radius) {
+              z.health -= tr.dmg * 0.25; // dmg por tick
+              z.flashTime = 0.1;
+              if (z.health <= 0) {
+                addPoints(60);
+                killZombie(z, false);
+              }
+            }
+          }
+        }
+        tr.light.intensity = 2.4 + Math.sin(now*20)*0.6;
+      } else {
+        tr.light.intensity = (now < tr.readyAt) ? 0.15 : 0.5;
+        if (tr.active && tr.active.material) {
+          tr.active.material.emissiveIntensity = (now < tr.readyAt) ? 0.08 : 0.3;
+        }
+      }
+    }
   }
 
   // ===== INTERACT =====
   function tryInteract() {
     const pp = camera.position;
+    // ===== INTERRUPTOR DE ELECTRICIDAD (primera prioridad si estás cerca) =====
+    if (powerSwitch && pp.distanceTo(powerSwitch.pos) < 3) {
+      if (!powerOn) {
+        if (player.points >= 2500) {
+          player.points -= 2500;
+          powerOn = true;
+          // palanca arriba (ON)
+          powerSwitch.leverPivot.rotation.x = Math.PI;
+          // cambiar color a verde
+          const greenMat = new TH.MeshStandardMaterial({ color:0x22ff22, emissive:0x22ff22, emissiveIntensity:0.8, metalness:0.7 });
+          powerSwitch.lever.material = greenMat;
+          powerSwitch.knob.material = greenMat;
+          powerSwitch.light.color.setHex(0x22ff22);
+          powerSwitch.light.intensity = 2.5;
+          showPickup('⚡ ELECTRICIDAD ACTIVADA');
+          playPickup(1200);
+          // flash global: encender todas las luces al máximo 1 seg
+          banner.textContent = '⚡ POWER ON ⚡';
+          banner.style.opacity = '1';
+          setTimeout(() => { banner.style.opacity = '0'; }, 2000);
+          updateHUD();
+        }
+      }
+      return;
+    }
+    // puertas primero
+    for (const door of doors) {
+      if (door.unlocked) continue;
+      if (pp.distanceTo(door.pos) < 3) {
+        if (player.points >= door.cost) {
+          player.points -= door.cost;
+          unlockDoor(door);
+          updateHUD();
+        }
+        return;
+      }
+    }
+    // caja
     if (mysteryBox && pp.distanceTo(mysteryBox.pos) < 2.6 && !mysteryBox.busy) {
       if (player.points >= mysteryBox.cost) {
         player.points -= mysteryBox.cost;
         mysteryBox.busy = true;
-        mysteryBox.t = 0;
         mysteryBox.mesh.material.emissiveIntensity = 1.4;
-        const pool = ['smg','shotgun','rifle','pistol'];
+        const pool = ['smg','shotgun','rifle','sniper','lmg','magnum','minigun','flamer','perkygun',
+                      'deagle','ak47','burst','autoshot','crossbow','rpg','plasma','tesla','railgun','perkynuke','katana','chainsaw'];
         const pick = pool[Math.floor(Math.random()*pool.length)];
         setTimeout(() => {
+          if (!player.inventory.includes(pick)) player.inventory.push(pick);
           currentWeapon = pick;
+          initAmmoFor(pick);
           buildWeaponMesh();
           mysteryBox.busy = false;
           mysteryBox.mesh.material.emissiveIntensity = 0.4;
@@ -2871,12 +5389,81 @@ window.addEventListener('popstate', () => {
         return;
       }
     }
+    // máquina de mejora de armas
+    if (upgradeMachine && pp.distanceTo(upgradeMachine.pos) < 3.2) {
+      if (WEAPONS[currentWeapon].type === 'melee') return; // no mejora melee
+      if (upgradeMachine.upgradedWeapons.has(currentWeapon)) return; // ya mejorada
+      if (player.points >= upgradeMachine.cost) {
+        player.points -= upgradeMachine.cost;
+        upgradeMachine.upgradedWeapons.add(currentWeapon);
+        // Mejora: +75% daño, cadencia un poco más rápida, recoil -20%
+        WEAPONS[currentWeapon].dmg = Math.round(WEAPONS[currentWeapon].dmg * 1.75);
+        WEAPONS[currentWeapon].fireRate = Math.round(WEAPONS[currentWeapon].fireRate * 0.88);
+        if (WEAPONS[currentWeapon].recoil) WEAPONS[currentWeapon].recoil *= 0.8;
+        if (!WEAPONS[currentWeapon].name.endsWith('+')) {
+          WEAPONS[currentWeapon].name = WEAPONS[currentWeapon].name + '+';
+        }
+        showPickup('ARMA MEJORADA ★');
+        playPickup(1200);
+        // flash visual en la máquina
+        upgradeMachine.crystal.material.color.setHex(0xffee44);
+        setTimeout(() => { upgradeMachine.crystal.material.color.setHex(0xff2a6d); }, 400);
+        updateHUD();
+      }
+      return;
+    }
+    // máquinas de bebidas
+    for (const dm of drinkMachines) {
+      if (pp.distanceTo(dm.pos) < 2.8) {
+        if (dm.bought || persistentBuffs[dm.drinkId]) return;
+        if (!powerOn) {
+          showPickup('⚡ ACTIVA LA ELECTRICIDAD PRIMERO');
+          return;
+        }
+        if (player.points >= dm.cost) {
+          player.points -= dm.cost;
+          dm.bought = true;
+          applyPersistentBuff(dm.drinkId, DRINKS[dm.drinkId].name);
+          // flash en el cartel
+          const orig = dm.sign.material.color.getHex();
+          dm.sign.material.color.setHex(0xffffff);
+          setTimeout(() => { dm.sign.material.color.setHex(orig); }, 350);
+          updateHUD();
+        }
+        return;
+      }
+    }
+    // wall buys
     for (const wb of wallBuys) {
       if (pp.distanceTo(wb.posV) < 2.6) {
         if (player.points >= wb.cost) {
           player.points -= wb.cost;
+          if (!player.inventory.includes(wb.weapon)) player.inventory.push(wb.weapon);
           currentWeapon = wb.weapon;
+          initAmmoFor(wb.weapon);
+          // Si ya la tenías, este wall buy te rellena la munición de reserva
+          if (player.ammo[wb.weapon]) {
+            addReserveAmmo(wb.weapon, WEAPONS[wb.weapon].reserve);
+          }
           buildWeaponMesh();
+          updateHUD();
+        }
+        return;
+      }
+    }
+    // TRAMPAS DE PAGO
+    const nowS = performance.now()/1000;
+    for (const tr of buyableTraps) {
+      if (pp.distanceTo(tr.pos) < 2.8) {
+        if (nowS < tr.armedUntil) return; // ya activa
+        if (nowS < tr.readyAt) return;    // en cooldown
+        if (!powerOn) {
+          showPickup('⚡ ACTIVA LA ELECTRICIDAD PRIMERO');
+          return;
+        }
+        if (player.points >= tr.cost) {
+          player.points -= tr.cost;
+          activateTrap(tr);
           updateHUD();
         }
         return;
@@ -2887,12 +5474,61 @@ window.addEventListener('popstate', () => {
   function updatePrompt() {
     const pp = camera.position;
     let txt = '';
-    if (mysteryBox && pp.distanceTo(mysteryBox.pos) < 2.6) {
+    // Interruptor de electricidad
+    if (powerSwitch && pp.distanceTo(powerSwitch.pos) < 3) {
+      if (powerOn) txt = '★ ELECTRICIDAD ACTIVA';
+      else txt = '[E] ACTIVAR ELECTRICIDAD — 2500 PTS';
+      promptEl.textContent = txt;
+      return;
+    }
+    for (const door of doors) {
+      if (door.unlocked) continue;
+      if (pp.distanceTo(door.pos) < 3) {
+        txt = '[E] ABRIR ' + door.label + ' — ' + door.cost + ' PTS';
+        break;
+      }
+    }
+    if (!txt && mysteryBox && pp.distanceTo(mysteryBox.pos) < 2.6) {
       txt = '[E] CAJA MISTERIOSA — ' + mysteryBox.cost + ' PTS';
     }
-    for (const wb of wallBuys) {
+    if (!txt && upgradeMachine && pp.distanceTo(upgradeMachine.pos) < 3.2) {
+      if (WEAPONS[currentWeapon].type === 'melee') {
+        txt = 'LA MAQUINA NO MEJORA MELEE';
+      } else if (upgradeMachine.upgradedWeapons.has(currentWeapon)) {
+        txt = 'ARMA YA MEJORADA ★';
+      } else {
+        txt = '[E] MEJORAR ' + WEAPONS[currentWeapon].name + ' — ' + upgradeMachine.cost + ' PTS';
+      }
+    }
+    if (!txt) for (const dm of drinkMachines) {
+      if (pp.distanceTo(dm.pos) < 2.8) {
+        if (dm.bought || persistentBuffs[dm.drinkId]) {
+          txt = '★ ' + DRINKS[dm.drinkId].name + ' YA COMPRADO';
+        } else {
+          txt = '[E] ' + DRINKS[dm.drinkId].name + ' — ' + dm.cost + ' PTS · ' + DRINKS[dm.drinkId].desc;
+        }
+        break;
+      }
+    }
+    if (!txt) for (const wb of wallBuys) {
       if (pp.distanceTo(wb.posV) < 2.6) {
         txt = '[E] ' + WEAPONS[wb.weapon].name + ' — ' + wb.cost + ' PTS';
+        break;
+      }
+    }
+    if (!txt) {
+      const nowS = performance.now()/1000;
+      for (const tr of buyableTraps) {
+        if (pp.distanceTo(tr.pos) < 2.8) {
+          if (nowS < tr.armedUntil) {
+            txt = '★ ' + TRAPS[tr.id].name + ' ACTIVA (' + Math.ceil(tr.armedUntil-nowS) + 's)';
+          } else if (nowS < tr.readyAt) {
+            txt = '⏳ ' + TRAPS[tr.id].name + ' (' + Math.ceil(tr.readyAt-nowS) + 's)';
+          } else {
+            txt = '[E] ' + TRAPS[tr.id].name + ' — ' + tr.cost + ' PTS';
+          }
+          break;
+        }
       }
     }
     promptEl.textContent = txt;
@@ -2956,8 +5592,8 @@ window.addEventListener('popstate', () => {
   // ===== WAVES =====
   function startWave() {
     wave++;
-    zombiesToSpawn = 5 + wave * 2;
-    maxAliveAtOnce = Math.min(4 + wave, 18);
+    zombiesToSpawn = 8 + Math.floor(wave * 3.2);
+    maxAliveAtOnce = Math.min(6 + Math.floor(wave*1.4), 28);
     waveBreakUntil = 0;
     banner.textContent = 'OLEADA ' + wave;
     banner.style.opacity = '1';
@@ -2970,7 +5606,7 @@ window.addEventListener('popstate', () => {
     if (zombiesToSpawn > 0 && zombiesAlive < maxAliveAtOnce && now > nextSpawnTime) {
       spawnZombie();
       zombiesToSpawn--;
-      nextSpawnTime = now + 900 + Math.random()*700;
+      nextSpawnTime = now + Math.max(180, 750 - wave*40) + Math.random()*350;
     }
     if (zombiesToSpawn === 0 && zombiesAlive === 0 && waveBreakUntil === 0) {
       waveBreakUntil = now + 5000;
@@ -2981,12 +5617,18 @@ window.addEventListener('popstate', () => {
     }
   }
 
+  let _lightFlickerFrame = 0;
   function updateLights(dt) {
-    lights.forEach(l => {
-      l.userData.f.t += dt;
-      const f = l.userData.f;
-      l.intensity = f.base * (0.78 + Math.sin(f.t*7)*0.14 + (Math.random()-0.5)*0.12);
-    });
+    // Throttle: solo recalculamos el parpadeo cada 3 frames (suficiente visualmente, mucho más barato)
+    _lightFlickerFrame = (_lightFlickerFrame + 1) % 3;
+    if (_lightFlickerFrame === 0) {
+      lights.forEach(l => {
+        if (!l.userData.f) return;
+        l.userData.f.t += dt*3;
+        const f = l.userData.f;
+        l.intensity = f.base * (0.78 + Math.sin(f.t*7)*0.14 + (Math.random()-0.5)*0.12);
+      });
+    }
     swingLamps.forEach(lp => {
       lp.phase += dt * 0.8;
       const sx = Math.sin(lp.phase) * 0.18;
@@ -3004,6 +5646,47 @@ window.addEventListener('popstate', () => {
       mysteryBox.qMark.rotation.y += dt*2;
       mysteryBox.qMark.position.y = 0.85 + Math.sin(performance.now()*0.003)*0.08;
     }
+    // máquina de mejora: anillos rotando y cristal flotando
+    if (upgradeMachine) {
+      upgradeMachine.ring1.rotation.z += dt*1.5;
+      upgradeMachine.ring2.rotation.z -= dt*1.2;
+      upgradeMachine.crystal.rotation.y += dt*2.5;
+      upgradeMachine.crystal.rotation.x += dt*1.2;
+      upgradeMachine.crystal.position.y = 2.7 + Math.sin(performance.now()*0.003)*0.1;
+    }
+    // spawners pulsan
+    spawners.forEach(sp => {
+      sp.pulseT += dt;
+      const pulse = sp.active ? (0.5 + Math.sin(sp.pulseT*4)*0.3) : 0.15;
+      sp.light.intensity = pulse * 0.9;
+      sp.group.children.forEach((child, idx) => {
+        if (child.material && child.material.opacity !== undefined) {
+          child.material.opacity = sp.active ? (0.6 + Math.sin(sp.pulseT*5 + idx)*0.25) : 0.2;
+        }
+      });
+    });
+    // puertas abriendo: baja más abajo del suelo y se elimina del todo al terminar
+    doors.forEach(d => {
+      if (!d.unlocked || d.removed) return;
+      if (d.openT === undefined) d.openT = 0;
+      if (d.openT < 1.4) {
+        d.openT += dt;
+        const k = Math.min(d.openT / 1.4, 1);
+        d.group.position.y = -8 * k; // baja 8 metros debajo del suelo
+        d.group.rotation.z = k * 0.5;
+        // hacer fade para que no se vea asomar
+        d.group.traverse(o => {
+          if (o.material && o.material.transparent !== undefined) {
+            o.material.transparent = true;
+            o.material.opacity = 1 - k;
+          }
+        });
+      } else {
+        // eliminar completamente del scene
+        scene.remove(d.group);
+        d.removed = true;
+      }
+    });
   }
 
   // ===== HUD =====
@@ -3012,7 +5695,14 @@ window.addEventListener('popstate', () => {
     healthBar.style.width = (player.health/player.maxHealth*100) + '%';
     pointsEl.textContent   = player.points;
     waveEl.textContent     = wave || 1;
-    weaponEl.textContent   = WEAPONS[currentWeapon].name;
+    const w = WEAPONS[currentWeapon];
+    let label = w.name;
+    if (w.type !== 'melee') {
+      initAmmoFor(currentWeapon);
+      const a = player.ammo[currentWeapon];
+      label += '  ' + (player.reloading ? '... RECARGANDO ...' : (a.mag + ' / ' + a.reserve));
+    }
+    weaponEl.textContent   = label;
     grenadesEl.textContent = player.grenades;
   }
 
@@ -3025,16 +5715,75 @@ window.addEventListener('popstate', () => {
 
     updatePlayer(dt);
     updateZombies(dt);
+    updateSpitters(dt);
     updateGrenades(dt);
     updateTracers(dt);
+    updatePowerupDrops(dt);
+    updateActivePowerups();
     updateWaves();
     updateLights(dt);
+    updateTraps(dt);
     updatePrompt();
     updateWeaponAnim(dt);
+
+    // comprobar fin de recarga
+    if (player.reloading && performance.now() >= player.reloadEnd) finishReload();
 
     if (mouseLeft && WEAPONS[currentWeapon].isAuto) tryShoot();
 
     renderer.render(scene, camera);
+  }
+
+  // ===== LEADERBOARD (window.storage) =====
+  async function loadLeaderboard() {
+    try {
+      if (!window.storage) {
+        leaderboardList.innerHTML = '<div class="leaderboard-empty">el leaderboard necesita guardado activado</div>';
+        return;
+      }
+      let entries = [];
+      try {
+        const res = await window.storage.get('perky_scores', true);
+        if (res && res.value) entries = JSON.parse(res.value);
+      } catch(e) { /* no existe aún */ }
+      renderLeaderboard(entries);
+    } catch(e) {
+      console.warn('leaderboard load err', e);
+      leaderboardList.innerHTML = '<div class="leaderboard-empty">error cargando leaderboard</div>';
+    }
+  }
+  async function submitScore(username, points, wv) {
+    try {
+      if (!window.storage) return;
+      let entries = [];
+      try {
+        const res = await window.storage.get('perky_scores', true);
+        if (res && res.value) entries = JSON.parse(res.value);
+      } catch(e) {}
+      entries.push({ name:username.toUpperCase().slice(0,14), points, wave:wv, ts:Date.now() });
+      entries.sort((a,b) => b.points - a.points);
+      entries = entries.slice(0, 50);
+      await window.storage.set('perky_scores', JSON.stringify(entries), true);
+      renderLeaderboard(entries);
+    } catch(e) { console.warn('submit err', e); }
+  }
+  function renderLeaderboard(entries) {
+    if (!entries || !entries.length) {
+      leaderboardList.innerHTML = '<div class="leaderboard-empty">vacio. se el primer perky pako en palmar ☠</div>';
+      return;
+    }
+    leaderboardList.innerHTML = entries.slice(0, 20).map((e, i) => {
+      const cls = i===0?'top1':i===1?'top2':i===2?'top3':'';
+      return '<div class="leaderboard-row '+cls+'">'+
+        '<span class="rk">#'+(i+1)+'</span>'+
+        '<span class="nm">'+escapeHtml(e.name)+'</span>'+
+        '<span class="pt">'+e.points+'</span>'+
+        '<span class="wv">W'+e.wave+'</span>'+
+        '</div>';
+    }).join('');
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
   // ===== FLOW =====
@@ -3045,14 +5794,44 @@ window.addEventListener('popstate', () => {
     grenades.length = 0;
     tracers.forEach(t => scene.remove(t.mesh));
     tracers.length = 0;
+    spitters.forEach(s => scene.remove(s.mesh));
+    spitters.length = 0;
+    powerupDrops.forEach(p => { scene.remove(p.mesh); scene.remove(p.light); });
+    powerupDrops.length = 0;
     walls.length = 0;
     wallBuys.length = 0;
-    spawnPoints.length = 0;
+    doors.length = 0;
+    spawners.length = 0;
+    rooms.length = 0;
     lights.length = 0;
     swingLamps.length = 0;
+    drinkMachines.length = 0;
+    buyableTraps.length = 0;
+    mysteryBox = null;
+    upgradeMachine = null;
+    powerSwitch = null;
+    powerOn = false;
+    wallMeshesCache.length = 0;
+    for (const k in activePowerups) delete activePowerups[k];
+    for (const k in persistentBuffs) delete persistentBuffs[k];
+    renderPowerups();
+    renderPersistentBuffs();
+    if (healthBar && healthBar.parentElement && healthBar.parentElement.parentElement) {
+      healthBar.parentElement.parentElement.classList.remove('buffed');
+    }
     while (scene.children.length > 0) scene.remove(scene.children[0]);
 
+    // restaurar stats originales de las armas (si han sido mejoradas)
+    if (!window.__weaponsOriginal) {
+      window.__weaponsOriginal = JSON.parse(JSON.stringify(WEAPONS));
+    } else {
+      for (const k in window.__weaponsOriginal) {
+        if (WEAPONS[k]) Object.assign(WEAPONS[k], window.__weaponsOriginal[k]);
+      }
+    }
+
     player.health = 100;
+    player.maxHealth = 100;
     player.points = 500;
     player.grenades = 3;
     player.yaw = 0;
@@ -3060,6 +5839,11 @@ window.addEventListener('popstate', () => {
     player.lastDmg = 0;
     player.velY = 0;
     player.onGround = true;
+    player.inventory = ['pistol','knife'];
+    player.ammo = {};
+    player.reloading = false;
+    player.reloadEnd = 0;
+    camShake = 0;
     currentWeapon = 'pistol';
     wave = 0; zombiesAlive = 0; zombiesToSpawn = 0;
     waveBreakUntil = 0; nextSpawnTime = 0;
@@ -3071,6 +5855,11 @@ window.addEventListener('popstate', () => {
   }
 
   function startGame() {
+    // leer nombre
+    const name = (usernameInput && usernameInput.value.trim()) || 'PAKO';
+    player.username = name.toUpperCase().slice(0, 14);
+    try { if (window.storage) window.storage.set('perky_username', player.username); } catch(e){}
+
     overlay.classList.add('active');
     startScreen.classList.remove('active');
     overScreen.classList.remove('active');
@@ -3097,6 +5886,7 @@ window.addEventListener('popstate', () => {
     overWaveEl.textContent = wave;
     overPointsEl.textContent = player.points;
     overScreen.classList.add('active');
+    submitScore(player.username, player.points, wave);
   }
 
   function quitGame() {
@@ -3113,6 +5903,14 @@ window.addEventListener('popstate', () => {
     startScreen.classList.add('active');
     overScreen.classList.remove('active');
     if (!initialized) init();
+    // cargar nombre previo si existe
+    try {
+      if (window.storage && usernameInput && !usernameInput.value) {
+        window.storage.get('perky_username').then(res => {
+          if (res && res.value) usernameInput.value = res.value;
+        }).catch(()=>{});
+      }
+    } catch(e){}
   });
   startBtn.addEventListener('click', startGame);
   retryBtn.addEventListener('click', startGame);
@@ -3125,6 +5923,9 @@ window.addEventListener('popstate', () => {
     camera.aspect = canvas.clientWidth / canvas.clientHeight;
     camera.updateProjectionMatrix();
   });
+
+  // cargar leaderboard al inicio
+  loadLeaderboard();
 })();
 </script>
 
