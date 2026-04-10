@@ -2753,6 +2753,7 @@ window.addEventListener('popstate', () => {
     }
     preloadWeaponModels();
     preloadDrinkModels();
+    scatterMexicanProps();
     setupInput();
     initAudio();
     // === OPTIMIZACIÓN: caché de wall meshes para raycasting ===
@@ -4363,6 +4364,150 @@ window.addEventListener('popstate', () => {
   };
   const WEAPON_MODEL_CACHE = {};
 
+  // ===== PROPS DECORATIVOS DEL MEXICAN STARTER PACK =====
+  //
+  // Carga un único archivo .glb que contiene MUCHOS props como hijos
+  // (cactus, sombrero, taco, piñata, etc.) y los distribuye por las salas.
+  //
+  // Para ajustar cuántos props hay por sala, tocar MEXICAN_SCATTER_COUNT.
+  // Para excluir props concretos por nombre, añadirlos a MEXICAN_EXCLUDE.
+  //
+  const MEXICAN_SCATTER_COUNT = {
+    // sala: nº de props a esparcir
+    plaza:    6,
+    bar:     10,
+    almacen:  8,
+    lab:      6,
+    patio:   14,
+    upgrade:  0,  // 0 = sin props (mantener la sala limpia)
+  };
+  // Zonas rectangulares donde se pueden colocar props (evitando centro/puertas).
+  // Cada zona: {room, minX, maxX, minZ, maxZ}
+  const MEXICAN_ZONES = [
+    // PLAZA (-10..10 x -10..10) — esquinas
+    { room:'plaza', minX:-9, maxX:-6, minZ:-9, maxZ:-6 },
+    { room:'plaza', minX: 6, maxX: 9, minZ:-9, maxZ:-6 },
+    { room:'plaza', minX:-9, maxX:-6, minZ: 6, maxZ: 9 },
+    { room:'plaza', minX: 6, maxX: 9, minZ: 6, maxZ: 9 },
+    // BAR PINK (-15..15 x 10..35)
+    { room:'bar', minX:-14, maxX:-11, minZ: 12, maxZ: 33 },
+    { room:'bar', minX: 11, maxX: 14, minZ: 12, maxZ: 33 },
+    { room:'bar', minX: -8, maxX:  8, minZ: 32, maxZ: 34 },
+    // ALMACEN (-40..-10 x -12..12)
+    { room:'almacen', minX:-39, maxX:-30, minZ:-11, maxZ: 11 },
+    { room:'almacen', minX:-20, maxX:-12, minZ:-11, maxZ:-8  },
+    { room:'almacen', minX:-20, maxX:-12, minZ:  8, maxZ: 11 },
+    // LAB bioquimico (10..40 x -12..12)
+    { room:'lab', minX: 30, maxX: 39, minZ:-11, maxZ: 11 },
+    { room:'lab', minX: 12, maxX: 20, minZ:-11, maxZ:-8  },
+    { room:'lab', minX: 12, maxX: 20, minZ:  8, maxZ: 11 },
+    // PATIO RAMBLAS (-20..20 x -40..-10)
+    { room:'patio', minX:-19, maxX:-12, minZ:-39, maxZ:-12 },
+    { room:'patio', minX: 12, maxX: 19, minZ:-39, maxZ:-12 },
+    { room:'patio', minX:-10, maxX: 10, minZ:-38, maxZ:-35 },
+    { room:'patio', minX:-10, maxX: 10, minZ:-15, maxZ:-12 },
+  ];
+  const MEXICAN_EXCLUDE = []; // nombres de props a NO usar, si alguno molesta
+
+  // PRNG simple con seed para que los props siempre caigan en el mismo sitio
+  function seededRandom(seed) {
+    let s = seed;
+    return () => {
+      s = (s * 9301 + 49297) % 233280;
+      return s / 233280;
+    };
+  }
+
+  // Verifica si una posición solapa con un wall existente (evita que los props spawneen dentro de paredes/máquinas)
+  function posCollidesWall(x, z, radius) {
+    for (let i=0; i<walls.length; i++) {
+      const w = walls[i];
+      if (x + radius > w.min.x && x - radius < w.max.x &&
+          z + radius > w.min.z && z - radius < w.max.z &&
+          w.min.y < 1.5) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function scatterMexicanProps() {
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+      'models/mexican_starter_pack.glb',
+      (gltf) => {
+        // Extraer todos los hijos directos del scene como props individuales
+        const propTemplates = [];
+        gltf.scene.children.slice().forEach(child => {
+          if (MEXICAN_EXCLUDE.includes(child.name)) return;
+          // clonar para no modificar el original
+          propTemplates.push(child);
+        });
+        if (propTemplates.length === 0) {
+          // Fallback: si el glb es un único mesh grande, usarlo entero
+          propTemplates.push(gltf.scene);
+        }
+        console.log('[MEXICAN OK] props disponibles:', propTemplates.length, propTemplates.map(p=>p.name));
+
+        // Normalizar cada template: centrar en X/Z, apoyar en Y=0, escalar a ~1-1.5m
+        propTemplates.forEach(t => {
+          const box = new TH.Box3().setFromObject(t);
+          const size = new TH.Vector3(); box.getSize(size);
+          const center = new TH.Vector3(); box.getCenter(center);
+          const maxDim = Math.max(size.x, size.y, size.z) || 1;
+          // tamaño objetivo entre 0.8 y 1.6 según el prop
+          const targetSize = 1.2;
+          const scale = targetSize / maxDim;
+          t.userData.normScale = scale;
+          t.userData.normOffsetX = -center.x * scale;
+          t.userData.normOffsetZ = -center.z * scale;
+          t.userData.normOffsetY = -box.min.y * scale;
+          t.userData.normRadius = Math.max(size.x, size.z) * scale * 0.5 + 0.1;
+        });
+
+        // Distribuir por sala
+        const rng = seededRandom(12345);
+        let placed = 0;
+        for (const [room, count] of Object.entries(MEXICAN_SCATTER_COUNT)) {
+          const roomZones = MEXICAN_ZONES.filter(z => z.room === room);
+          if (roomZones.length === 0) continue;
+          for (let i=0; i<count; i++) {
+            // intentar hasta 10 veces encontrar un sitio libre
+            let spot = null;
+            for (let attempt=0; attempt<10; attempt++) {
+              const zone = roomZones[Math.floor(rng() * roomZones.length)];
+              const x = zone.minX + rng() * (zone.maxX - zone.minX);
+              const z = zone.minZ + rng() * (zone.maxZ - zone.minZ);
+              if (!posCollidesWall(x, z, 0.6)) { spot = {x, z}; break; }
+            }
+            if (!spot) continue;
+            const template = propTemplates[Math.floor(rng() * propTemplates.length)];
+            const inst = template.clone(true);
+            inst.scale.setScalar(template.userData.normScale);
+            inst.position.set(
+              spot.x + template.userData.normOffsetX,
+              template.userData.normOffsetY,
+              spot.z + template.userData.normOffsetZ
+            );
+            inst.rotation.y = rng() * Math.PI * 2;
+            // materiales: que respeten el env map ligeramente
+            inst.traverse(o => {
+              if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+                o.material.envMapIntensity = 0.3;
+              }
+            });
+            scene.add(inst);
+            placed++;
+          }
+        }
+        console.log('[MEXICAN OK] props colocados:', placed);
+      },
+      undefined,
+      (err) => console.error('[MEXICAN FAIL] mexican_starter_pack.glb', err)
+    );
+  }
+
   // ===== SISTEMA DE MODELOS 3D DE MÁQUINAS DE BEBIDA (GLTF) =====
   //
   // ┌─────────────────────────────────────────────────────────────────────┐
@@ -4478,10 +4623,22 @@ window.addEventListener('popstate', () => {
   function applyDrinkModel(machine) {
     const cached = DRINK_MODEL_CACHE[machine.drinkId];
     if (!cached) return;
-    // Ocultar todos los meshes procedurales del grupo original (menos el cartel interactivo)
+    // Eliminar los meshes procedurales del grupo (libera geometría/material de memoria).
+    // El cartel 'sign' se mantiene porque el código lo usa para detectar compra.
+    const toRemove = [];
     machine.group.traverse(o => {
-      if (o.isMesh && o !== machine.sign) o.visible = false;
+      if (o.isMesh && o !== machine.sign) toRemove.push(o);
     });
+    toRemove.forEach(o => {
+      if (o.parent) o.parent.remove(o);
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+        else o.material.dispose();
+      }
+    });
+    // Ocultar el cartel también (queda dentro del modelo 3D, pero aún detectable por raycast)
+    if (machine.sign) machine.sign.visible = false;
     // Añadir el modelo 3D dentro del mismo grupo
     const inst = cached.clone(true);
     const ov = DRINK_MODEL_OVERRIDES[machine.drinkId] || {};
