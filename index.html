@@ -5688,7 +5688,13 @@ window.addEventListener('popstate', () => {
       cost: d.cost,
       bought: false,
       pulseT: Math.random()*10,
+      _rotY: rotY,
+      _modelApplied: false,
     });
+    // Si el modelo ya estaba cargado antes de crear la máquina, aplicarlo ya
+    if (DRINK_MODEL_CACHE[drinkId]) {
+      applyDrinkModel(drinkMachines[drinkMachines.length-1]);
+    }
   }
 
   // ===== TRAMPAS DE PAGO ESTILO COD ZOMBIES =====
