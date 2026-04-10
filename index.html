@@ -4710,7 +4710,6 @@ window.addEventListener('popstate', () => {
     const dir = new TH.Vector3().subVectors(to, from).normalize();
     const start = from.clone().add(dir.clone().multiplyScalar(0.6));
     const tracerLen = Math.min(5, dist - 0.6);
-    const w = WEAPONS[currentWeapon];
     const col = w.glow ? 0xff2a6d : 0xffee44;
     slot.mesh.material.color.setHex(col);
     slot.mesh.material.opacity = 0.95;
