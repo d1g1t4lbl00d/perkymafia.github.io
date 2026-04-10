@@ -4280,7 +4280,6 @@ window.addEventListener('popstate', () => {
     ak47:     'fusil.glb',
     sniper:   'sniper.glb',
     lmg:      'ametralladora pesada.glb',
-    minigun:  'minigun.glb',
     plasma:   'plasmagun.glb',
     perkygun: 'plasmagun.glb',
     railgun:  'railgun.glb',
@@ -4290,30 +4289,29 @@ window.addEventListener('popstate', () => {
     chainsaw: 'motosierra.glb',
   };
   const WEAPON_MODEL_OVERRIDES = {
-    pistol:   { x: 0.28, y:-0.28, z:-0.50, ry: 0 },
-    magnum:   { x: 0.28, y:-0.28, z:-0.50, ry: 0 },
-    shotgun:  { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
-    autoshot: { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
-    rifle:    { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
-    burst:    { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
-    ak47:     { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
-    sniper:   { x: 0.30, y:-0.30, z:-0.70, ry: 0 },
-    lmg:      { x: 0.32, y:-0.32, z:-0.65, ry: 0 },
-    minigun:  { x: 0.35, y:-0.35, z:-0.70, ry: 0 },
-    plasma:   { x: 0.30, y:-0.28, z:-0.55, ry: 0 },
-    perkygun: { x: 0.30, y:-0.28, z:-0.55, ry: 0 },
-    railgun:  { x: 0.32, y:-0.30, z:-0.65, ry: 0 },
-    bat:      { x: 0.30, y:-0.30, z:-0.55, ry: 0 },
-    katana:   { x: 0.30, y:-0.30, z:-0.55, ry: 0 },
-    machete:  { x: 0.30, y:-0.30, z:-0.55, ry: 0 },
-    chainsaw: { x: 0.32, y:-0.32, z:-0.60, ry: 0 },
+    pistol:   { x: 0.28, y:-0.28, z:-0.50, rx: 0, ry: Math.PI/2, rz: 0 },
+    magnum:   { x: 0.28, y:-0.28, z:-0.50, rx: 0, ry:-Math.PI/2, rz: 0 },
+    shotgun:  { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: Math.PI,   rz: 0 },
+    autoshot: { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: Math.PI,   rz: 0 },
+    rifle:    { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: 0,         rz: 0 },
+    burst:    { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: 0,         rz: 0 },
+    ak47:     { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: Math.PI,   rz: 0 },
+    sniper:   { x: 0.30, y:-0.30, z:-0.70, rx: 0, ry: Math.PI,   rz: 0 },
+    lmg:      { x: 0.32, y:-0.32, z:-0.65, rx: 0, ry: 0,         rz: 0 },
+    plasma:   { x: 0.30, y:-0.28, z:-0.55, rx: 0, ry: 0,         rz: 0 },
+    perkygun: { x: 0.30, y:-0.28, z:-0.55, rx: 0, ry: 0,         rz: 0 },
+    railgun:  { x: 0.32, y:-0.30, z:-0.65, rx: 0, ry: 0,         rz: 0 },
+    bat:      { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: 0,         rz: 0 },
+    katana:   { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: Math.PI,   rz: 0 },
+    machete:  { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: Math.PI,   rz: 0 },
+    chainsaw: { x: 0.32, y:-0.32, z:-0.60, rx: 0, ry: 0,         rz: 0 },
   };
   const WEAPON_MODEL_CACHE = {};
   const WEAPON_TARGET_SIZE = {
     pistol: 0.35, magnum: 0.4,
     shotgun: 0.75, autoshot: 0.75,
     rifle: 0.7, burst: 0.7, ak47: 0.75,
-    sniper: 0.95, lmg: 0.85, minigun: 0.95,
+    sniper: 0.95, lmg: 0.85,
     plasma: 0.65, perkygun: 0.65, railgun: 0.85,
     bat: 0.7, katana: 0.8, machete: 0.6, chainsaw: 0.75,
   };
@@ -4878,15 +4876,19 @@ window.addEventListener('popstate', () => {
     if (Math.random() < 0.5) playGrowl();
   }
 
+  // Color de flash reutilizable (evita new TH.Color cada frame)
+  const _flashColor = new TH.Color(0xff0000);
+  const _noColor = new TH.Color(0x000000);
+
   function updateZombies(dt) {
     const pp = camera.position;
     for (let i=zombies.length-1; i>=0; i--) {
       const z = zombies[i];
       if (!z.alive) {
         z.deathTime += dt;
-        z.group.rotation.x = Math.min(Math.PI/2, z.group.rotation.x + dt*4);
-        z.group.position.y = Math.max(0, z.group.position.y - dt*0.5);
-        if (z.deathTime > 2.5) {
+        z.group.rotation.x = Math.min(Math.PI/2, z.group.rotation.x + dt*6);
+        z.group.position.y = Math.max(0, z.group.position.y - dt*0.8);
+        if (z.deathTime > 1.2) {
           scene.remove(z.group);
           z.group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
           zombies.splice(i, 1);
@@ -4942,10 +4944,14 @@ window.addEventListener('popstate', () => {
 
       if (z.flashTime > 0) {
         z.flashTime -= dt;
-        z.body.material.emissive = new TH.Color(0xff0000);
-        z.body.material.emissiveIntensity = 0.6;
-      } else {
+        if (!z._flashing) {
+          z.body.material.emissive.copy(_flashColor);
+          z.body.material.emissiveIntensity = 0.6;
+          z._flashing = true;
+        }
+      } else if (z._flashing) {
         z.body.material.emissiveIntensity = 0;
+        z._flashing = false;
       }
     }
   }
