@@ -3049,23 +3049,50 @@ window.addEventListener('popstate', () => {
     addDoor(-10,  0, Math.PI/2,  750, 2, 'ALMACEN');
     addDoor( 10,  0,-Math.PI/2,  750, 5, 'LAB BIOQUIM');
 
-    // Caja misteriosa esquina NW
+    // Caja misteriosa esquina NW (modelo 3D)
     {
       const mbGrp = new TH.Group();
-      const mbBody = new TH.Mesh(
-        new TH.BoxGeometry(1.4, 1, 1),
-        new TH.MeshStandardMaterial({ color:0x4a2a05, emissive:COLS.orange, emissiveIntensity:0.4 })
-      );
-      mbGrp.add(mbBody);
-      const bandMat = new TH.MeshStandardMaterial({ color:COLS.yellow, emissive:COLS.yellow, emissiveIntensity:0.5 });
-      const b1 = new TH.Mesh(new TH.BoxGeometry(1.42, 0.1, 1.02), bandMat); b1.position.y = 0.35; mbGrp.add(b1);
-      const b2 = new TH.Mesh(new TH.BoxGeometry(1.42, 0.1, 1.02), bandMat); b2.position.y = -0.35; mbGrp.add(b2);
-      const qMark = new TH.Mesh(new TH.BoxGeometry(0.2, 0.4, 0.2), new TH.MeshBasicMaterial({ color:COLS.pink }));
-      qMark.position.y = 0.85;
-      mbGrp.add(qMark);
       mbGrp.position.set(-7.5, 0.5, -7.5);
       scene.add(mbGrp);
-      mysteryBox = { mesh:mbBody, group:mbGrp, qMark, pos:mbGrp.position, cost:950, busy:false };
+      mysteryBox = { mesh:null, group:mbGrp, qMark:null, pos:mbGrp.position, cost:950, busy:false };
+
+      // Cargar modelo 3D
+      if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          'models/weapon_box.glb',
+          (gltf) => {
+            const model = gltf.scene;
+            const box = new TH.Box3().setFromObject(model);
+            const size = new TH.Vector3(); box.getSize(size);
+            const center = new TH.Vector3(); box.getCenter(center);
+            // Escalar a ~1.2m de ancho (tamaño de una caja tipo cod zombies)
+            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            const targetSize = 1.4;
+            const scale = targetSize / maxDim;
+            const inner = new TH.Group();
+            model.position.set(-center.x, -box.min.y, -center.z);
+            inner.add(model);
+            inner.scale.setScalar(scale);
+            mbGrp.add(inner);
+            inner.traverse(o => {
+              if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+                o.material.envMapIntensity = 0.3;
+              }
+            });
+            mysteryBox.modelRoot = inner;
+            // Buscar el primer mesh para el efecto de iluminación al activar
+            inner.traverse(o => {
+              if (!mysteryBox.mesh && o.isMesh && o.material) {
+                mysteryBox.mesh = o;
+              }
+            });
+            console.log('[MYSTERYBOX OK] weapon_box.glb cargada');
+          },
+          undefined,
+          (err) => console.error('[MYSTERYBOX FAIL]', err)
+        );
+      }
     }
 
     // Wall buys de spawn: pistola y cuchillo
@@ -3477,64 +3504,62 @@ window.addEventListener('popstate', () => {
       };
     }
 
-    // ========= MÁQUINA DE MEJORA DE ARMAS =========
-    // Movida a la esquina NE de la sala para dejar el centro libre (antes estaba en (0,0,45)
-    // y su cartel flotante + collider cortaban la sala en dos)
+    // ========= MÁQUINA DE MEJORA DE ARMAS (modelo 3D) =========
+    // Posición: centro de la sala de mejoras (x=0, z=45).
+    // El modelo procedural antiguo ha sido eliminado.
     {
       const grp = new TH.Group();
-      const base = new TH.Mesh(
-        new TH.CylinderGeometry(1.4, 1.6, 0.4, 12),
-        new TH.MeshStandardMaterial({ color:0x1a1a22, roughness:0.4, metalness:0.85 })
-      );
-      base.position.y = 0.2;
-      grp.add(base);
-      const pillar = new TH.Mesh(
-        new TH.BoxGeometry(0.9, 1.8, 0.9),
-        new TH.MeshStandardMaterial({ color:0x2a0010, emissive:0xff2a6d, emissiveIntensity:0.8, metalness:0.6 })
-      );
-      pillar.position.y = 1.3;
-      grp.add(pillar);
-      const ring1 = new TH.Mesh(
-        new TH.TorusGeometry(0.75, 0.06, 8, 20),
-        new TH.MeshBasicMaterial({ color:COLS.yellow })
-      );
-      ring1.position.y = 1.3; ring1.rotation.x = Math.PI/2;
-      grp.add(ring1);
-      const ring2 = new TH.Mesh(
-        new TH.TorusGeometry(0.95, 0.05, 8, 20),
-        new TH.MeshBasicMaterial({ color:COLS.green })
-      );
-      ring2.position.y = 1.5; ring2.rotation.x = Math.PI/3;
-      grp.add(ring2);
-      const crystal = new TH.Mesh(
-        new TH.OctahedronGeometry(0.45, 0),
-        new TH.MeshBasicMaterial({ color:0xff2a6d })
-      );
-      crystal.position.y = 2.7;
-      grp.add(crystal);
-      // CARTEL REMOVIDO: el PlaneGeometry flotante a y=3.5 era la causa del "muro sin hitbox".
-
-      // Posición: esquina NE del lab de mejoras, contra la pared este
-      grp.position.set(11, 0, 42);
+      grp.position.set(0, 0, 45);
       scene.add(grp);
 
       upgradeMachine = {
         group: grp,
-        crystal: crystal,
-        ring1: ring1,
-        ring2: ring2,
-        pos: new TH.Vector3(11, 1, 42),
+        crystal: null, // rellenado cuando cargue el modelo
+        ring1: null,
+        ring2: null,
+        pos: new TH.Vector3(0, 1, 45),
         cost: 5000,
         upgradedWeapons: new Set(),
       };
 
-      // Collider ELIMINADO por completo. El pilar es pequeño (0.9m) y no necesita
-      // bloquear al jugador — así nada corta la sala visual o físicamente.
-
-      const upgL = new TH.PointLight(0xff2a6d, 2.5, 12, 1.6);
-      upgL.position.set(11, 3, 42);
+      // Luz ambiental de la máquina (rosa)
+      const upgL = new TH.PointLight(0xff2a6d, 2.5, 14, 1.6);
+      upgL.position.set(0, 3, 45);
       scene.add(upgL);
       lights.push(upgL);
+
+      // Cargar modelo 3D
+      if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          'models/maquinamejoradearma.glb',
+          (gltf) => {
+            const model = gltf.scene;
+            // Normalizar: centrar X/Z, apoyar en Y=0, escalar a ~3m de alto
+            const box = new TH.Box3().setFromObject(model);
+            const size = new TH.Vector3(); box.getSize(size);
+            const center = new TH.Vector3(); box.getCenter(center);
+            const targetH = 3.0;
+            const scale = size.y > 0 ? targetH / size.y : 1;
+            const inner = new TH.Group();
+            model.position.set(-center.x, -box.min.y, -center.z);
+            inner.add(model);
+            inner.scale.setScalar(scale);
+            grp.add(inner);
+            // materiales: envmap bajo para que no se tiñan de morado
+            inner.traverse(o => {
+              if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+                o.material.envMapIntensity = 0.3;
+              }
+            });
+            // Guardamos referencia al grupo interior para animarlo (rotación lenta)
+            upgradeMachine.modelRoot = inner;
+            console.log('[UPGRADE OK] maquinamejoradearma.glb cargada');
+          },
+          undefined,
+          (err) => console.error('[UPGRADE FAIL]', err)
+        );
+      }
     }
 
     // Iluminación dual rosa/cyan del sanctum
@@ -6016,7 +6041,9 @@ window.addEventListener('popstate', () => {
       if (player.points >= mysteryBox.cost) {
         player.points -= mysteryBox.cost;
         mysteryBox.busy = true;
-        mysteryBox.mesh.material.emissiveIntensity = 1.4;
+        if (mysteryBox.mesh && mysteryBox.mesh.material && mysteryBox.mesh.material.emissiveIntensity !== undefined) {
+          mysteryBox.mesh.material.emissiveIntensity = 1.4;
+        }
         const pool = ['smg','shotgun','rifle','sniper','lmg','magnum','minigun','flamer','perkygun',
                       'deagle','ak47','burst','autoshot','crossbow','rpg','plasma','tesla','railgun','perkynuke','katana','chainsaw'];
         const pick = pool[Math.floor(Math.random()*pool.length)];
@@ -6026,7 +6053,9 @@ window.addEventListener('popstate', () => {
           initAmmoFor(pick);
           buildWeaponMesh();
           mysteryBox.busy = false;
-          mysteryBox.mesh.material.emissiveIntensity = 0.4;
+          if (mysteryBox.mesh && mysteryBox.mesh.material && mysteryBox.mesh.material.emissiveIntensity !== undefined) {
+            mysteryBox.mesh.material.emissiveIntensity = 0.4;
+          }
           updateHUD();
         }, 2200);
         updateHUD();
@@ -6049,9 +6078,14 @@ window.addEventListener('popstate', () => {
         }
         showPickup('ARMA MEJORADA ★');
         playPickup(1200);
-        // flash visual en la máquina
-        upgradeMachine.crystal.material.color.setHex(0xffee44);
-        setTimeout(() => { upgradeMachine.crystal.material.color.setHex(0xff2a6d); }, 400);
+        // flash visual en la máquina (null-safe para modelo 3D)
+        if (upgradeMachine.crystal && upgradeMachine.crystal.material) {
+          upgradeMachine.crystal.material.color.setHex(0xffee44);
+          setTimeout(() => {
+            if (upgradeMachine.crystal && upgradeMachine.crystal.material)
+              upgradeMachine.crystal.material.color.setHex(0xff2a6d);
+          }, 400);
+        }
         updateHUD();
       }
       return;
@@ -6293,17 +6327,14 @@ window.addEventListener('popstate', () => {
       lp.chain.rotation.z = sx*0.3;
       lp.chain.rotation.x = sz*0.3;
     });
-    if (mysteryBox && mysteryBox.qMark) {
-      mysteryBox.qMark.rotation.y += dt*2;
-      mysteryBox.qMark.position.y = 0.85 + Math.sin(performance.now()*0.003)*0.08;
+    if (mysteryBox && mysteryBox.modelRoot) {
+      mysteryBox.modelRoot.rotation.y += dt*1.2;
+      mysteryBox.modelRoot.position.y = Math.sin(performance.now()*0.003)*0.08;
     }
-    // máquina de mejora: anillos rotando y cristal flotando
-    if (upgradeMachine) {
-      upgradeMachine.ring1.rotation.z += dt*1.5;
-      upgradeMachine.ring2.rotation.z -= dt*1.2;
-      upgradeMachine.crystal.rotation.y += dt*2.5;
-      upgradeMachine.crystal.rotation.x += dt*1.2;
-      upgradeMachine.crystal.position.y = 2.7 + Math.sin(performance.now()*0.003)*0.1;
+    // máquina de mejora: rotación lenta del modelo + ligero flotado
+    if (upgradeMachine && upgradeMachine.modelRoot) {
+      upgradeMachine.modelRoot.rotation.y += dt * 0.5;
+      upgradeMachine.modelRoot.position.y = Math.sin(performance.now()*0.002) * 0.08;
     }
     // spawners pulsan
     spawners.forEach(sp => {
