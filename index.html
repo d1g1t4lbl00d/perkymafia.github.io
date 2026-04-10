@@ -3578,27 +3578,7 @@ window.addEventListener('popstate', () => {
     // Ambient global
     scene.add(new TH.AmbientLight(0x556070, 0.6));
 
-    // Polvo flotante (reducido para optimizar)
-    {
-      const dustGeo = new TH.BufferGeometry();
-      const dustCount = 80;
-      const dustPos = new Float32Array(dustCount * 3);
-      const dustVel = [];
-      for (let i=0; i<dustCount; i++) {
-        dustPos[i*3]   = (Math.random()-0.5) * 90;
-        dustPos[i*3+1] = Math.random() * 5 + 0.5;
-        dustPos[i*3+2] = (Math.random()-0.5) * 100;
-        dustVel.push({ x:(Math.random()-0.5)*0.08, y:0.03+Math.random()*0.05, z:(Math.random()-0.5)*0.08 });
-      }
-      dustGeo.setAttribute('position', new TH.BufferAttribute(dustPos, 3));
-      const dust = new TH.Points(dustGeo, new TH.PointsMaterial({
-        color:0xccccdd, size:0.06, transparent:true, opacity:0.45, sizeAttenuation:true
-      }));
-      scene.add(dust);
-      if (typeof dynamicRefs !== 'undefined') {
-        dynamicRefs.dust = { points:dust, geo:dustGeo, vel:dustVel, count:dustCount };
-      }
-    }
+    // (Polvo flotante eliminado: nunca se actualizaba en el loop, solo consumía memoria)
 
     // =========================================================
     // ANTI-TRAMPAS
@@ -4265,13 +4245,17 @@ window.addEventListener('popstate', () => {
   function buildWeaponMesh() {
     if (weaponMesh) {
       camera.remove(weaponMesh);
-      weaponMesh.traverse(o => { if (o.geometry && !o.userData.keepGeo) o.geometry.dispose(); });
+      // Solo disponer si es el modelo procedural. Los GLB son clones
+      // de un template compartido: al disponer romperíamos el cache.
+      if (!weaponMesh.userData.isClonedGLB) {
+        weaponMesh.traverse(o => { if (o.geometry && !o.userData.keepGeo) o.geometry.dispose(); });
+      }
     }
-    // Si existe un modelo 3D cargado para esta arma, úsalo. Si no, fallback procedural.
     let grp;
     const loaded = WEAPON_MODEL_CACHE[currentWeapon];
     if (loaded) {
       grp = loaded.clone(true);
+      grp.userData.isClonedGLB = true;
       const override = WEAPON_MODEL_OVERRIDES[currentWeapon] || {};
       grp.position.set(
         override.x != null ? override.x : 0.32,
@@ -5288,11 +5272,11 @@ window.addEventListener('popstate', () => {
   }
 
   const spitters = [];
+  // Geometría compartida (evita allocs por escupitajo)
+  const _spitterGeo = new TH.SphereGeometry(0.18, 8, 6);
+  const _spitterMat = new TH.MeshBasicMaterial({ color:0x00ffaa });
   function spitProjectile(from, to) {
-    const m = new TH.Mesh(
-      new TH.SphereGeometry(0.18, 8, 6),
-      new TH.MeshBasicMaterial({ color:0x00ffaa })
-    );
+    const m = new TH.Mesh(_spitterGeo, _spitterMat);
     m.position.copy(from);
     m.position.y = 1.5;
     scene.add(m);
@@ -5310,12 +5294,12 @@ window.addEventListener('popstate', () => {
       if (s.mesh.position.distanceTo(pp) < 0.8) {
         let dmg = 15;
         if (activePowerups.resist) dmg *= 0.4;
-          if (persistentBuffs.mojito) dmg *= 0.6;
+        if (persistentBuffs.mojito) dmg *= 0.6;
         damagePlayer(dmg);
-        scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mesh.material.dispose();
+        scene.remove(s.mesh); // NO disponer: geo y mat son compartidos
         spitters.splice(i, 1);
       } else if (s.t > 3) {
-        scene.remove(s.mesh); s.mesh.geometry.dispose(); s.mesh.material.dispose();
+        scene.remove(s.mesh);
         spitters.splice(i, 1);
       }
     }
@@ -5347,16 +5331,24 @@ window.addEventListener('popstate', () => {
     { id:'nuke',     color:0xff0000, label:'NUKE ☠',     weight:1 },
   ];
 
+  // Geo + materiales compartidos por color (evita allocs por powerup)
+  const _powerupGeo = new TH.IcosahedronGeometry(0.25, 0);
+  const _powerupMatCache = {};
+  function getPowerupMat(color) {
+    if (!_powerupMatCache[color]) {
+      _powerupMatCache[color] = new TH.MeshStandardMaterial({
+        color, emissive: color, emissiveIntensity: 1
+      });
+    }
+    return _powerupMatCache[color];
+  }
+
   function dropPowerup(pos) {
-    // weighted random
     const total = POWERUP_TYPES.reduce((a,b)=>a+b.weight, 0);
     let r = Math.random()*total;
     let pick = POWERUP_TYPES[0];
     for (const p of POWERUP_TYPES) { r -= p.weight; if (r <= 0) { pick = p; break; } }
-    const m = new TH.Mesh(
-      new TH.IcosahedronGeometry(0.25, 0),
-      new TH.MeshStandardMaterial({ color:pick.color, emissive:pick.color, emissiveIntensity:1 })
-    );
+    const m = new TH.Mesh(_powerupGeo, getPowerupMat(pick.color));
     m.position.copy(pos);
     m.position.y = 0.7;
     scene.add(m);
@@ -5376,13 +5368,13 @@ window.addEventListener('popstate', () => {
       d.light.position.copy(d.mesh.position);
       if (d.mesh.position.distanceTo(pp) < 1.5) {
         applyPowerup(d.type);
-        scene.remove(d.mesh); d.mesh.geometry.dispose(); d.mesh.material.dispose();
+        scene.remove(d.mesh); // geo y mat compartidos, NO disponer
         scene.remove(d.light);
         powerupDrops.splice(i, 1);
         continue;
       }
       if (d.t > 22) {
-        scene.remove(d.mesh); d.mesh.geometry.dispose(); d.mesh.material.dispose();
+        scene.remove(d.mesh);
         scene.remove(d.light);
         powerupDrops.splice(i, 1);
       }
@@ -5511,21 +5503,43 @@ window.addEventListener('popstate', () => {
     setTimeout(() => el.remove(), 2400);
   }
 
+  // Cache de elementos DOM (evita getElementById en cada golpe)
+  const _domCache = {};
+  function _dom(id) {
+    if (!_domCache[id]) _domCache[id] = document.getElementById(id);
+    return _domCache[id];
+  }
+
+  // Estado de animaciones de hit (gestionadas en el loop, no con setTimeout)
+  let _vignetteUntil = 0;
+  let _flashUntil = 0;
+  let _hboxUntil = 0;
+
   // ===== PLAYER =====
   function damagePlayer(amount, sourcePos) {
     player.health -= amount;
     player.lastDmg = performance.now();
+    const now = performance.now();
+    // Vignette: se gestiona en updatePlayer
     dmgVignette.style.opacity = '1';
-    setTimeout(() => { dmgVignette.style.opacity = '0'; }, 400);
-    // hit flash más fuerte
-    const flash = document.getElementById('gameHitFlash');
-    if (flash) {
-      flash.classList.remove('flash'); void flash.offsetWidth; flash.classList.add('flash');
+    _vignetteUntil = now + 400;
+    // Flash y shake con cooldown: si ya están activos no rearrancar (evita reflows constantes)
+    if (now > _flashUntil - 200) {
+      const flash = _dom('gameHitFlash');
+      if (flash) {
+        flash.classList.remove('flash');
+        // Sin forzar reflow: usamos requestAnimationFrame
+        requestAnimationFrame(() => flash.classList.add('flash'));
+      }
+      _flashUntil = now + 400;
     }
-    // shake del healthbox
-    const hbox = document.getElementById('gameHealthbox');
-    if (hbox) {
-      hbox.classList.remove('hit'); void hbox.offsetWidth; hbox.classList.add('hit');
+    if (now > _hboxUntil - 200) {
+      const hbox = _dom('gameHealthbox');
+      if (hbox) {
+        hbox.classList.remove('hit');
+        requestAnimationFrame(() => hbox.classList.add('hit'));
+      }
+      _hboxUntil = now + 400;
     }
     // indicador direccional
     if (sourcePos) {
@@ -5533,10 +5547,11 @@ window.addEventListener('popstate', () => {
       const dz = sourcePos.z - camera.position.z;
       const angToSrc = Math.atan2(dx, -dz);
       const rel = angToSrc - player.yaw;
-      const ind = document.getElementById('gameDmgIndicator');
+      const ind = _dom('gameDmgIndicator');
       if (ind) {
         ind.style.transform = 'translate(-50%,-50%) rotate('+rel+'rad)';
-        ind.classList.remove('show'); void ind.offsetWidth; ind.classList.add('show');
+        ind.classList.remove('show');
+        requestAnimationFrame(() => ind.classList.add('show'));
       }
     }
     // camera shake MÁS FUERTE (con cap para que no se acumule sin control)
@@ -6403,6 +6418,11 @@ window.addEventListener('popstate', () => {
     // expirar luz de explosión
     if (_explosionLight && _explosionLight.intensity > 0 && performance.now() > _explosionLightUntil) {
       _explosionLight.intensity = 0;
+    }
+    // expirar vignette de daño (sin setTimeout)
+    if (_vignetteUntil > 0 && performance.now() > _vignetteUntil) {
+      dmgVignette.style.opacity = '0';
+      _vignetteUntil = 0;
     }
     updatePowerupDrops(dt);
     updateActivePowerups();
