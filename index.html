@@ -4437,71 +4437,30 @@ window.addEventListener('popstate', () => {
     loader.load(
       'models/mexican_starter_pack.glb',
       (gltf) => {
-        // Extraer todos los hijos directos del scene como props individuales
-        const propTemplates = [];
-        gltf.scene.children.slice().forEach(child => {
-          if (MEXICAN_EXCLUDE.includes(child.name)) return;
-          // clonar para no modificar el original
-          propTemplates.push(child);
-        });
-        if (propTemplates.length === 0) {
-          // Fallback: si el glb es un único mesh grande, usarlo entero
-          propTemplates.push(gltf.scene);
-        }
-        console.log('[MEXICAN OK] props disponibles:', propTemplates.length, propTemplates.map(p=>p.name));
-
-        // Normalizar cada template: centrar en X/Z, apoyar en Y=0, escalar a ~1-1.5m
-        propTemplates.forEach(t => {
-          const box = new TH.Box3().setFromObject(t);
-          const size = new TH.Vector3(); box.getSize(size);
-          const center = new TH.Vector3(); box.getCenter(center);
-          const maxDim = Math.max(size.x, size.y, size.z) || 1;
-          // tamaño objetivo entre 0.8 y 1.6 según el prop
-          const targetSize = 1.2;
-          const scale = targetSize / maxDim;
-          t.userData.normScale = scale;
-          t.userData.normOffsetX = -center.x * scale;
-          t.userData.normOffsetZ = -center.z * scale;
-          t.userData.normOffsetY = -box.min.y * scale;
-          t.userData.normRadius = Math.max(size.x, size.z) * scale * 0.5 + 0.1;
-        });
-
-        // Distribuir por sala
-        const rng = seededRandom(12345);
-        let placed = 0;
-        for (const [room, count] of Object.entries(MEXICAN_SCATTER_COUNT)) {
-          const roomZones = MEXICAN_ZONES.filter(z => z.room === room);
-          if (roomZones.length === 0) continue;
-          for (let i=0; i<count; i++) {
-            // intentar hasta 10 veces encontrar un sitio libre
-            let spot = null;
-            for (let attempt=0; attempt<10; attempt++) {
-              const zone = roomZones[Math.floor(rng() * roomZones.length)];
-              const x = zone.minX + rng() * (zone.maxX - zone.minX);
-              const z = zone.minZ + rng() * (zone.maxZ - zone.minZ);
-              if (!posCollidesWall(x, z, 0.6)) { spot = {x, z}; break; }
-            }
-            if (!spot) continue;
-            const template = propTemplates[Math.floor(rng() * propTemplates.length)];
-            const inst = template.clone(true);
-            inst.scale.setScalar(template.userData.normScale);
-            inst.position.set(
-              spot.x + template.userData.normOffsetX,
-              template.userData.normOffsetY,
-              spot.z + template.userData.normOffsetZ
-            );
-            inst.rotation.y = rng() * Math.PI * 2;
-            // materiales: que respeten el env map ligeramente
-            inst.traverse(o => {
-              if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
-                o.material.envMapIntensity = 0.3;
-              }
-            });
-            scene.add(inst);
-            placed++;
+        // Colocar el pack COMPLETO una sola vez, de pie, en una esquina de la plaza.
+        const inst = gltf.scene;
+        const box = new TH.Box3().setFromObject(inst);
+        const size = new TH.Vector3(); box.getSize(size);
+        const center = new TH.Vector3(); box.getCenter(center);
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        const targetSize = 2.0; // altura aprox del conjunto
+        const scale = targetSize / maxDim;
+        inst.scale.setScalar(scale);
+        // Posición: esquina NE de la plaza (dentro del mapa, no pegado a la pared)
+        const px = 8, pz = -8;
+        inst.position.set(
+          px - center.x * scale,
+          -box.min.y * scale,
+          pz - center.z * scale
+        );
+        inst.rotation.y = -Math.PI / 4; // mirando hacia el centro de la plaza
+        inst.traverse(o => {
+          if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+            o.material.envMapIntensity = 0.3;
           }
-        }
-        console.log('[MEXICAN OK] props colocados:', placed);
+        });
+        scene.add(inst);
+        console.log('[MEXICAN OK] prop colocado en la plaza');
       },
       undefined,
       (err) => console.error('[MEXICAN FAIL] mexican_starter_pack.glb', err)
@@ -4738,6 +4697,21 @@ window.addEventListener('popstate', () => {
       if (e.button === 2) { isAds = false; }
     });
     canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+    // Cambiar de arma con la rueda del ratón
+    canvas.addEventListener('wheel', e => {
+      if (!running) return;
+      e.preventDefault();
+      const inv = player.inventory;
+      if (!inv || inv.length === 0) return;
+      let idx = inv.indexOf(currentWeapon);
+      if (idx === -1) idx = 0;
+      if (e.deltaY > 0) idx = (idx + 1) % inv.length;
+      else              idx = (idx - 1 + inv.length) % inv.length;
+      currentWeapon = inv[idx];
+      buildWeaponMesh();
+      updateHUD();
+    }, { passive: false });
 
     document.addEventListener('mousemove', e => {
       if (document.pointerLockElement !== canvas) return;
@@ -5540,8 +5514,8 @@ window.addEventListener('popstate', () => {
         ind.classList.remove('show'); void ind.offsetWidth; ind.classList.add('show');
       }
     }
-    // camera shake MÁS FUERTE
-    camShake = Math.min(0.9, camShake + 0.5);
+    // camera shake MÁS FUERTE (con cap para que no se acumule sin control)
+    camShake = Math.min(0.6, camShake + 0.4);
     if (player.health <= 0) { player.health = 0; gameOver(); }
     updateHUD();
   }
@@ -5645,12 +5619,24 @@ window.addEventListener('popstate', () => {
     camera.quaternion.setFromEuler(eu);
 
     // ===== CAMERA SHAKE (decae por frame) =====
+    // BUGFIX: antes se aplicaba a camera.position directamente, lo que permitía que
+    // el jugador se metiera dentro de muros al ser golpeado mientras estaba pegado a ellos.
+    // Ahora aplicamos el shake SOLO como offset visual, sin tocar la posición real.
     if (camShake > 0.001) {
       const s = camShake;
-      camera.position.x += (Math.random()-0.5) * s * 0.4;
-      camera.position.y += (Math.random()-0.5) * s * 0.35;
-      camera.position.z += (Math.random()-0.5) * s * 0.4;
-      // también rotación
+      const sx = (Math.random()-0.5) * s * 0.4;
+      const sy = (Math.random()-0.5) * s * 0.35;
+      const sz = (Math.random()-0.5) * s * 0.4;
+      // Probar la nueva posición. Si colisiona con un muro, no aplicar el offset horizontal.
+      const testX = camera.position.x + sx;
+      const testZ = camera.position.z + sz;
+      const feetY = camera.position.y - player.height + sy;
+      const test = new TH.Vector3(testX, camera.position.y + sy, testZ);
+      if (!collidesWalls(test, feetY)) {
+        camera.position.x = testX;
+        camera.position.z = testZ;
+      }
+      camera.position.y += sy;
       camera.rotation.z += (Math.random()-0.5) * s * 0.15;
       camShake = Math.max(0, camShake - dt * 2.8);
     }
