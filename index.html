@@ -4271,30 +4271,51 @@ window.addEventListener('popstate', () => {
   // ===== SISTEMA DE MODELOS 3D DE ARMAS (GLTF) =====
   // Mapa arma → archivo .glb. Las armas no listadas usan el modelo procedural.
   const WEAPON_MODEL_FILES = {
-    pistol:  'usp_psx.glb',
-    shotgun: 'm1897_psx.glb',
-    smg:     'low-poly_hk_mp5k.glb',
-    lmg:     'low-poly_hk_mg5.glb',
-    sniper:  'low-poly_gepard_smg.glb',
-    rifle:   'low_poly_gun_model.glb',
-    minigun: 'low-poly_m134_minigun.glb',
+    pistol:   'pistol.glb',
+    magnum:   'revolver.glb',
+    shotgun:  'shotgun.glb',
+    autoshot: 'shotgun.glb',
+    rifle:    'rifle.glb',
+    burst:    'rifle.glb',
+    ak47:     'fusil.glb',
+    sniper:   'sniper.glb',
+    lmg:      'ametralladora pesada.glb',
+    minigun:  'minigun.glb',
+    plasma:   'plasmagun.glb',
+    perkygun: 'plasmagun.glb',
+    railgun:  'railgun.glb',
+    bat:      'bate.glb',
+    katana:   'katana.glb',
+    machete:  'machete.glb',
+    chainsaw: 'motosierra.glb',
   };
-  // Ajustes finos por arma (posición/rotación respecto a la cámara).
-  // Si algo se ve torcido o demasiado grande, tocas estos valores.
   const WEAPON_MODEL_OVERRIDES = {
-    pistol:  { x: 0.28, y:-0.28, z:-0.50, ry: 0 },
-    shotgun: { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
-    smg:     { x: 0.28, y:-0.28, z:-0.55, ry: 0 },
-    lmg:     { x: 0.32, y:-0.32, z:-0.65, ry: 0 },
-    sniper:  { x: 0.30, y:-0.30, z:-0.70, ry: 0 },
-    rifle:   { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
-    minigun: { x: 0.35, y:-0.35, z:-0.70, ry: 0 },
+    pistol:   { x: 0.28, y:-0.28, z:-0.50, ry: 0 },
+    magnum:   { x: 0.28, y:-0.28, z:-0.50, ry: 0 },
+    shotgun:  { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
+    autoshot: { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
+    rifle:    { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
+    burst:    { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
+    ak47:     { x: 0.30, y:-0.30, z:-0.60, ry: 0 },
+    sniper:   { x: 0.30, y:-0.30, z:-0.70, ry: 0 },
+    lmg:      { x: 0.32, y:-0.32, z:-0.65, ry: 0 },
+    minigun:  { x: 0.35, y:-0.35, z:-0.70, ry: 0 },
+    plasma:   { x: 0.30, y:-0.28, z:-0.55, ry: 0 },
+    perkygun: { x: 0.30, y:-0.28, z:-0.55, ry: 0 },
+    railgun:  { x: 0.32, y:-0.30, z:-0.65, ry: 0 },
+    bat:      { x: 0.30, y:-0.30, z:-0.55, ry: 0 },
+    katana:   { x: 0.30, y:-0.30, z:-0.55, ry: 0 },
+    machete:  { x: 0.30, y:-0.30, z:-0.55, ry: 0 },
+    chainsaw: { x: 0.32, y:-0.32, z:-0.60, ry: 0 },
   };
   const WEAPON_MODEL_CACHE = {};
-  // Tamaño objetivo (ancho aprox. del arma en unidades del mundo)
   const WEAPON_TARGET_SIZE = {
-    pistol: 0.35, shotgun: 0.75, smg: 0.6, lmg: 0.85,
-    sniper: 0.95, rifle: 0.7, minigun: 0.9,
+    pistol: 0.35, magnum: 0.4,
+    shotgun: 0.75, autoshot: 0.75,
+    rifle: 0.7, burst: 0.7, ak47: 0.75,
+    sniper: 0.95, lmg: 0.85, minigun: 0.95,
+    plasma: 0.65, perkygun: 0.65, railgun: 0.85,
+    bat: 0.7, katana: 0.8, machete: 0.6, chainsaw: 0.75,
   };
   function normalizeWeaponModel(root, weaponId) {
     // Centrar y escalar el modelo a un tamaño estándar
@@ -4334,7 +4355,7 @@ window.addEventListener('popstate', () => {
     const loader = new THREE.GLTFLoader();
     Object.entries(WEAPON_MODEL_FILES).forEach(([weaponId, file]) => {
       loader.load(
-        'models/' + file,
+        'models/' + encodeURIComponent(file),
         (gltf) => {
           const normalized = normalizeWeaponModel(gltf.scene, weaponId);
           WEAPON_MODEL_CACHE[weaponId] = normalized;
@@ -4525,15 +4546,11 @@ window.addEventListener('popstate', () => {
     camera.getWorldPosition(origin);
     raycaster.set(origin, dir);
     raycaster.far = 120;
-    const targets = [];
-    zombies.forEach(z => { if (z.alive) { targets.push(z.body); targets.push(z.head); } });
-    for (let i=0;i<wallMeshesCache.length;i++) targets.push(wallMeshesCache[i]);
-    const hits = raycaster.intersectObjects(targets, true);
+    const targets = buildRaycastTargets();
+    const hits = raycaster.intersectObjects(targets, false);
     let endPoint = hits.length ? hits[0].point.clone() : origin.clone().add(dir.clone().multiplyScalar(120));
     spawnTracer(origin, endPoint);
-    // explosión
     explode(endPoint);
-    // daño en area
     for (const z of zombies) {
       if (!z.alive) continue;
       const d = z.pos.distanceTo(endPoint);
@@ -4553,10 +4570,8 @@ window.addEventListener('popstate', () => {
     camera.getWorldPosition(origin);
     raycaster.set(origin, dir);
     raycaster.far = 60;
-    const targets = [];
-    zombies.forEach(z => { if (z.alive) { targets.push(z.body); targets.push(z.head); } });
-    for (let i=0;i<wallMeshesCache.length;i++) targets.push(wallMeshesCache[i]);
-    const hits = raycaster.intersectObjects(targets, true);
+    const targets = buildRaycastTargets();
+    const hits = raycaster.intersectObjects(targets, false);
     if (!hits.length) {
       const ep = origin.clone().add(dir.clone().multiplyScalar(60));
       spawnTracer(origin, ep);
@@ -4591,6 +4606,19 @@ window.addEventListener('popstate', () => {
     }
   }
 
+  // Contador para saltarse tracers visuales en armas muy rápidas
+  let _rapidFireTracerSkip = 0;
+  const _raycastTargets = [];
+  function buildRaycastTargets() {
+    _raycastTargets.length = 0;
+    for (let i=0; i<zombies.length; i++) {
+      const z = zombies[i];
+      if (z.alive) { _raycastTargets.push(z.body); _raycastTargets.push(z.head); }
+    }
+    for (let i=0; i<wallMeshesCache.length; i++) _raycastTargets.push(wallMeshesCache[i]);
+    return _raycastTargets;
+  }
+
   function raycastShot(dmg, spread) {
     const dir = new TH.Vector3();
     camera.getWorldDirection(dir);
@@ -4605,27 +4633,26 @@ window.addEventListener('popstate', () => {
     raycaster.set(origin, dir);
     raycaster.far = 80;
 
-    const targets = [];
-    zombies.forEach(z => { if (z.alive) { targets.push(z.body); targets.push(z.head); } });
-    for (let i=0;i<wallMeshesCache.length;i++) targets.push(wallMeshesCache[i]);
-    const hits = raycaster.intersectObjects(targets, true);
+    const targets = buildRaycastTargets();
+    const hits = raycaster.intersectObjects(targets, false);
 
     let endPoint;
     if (hits.length > 0) {
       const h = hits[0];
       endPoint = h.point.clone();
-      const z = zombies.find(zz => zz.body === h.object || zz.head === h.object);
+      let z = null;
+      for (let i=0; i<zombies.length; i++) {
+        if (zombies[i].body === h.object || zombies[i].head === h.object) { z = zombies[i]; break; }
+      }
       if (z) {
         const isHead = (h.object === z.head);
         let dealt = isHead ? dmg * 2 : dmg;
-        // CHARTREUSE: 25% crítico x3
         if (persistentBuffs.chartreuse && Math.random() < 0.25) dealt *= 3;
         z.health -= dealt;
         z.flashTime = 0.12;
         addPoints(isHead ? 20 : 10);
         playHit();
         if (z.health <= 0) {
-          // BLOODY: vampiro - cura al matar
           if (persistentBuffs.bloody) {
             player.health = Math.min(player.maxHealth, player.health + 8);
             updateHUD();
@@ -4640,35 +4667,72 @@ window.addEventListener('popstate', () => {
     spawnTracer(origin, endPoint);
   }
 
+  // ===== POOL DE TRACERS (evita crear/destruir geometrías en cada disparo) =====
+  const TRACER_POOL_SIZE = 32;
+  const tracerPool = [];
+  let tracerPoolInitialized = false;
+  function initTracerPool() {
+    if (tracerPoolInitialized) return;
+    const sharedGeo = new TH.CylinderGeometry(0.025, 0.025, 1, 6);
+    for (let i=0; i<TRACER_POOL_SIZE; i++) {
+      const mat = new TH.MeshBasicMaterial({ color:0xffee44, transparent:true, opacity:0 });
+      const mesh = new TH.Mesh(sharedGeo, mat);
+      mesh.visible = false;
+      mesh.userData.active = false;
+      scene.add(mesh);
+      tracerPool.push({ mesh, t:0, maxT:0.09 });
+    }
+    tracerPoolInitialized = true;
+  }
   function spawnTracer(from, to) {
+    if (!tracerPoolInitialized) initTracerPool();
+    // Skip de tracers para armas rápidas (minigun, lmg, flamer...): dibuja 1 de cada 2.
+    // Esto NO afecta al daño, solo al visual.
+    const w = WEAPONS[currentWeapon];
+    if (w && w.fireRate && w.fireRate < 100) {
+      _rapidFireTracerSkip = (_rapidFireTracerSkip + 1) % 2;
+      if (_rapidFireTracerSkip !== 0) return;
+    }
     const dist = from.distanceTo(to);
     if (dist < 0.5) return;
+    // buscar un tracer libre
+    let slot = null;
+    for (let i=0; i<tracerPool.length; i++) {
+      if (!tracerPool[i].mesh.userData.active) { slot = tracerPool[i]; break; }
+    }
+    // si no hay, reciclar el más viejo
+    if (!slot) {
+      slot = tracerPool[0];
+      for (let i=1; i<tracerPool.length; i++) {
+        if (tracerPool[i].t > slot.t) slot = tracerPool[i];
+      }
+    }
     const dir = new TH.Vector3().subVectors(to, from).normalize();
     const start = from.clone().add(dir.clone().multiplyScalar(0.6));
     const tracerLen = Math.min(5, dist - 0.6);
     const w = WEAPONS[currentWeapon];
     const col = w.glow ? 0xff2a6d : 0xffee44;
-    const cyl = new TH.Mesh(
-      new TH.CylinderGeometry(0.025, 0.025, tracerLen, 6),
-      new TH.MeshBasicMaterial({ color:col, transparent:true, opacity:0.95 })
-    );
+    slot.mesh.material.color.setHex(col);
+    slot.mesh.material.opacity = 0.95;
+    slot.mesh.scale.set(1, tracerLen, 1); // la geo base tiene largo 1, escalamos en Y
     const mid = start.clone().add(dir.clone().multiplyScalar(tracerLen/2));
-    cyl.position.copy(mid);
-    cyl.lookAt(to);
-    cyl.rotateX(Math.PI/2);
-    scene.add(cyl);
-    tracers.push({ mesh:cyl, t:0, maxT:0.09 });
+    slot.mesh.position.copy(mid);
+    slot.mesh.lookAt(to);
+    slot.mesh.rotateX(Math.PI/2);
+    slot.mesh.visible = true;
+    slot.mesh.userData.active = true;
+    slot.t = 0;
   }
 
   function updateTracers(dt) {
-    for (let i=tracers.length-1; i>=0; i--) {
-      const t = tracers[i];
+    for (let i=0; i<tracerPool.length; i++) {
+      const t = tracerPool[i];
+      if (!t.mesh.userData.active) continue;
       t.t += dt;
       t.mesh.material.opacity = 0.95 * (1 - t.t/t.maxT);
       if (t.t >= t.maxT) {
-        scene.remove(t.mesh);
-        t.mesh.geometry.dispose(); t.mesh.material.dispose();
-        tracers.splice(i, 1);
+        t.mesh.visible = false;
+        t.mesh.userData.active = false;
       }
     }
   }
@@ -5822,11 +5886,18 @@ window.addEventListener('popstate', () => {
     }
   }
 
+  // Luz de explosión reutilizable (evita crear PointLight + setTimeout por cada boom)
+  let _explosionLight = null;
+  let _explosionLightUntil = 0;
   function explode(pos) {
     playExplosion();
-    const fl = new TH.PointLight(0xffaa44, 12, 22, 2);
-    fl.position.copy(pos); scene.add(fl);
-    setTimeout(() => scene.remove(fl), 250);
+    if (!_explosionLight) {
+      _explosionLight = new TH.PointLight(0xffaa44, 0, 22, 2);
+      scene.add(_explosionLight);
+    }
+    _explosionLight.position.copy(pos);
+    _explosionLight.intensity = 12;
+    _explosionLightUntil = performance.now() + 250;
     zombies.forEach(z => {
       if (!z.alive) return;
       const d = z.pos.distanceTo(pos);
@@ -5969,6 +6040,10 @@ window.addEventListener('popstate', () => {
     updateSpitters(dt);
     updateGrenades(dt);
     updateTracers(dt);
+    // expirar luz de explosión
+    if (_explosionLight && _explosionLight.intensity > 0 && performance.now() > _explosionLightUntil) {
+      _explosionLight.intensity = 0;
+    }
     updatePowerupDrops(dt);
     updateActivePowerups();
     updateWaves();
@@ -6032,8 +6107,12 @@ window.addEventListener('popstate', () => {
     zombies.length = 0;
     grenades.forEach(g => scene.remove(g.mesh));
     grenades.length = 0;
-    tracers.forEach(t => scene.remove(t.mesh));
     tracers.length = 0;
+    for (let i=0; i<tracerPool.length; i++) {
+      tracerPool[i].mesh.visible = false;
+      tracerPool[i].mesh.userData.active = false;
+      tracerPool[i].t = 0;
+    }
     spitters.forEach(s => scene.remove(s.mesh));
     spitters.length = 0;
     powerupDrops.forEach(p => { scene.remove(p.mesh); scene.remove(p.light); });
