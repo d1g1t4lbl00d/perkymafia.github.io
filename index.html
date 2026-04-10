@@ -1397,6 +1397,209 @@ footer{
   .evento-titulo{font-size:0.5rem}
 }
 
+/* ================================================================
+   COMPACT DESKTOP OVERRIDES + AMBIENTE VISUAL REFORZADO
+   En escritorio el contenido se ve más disperso que en móvil y los
+   efectos pierden densidad. Aquí compactamos Y reforzamos glows,
+   sombras, neones y animaciones para recuperar ese carácter callejero.
+   NO afecta al móvil (≤768px) ni al contenido.
+   ================================================================ */
+@media(min-width:769px){
+  /* === PADDINGS Y TAMAÑOS COMPACTOS === */
+  section{padding:2.5rem 1.2rem}
+  .hero{padding:2.8rem 1rem;min-height:auto}
+  .hero-content{gap:0.9rem}
+  .hero-stats{gap:0.9rem}
+  .stat-box{padding:0.5rem 0.85rem}
+  .stat-n{font-size:1rem}
+  .stat-l{font-size:0.85rem}
+  .hero-cta{gap:0.8rem}
+  .btn-pixel{font-size:0.55rem;padding:0.7rem 1rem}
+  .scroll-hint{bottom:0.8rem;font-size:1.1rem}
+  .player-box{max-width:760px}
+  .player-top{padding:0.4rem 0.7rem}
+  .player-bot{padding:0.35rem 0.7rem}
+  .tracks-grid{max-width:880px;gap:0.8rem}
+  .vid-section{min-height:40vh}
+  .vid-section .vid-text{padding:1.5rem}
+  .evento-fecha{min-width:75px;padding:0.8rem}
+  .sec-head{margin-bottom:1.4rem}
+  .leaderboard-wrap{max-width:560px}
+  .start-screen,.over-screen{max-width:480px}
+
+  /* === REFUERZO DE EFECTOS NEÓN Y CARÁCTER === */
+
+  /* Hero: glows más densos en título y subtítulo */
+  .hero-title{
+    text-shadow:
+      4px 4px 0 var(--pink),
+      -2px -2px 0 var(--cyan),
+      0 0 25px var(--pink),
+      0 0 60px rgba(255,42,109,0.6),
+      0 0 100px rgba(255,42,109,0.3);
+    filter:drop-shadow(0 0 8px rgba(255,42,109,0.4));
+  }
+  .hero-sub{
+    text-shadow:0 0 14px var(--yellow),0 0 28px rgba(255,230,0,0.5);
+  }
+  .hero-ascii{
+    text-shadow:0 0 14px var(--green),0 0 26px rgba(57,255,20,0.4);
+  }
+
+  /* Stat boxes: borde más vivo + glow doble */
+  .stat-box{
+    box-shadow:
+      0 0 0 1px rgba(57,255,20,0.4),
+      0 0 18px rgba(57,255,20,0.25),
+      4px 4px 0 var(--pink);
+    background:rgba(57,255,20,0.08);
+    transition:box-shadow 0.2s, transform 0.2s;
+  }
+  .stat-box:hover{
+    transform:translate(-2px,-2px);
+    box-shadow:
+      0 0 0 1px rgba(57,255,20,0.6),
+      0 0 28px rgba(57,255,20,0.45),
+      6px 6px 0 var(--pink);
+  }
+  .stat-n{text-shadow:2px 2px 0 rgba(255,42,109,0.5),0 0 12px rgba(255,42,109,0.5)}
+  .stat-l{text-shadow:0 0 8px rgba(57,255,20,0.6)}
+
+  /* Botones: glows más fuertes y animación de pulso permanente */
+  .btn-play{
+    box-shadow:
+      4px 4px 0 var(--yellow),
+      0 0 22px rgba(255,42,109,0.55),
+      0 0 50px rgba(255,42,109,0.25);
+    animation:btnPulse 2.4s ease-in-out infinite;
+  }
+  .btn-play:hover{
+    box-shadow:
+      6px 6px 0 var(--yellow),
+      0 0 32px rgba(255,42,109,0.8),
+      0 0 70px rgba(255,42,109,0.4);
+  }
+  .btn-sc{
+    box-shadow:
+      4px 4px 0 var(--green),
+      0 0 18px rgba(57,255,20,0.4);
+  }
+  .btn-sc:hover{
+    box-shadow:
+      6px 6px 0 var(--green),
+      0 0 28px rgba(57,255,20,0.6);
+  }
+  @keyframes btnPulse{
+    0%,100%{filter:brightness(1)}
+    50%{filter:brightness(1.18)}
+  }
+
+  /* Scanlines más densas y visibles en pantallas grandes */
+  .scanlines::after{
+    background:repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.22) 0px,
+      rgba(0,0,0,0.22) 1px,
+      transparent 1px,
+      transparent 3px);
+    opacity:0.85;
+  }
+
+  /* Player de SoundCloud: marco con doble glow */
+  .player-box{
+    box-shadow:
+      0 0 22px rgba(57,255,20,0.35),
+      0 0 50px rgba(57,255,20,0.15),
+      6px 6px 0 var(--pink);
+  }
+  .player-top{
+    background:linear-gradient(90deg,
+      rgba(57,255,20,0.12) 0%,
+      rgba(255,42,109,0.08) 100%);
+  }
+
+  /* Track items: borde y sombra más marcados */
+  .track-item{
+    box-shadow:
+      4px 4px 0 var(--pink),
+      0 0 14px rgba(255,42,109,0.25);
+    transition:transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  }
+  .track-item:hover{
+    transform:translate(-3px,-3px);
+    box-shadow:
+      6px 6px 0 var(--pink),
+      0 0 24px rgba(255,42,109,0.45),
+      0 0 50px rgba(255,42,109,0.2);
+  }
+
+  /* Sección de video: bordes más vivos y vignette interior */
+  .vid-section{
+    border-top:4px solid var(--pink);
+    border-bottom:4px solid var(--pink);
+    box-shadow:
+      inset 0 0 80px rgba(255,42,109,0.25),
+      inset 0 0 200px rgba(0,0,0,0.6);
+  }
+  .vid-section .vid-text h2{
+    text-shadow:0 0 18px var(--pink),0 0 40px rgba(255,42,109,0.5);
+  }
+  .vid-section .vid-text p{
+    text-shadow:0 0 12px var(--yellow),0 0 24px rgba(255,230,0,0.4);
+  }
+
+  /* Eventos: tarjetas con glow y hover vivo */
+  .evento-fecha{
+    box-shadow:
+      0 0 14px rgba(57,255,20,0.3),
+      3px 3px 0 var(--pink);
+    transition:transform 0.15s, box-shadow 0.15s;
+  }
+
+  /* Leaderboard: marco con neón doble */
+  .leaderboard-wrap{
+    box-shadow:
+      0 0 22px rgba(57,255,20,0.35),
+      0 0 60px rgba(255,42,109,0.18),
+      6px 6px 0 var(--pink);
+  }
+  .leaderboard-head{
+    text-shadow:0 0 14px var(--pink),0 0 30px rgba(255,42,109,0.5);
+  }
+
+  /* Headers de sección: títulos con glow más fuerte */
+  .sec-head h2,.sec-title{
+    text-shadow:
+      3px 3px 0 var(--pink),
+      0 0 20px var(--pink),
+      0 0 45px rgba(255,42,109,0.4);
+  }
+
+  /* Pills (las botellas/fantasmas decorativos) con glow */
+  .pill-bottle,.pill-ghost{
+    filter:drop-shadow(0 0 18px rgba(255,42,109,0.5))
+           drop-shadow(0 0 36px rgba(255,42,109,0.25));
+  }
+
+  /* Nav: barra superior con más presencia */
+  nav{
+    box-shadow:
+      0 2px 0 var(--pink),
+      0 4px 20px rgba(255,42,109,0.35);
+    backdrop-filter:blur(8px);
+    background:rgba(5,3,10,0.7);
+  }
+
+  /* Body: vignette general suave para concentrar la atención */
+  body::before{
+    content:'';position:fixed;inset:0;
+    background:radial-gradient(ellipse at center,
+      transparent 40%,
+      rgba(0,0,0,0.45) 100%);
+    pointer-events:none;
+    z-index:9998;
+  }
+}
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
@@ -2753,6 +2956,7 @@ window.addEventListener('popstate', () => {
     }
     preloadWeaponModels();
     preloadDrinkModels();
+    preloadTrapModels();
     scatterMexicanProps();
     setupInput();
     initAudio();
@@ -2980,6 +3184,13 @@ window.addEventListener('popstate', () => {
     });
 
     const crateMat  = new TH.MeshStandardMaterial({ map:textures.crate, roughness:0.85 });
+
+    // Material compartido para TECHOS (concrete oscurecido con PBR)
+    const ceilMat = new TH.MeshStandardMaterial({
+      map: textures.pbrConcrete.color, normalMap: textures.pbrConcrete.normal,
+      roughnessMap: textures.pbrConcrete.rough, roughness: 1.0,
+      color: 0x222222  // oscurece el techo sin perder la textura
+    });
     const darkMetal = new TH.MeshStandardMaterial({ color:0x1a1c22, roughness:0.4, metalness:0.85 });
     const platMat   = new TH.MeshStandardMaterial({ color:0x2a2a30, roughness:0.7, metalness:0.5 });
     const stairMat  = new TH.MeshStandardMaterial({ color:0x222024, roughness:0.8, metalness:0.4 });
@@ -3035,7 +3246,7 @@ window.addEventListener('popstate', () => {
     // =========================================================
     rooms.push({ id:0, name:'PLAZA', bounds:{minX:-10,maxX:10,minZ:-10,maxZ:10}, unlocked:true });
     addFloorPlane(0, 0, 20, 20, fConcrete);
-    addCeilingPlane(0, 0, 20, 20, H, new TH.MeshStandardMaterial({ color:0x0a0606 }));
+    addCeilingPlane(0, 0, 20, 20, H, ceilMat);
 
     // 4 paredes perimetrales de SPAWN (todas con hueco central de 4u para puerta)
     addWallWithGap('x', -10, -10, 10, H/2, H, 0.5, wBrick, -2, 2); // norte
@@ -3096,8 +3307,6 @@ window.addEventListener('popstate', () => {
     }
 
     // Wall buys de spawn: pistola y cuchillo
-    addWallBuy(-9.85, 1.6,  5, 0, Math.PI/2, 0, 'pistol', 150);
-    addWallBuy( 9.85, 1.6, -5, 0,-Math.PI/2, 0, 'knife',  100);
 
     // Spawners sala 0 (activos al empezar)
     addSpawner(-9.9, 1.2, -4, Math.PI/2, 0);
@@ -3108,17 +3317,16 @@ window.addEventListener('popstate', () => {
     // === NUEVA: REDBULL en spawn (esquina NW, mira al centro) ===
     addDrinkMachine(-7.5, 7.5, 3*Math.PI/4, 'redbull');
 
-    // ===== TRAMPAS DE LOS PASILLOS (UNA POR TRANSICIÓN) =====
-    // SPAWN ↔ BAR PINK (puerta sur, z=10): trampa justo pasada la puerta en bar pink
-    addBuyableTrap(0, 13, 'sawblade');
-    // SPAWN ↔ ALMACEN (puerta oeste, x=-10): trampa justo pasada la puerta en almacen
-    addBuyableTrap(-13, 0, 'fire');
-    // SPAWN ↔ LAB BIOQUIM (puerta este, x=10): trampa justo pasada la puerta en lab
-    addBuyableTrap(13, 0, 'spikes');
-    // BAR PINK ↔ UPGRADE (puerta sur del bar, z=35): trampa justo pasada la puerta en upgrade
+    // ===== TRAMPAS — UNA POR SALA, EN EL CENTRO =====
+    // Sierra giratoria → centro Bar Pink
+    addBuyableTrap(0, 22.5, 'sawblade');
+    // Lanzallamas → centro Almacén
+    addBuyableTrap(-25, 0, 'fire');
+    // Pinchos → centro Lab bioquímico
+    addBuyableTrap(25, 0, 'spikes');
+    // Torre Tesla → se queda donde está (sala upgrade, no moverla al centro)
     addBuyableTrap(0, 38, 'tesla');
     // === NUEVA: DEAGLE wall buy (pared sur, rotY=π para que mire al centro) ===
-    addWallBuy(7, 1.6, 9.85, 0, Math.PI, 0, 'deagle', 1750);
 
     // Luz cenital de spawn (única point light, sin malla colgante)
     {
@@ -3136,7 +3344,7 @@ window.addEventListener('popstate', () => {
     // =========================================================
     rooms.push({ id:1, name:'BAR PINK', bounds:{minX:-15,maxX:15,minZ:10,maxZ:35}, unlocked:false });
     addFloorPlane(0, 22.5, 30, 25, fBrick);
-    addCeilingPlane(0, 22.5, 30, 25, H, new TH.MeshStandardMaterial({ color:0x120408 }));
+    addCeilingPlane(0, 22.5, 30, 25, H, ceilMat);
 
     // Trozos laterales del muro norte (NO solapan con el de spawn)
     addWallWithGap('x', 10, -15, -10, H/2, H, 0.5, wBrick, null, null);
@@ -3153,12 +3361,8 @@ window.addEventListener('popstate', () => {
     addSpawner( 14.9, 1.2, 22,-Math.PI/2, 1);
 
     // Wall buys
-    addWallBuy(-14.85, 1.6, 15, 0, Math.PI/2, 0, 'smg',      1000);
-    addWallBuy( 14.85, 1.6, 15, 0,-Math.PI/2, 0, 'shotgun',  1500);
     // PERKY RAY — rotY=π para que mire al centro del bar pink
-    addWallBuy( 10,    1.6, 34.85, 0, Math.PI, 0, 'perkygun', 7000);
     // Bate de béisbol pegado a la pared este (cuerpo a cuerpo barato)
-    addWallBuy( 14.85, 1.6, 28, 0,-Math.PI/2, 0, 'bat', 800);
 
     // 2 luces rosas (reducidas para optimizar)
     for (let i=0;i<2;i++) {
@@ -3172,10 +3376,8 @@ window.addEventListener('popstate', () => {
     addDrinkMachine(-13, 33, Math.atan2(13, -10.5), 'katxorro');
 
     // === MACHETE en pared sur del BAR PINK (rotY=π para que mire al centro) ===
-    addWallBuy(-10, 1.6, 34.85, 0, Math.PI, 0, 'machete', 1800);
 
     // === NUEVO: AK-47 wall buy (pared este, lejos de la barra/door) ===
-    addWallBuy(14.85, 1.6, 18, 0, -Math.PI/2, 0, 'ak47', 2200);
     // === NUEVO: CHUPITO bebida (esquina NE, mira al centro) ===
     addDrinkMachine(13, 13, Math.atan2(-13, 9.5), 'chupito');
 
@@ -3187,7 +3389,7 @@ window.addEventListener('popstate', () => {
     // =========================================================
     rooms.push({ id:2, name:'ALMACEN', bounds:{minX:-40,maxX:-10,minZ:-12,maxZ:12}, unlocked:false });
     addFloorPlane(-25, 0, 30, 24, fConcrete);
-    addCeilingPlane(-25, 0, 30, 24, H, new TH.MeshStandardMaterial({ color:0x0a0605 }));
+    addCeilingPlane(-25, 0, 30, 24, H, ceilMat);
 
     // Trozos laterales del muro este (x=-10) que extienden el de spawn
     addWallWithGap('z',-10, -12, -10, H/2, H, 0.5, wBrick, null, null);
@@ -3201,26 +3403,19 @@ window.addEventListener('popstate', () => {
     addSpawner(-39.9, 1.2,  5, Math.PI/2, 2);
 
     // Wall buys
-    addWallBuy(-39.85, 1.6,  0, 0, Math.PI/2, 0, 'rifle', 2500);
     // SMG movida a x=-18 (antes estaba a x=-25 detrás de la máquina de MOJITO)
-    addWallBuy(-18,    1.6,-11.85, 0, 0,      0, 'smg',   1000);
     // LMG en pared sur (lado este)
-    addWallBuy(-13,    1.6, 11.85, 0, Math.PI, 0, 'lmg',  3000);
 
     // === MÁQUINA DE BEBIDA #3 — MOJITO (centro de la pared norte, mira al centro) ===
     addDrinkMachine(-25, -10.5, 0, 'mojito');
 
     // === MAGNUM en pared sur del almacén, lado oeste ===
-    addWallBuy(-32, 1.6, 11.85, 0, Math.PI, 0, 'magnum', 2200);
 
     // === NUEVO: BURST RIFLE wall buy ===
-    addWallBuy(-25, 1.6, -11.85, 0, 0, 0, 'burst', 2400);
     // === NUEVO: AUTO-ESCOPETA wall buy (separada de LMG) ===
-    addWallBuy(-22, 1.6, 11.85, 0, Math.PI, 0, 'autoshot', 3000);
     // === NUEVO: ABSENTA bebida (pared oeste, mira al centro) ===
     addDrinkMachine(-37, 9, Math.atan2(12, -9), 'absenta');
     // === NUEVO: KATANA cuerpo a cuerpo en almacén ===
-    addWallBuy(-39.85, 1.6, 8, 0, Math.PI/2, 0, 'katana', 2500);
 
     // Luces amarillas (reducidas)
     for (let i=0;i<2;i++) {
@@ -3238,7 +3433,7 @@ window.addEventListener('popstate', () => {
     // =========================================================
     rooms.push({ id:5, name:'LAB', bounds:{minX:10,maxX:40,minZ:-12,maxZ:12}, unlocked:false });
     addFloorPlane(25, 0, 30, 24, fMetal);
-    addCeilingPlane(25, 0, 30, 24, H, new TH.MeshStandardMaterial({ color:0x080a10 }));
+    addCeilingPlane(25, 0, 30, 24, H, ceilMat);
 
     addWallWithGap('z', 10, -12, -10, H/2, H, 0.5, wMetal, null, null);
     addWallWithGap('z', 10,  10,  12, H/2, H, 0.5, wMetal, null, null);
@@ -3249,14 +3444,9 @@ window.addEventListener('popstate', () => {
     addSpawner(39.9, 1.2, -5,-Math.PI/2, 5);
     addSpawner(39.9, 1.2,  5,-Math.PI/2, 5);
 
-    addWallBuy(39.85, 1.6,  0, 0,-Math.PI/2, 0, 'sniper', 3500);
-    addWallBuy(30,    1.6,-11.85, 0, 0,      0, 'rifle',  2500);
     // Lanzallamas como arma "experimental" del lab
-    addWallBuy(39.85, 1.6, -8, 0,-Math.PI/2, 0, 'flamer', 3200);
     // === NUEVO: PLASMA wall buy (lab tech) ===
-    addWallBuy(39.85, 1.6, 8, 0,-Math.PI/2, 0, 'plasma', 4500);
     // === NUEVO: TESLA GUN wall buy (pared NORTE del lab bioquim, totalmente despejada) ===
-    addWallBuy(20, 1.6, -11.85, 0, 0, 0, 'tesla', 4000);
     // === NUEVO: BLOODY bebida (pared sur, mira al centro) ===
     addDrinkMachine(30, 10.5, Math.atan2(-5, -10.5), 'bloody');
 
@@ -3323,10 +3513,7 @@ window.addEventListener('popstate', () => {
     addSpawner( 19.9, 1.2, -25,-Math.PI/2, 4);
     addSpawner(  0,   1.2, -39.9, 0, 4);
 
-    addWallBuy(-19.85, 1.8, -20, 0, Math.PI/2, 0, 'lmg',     3000);
-    addWallBuy( 19.85, 1.8, -30, 0,-Math.PI/2, 0, 'shotgun', 1500);
     // Minigun en el patio (más cara, posición visible)
-    addWallBuy(  0,    1.8, -39.85, 0, 0, 0, 'minigun', 5500);
 
     // === MÁQUINA DE BEBIDA #4 — QUINTOS (en una esquina del patio) ===
     addDrinkMachine(-17, -38, Math.PI/4, 'quintos');
@@ -3336,13 +3523,11 @@ window.addEventListener('popstate', () => {
     // === NUEVO: CHARTREUSE bebida — pared este del patio ===
     addDrinkMachine(18, -20, Math.atan2(-18, -5), 'chartreuse');
     // === NUEVO: BALLESTA wall buy ===
-    addWallBuy(-19.85, 1.6, -30, 0, Math.PI/2, 0, 'crossbow', 3800);
     // === NUEVO: RPG wall buy (caro pero brutal) ===
-    addWallBuy(19.85, 1.6, -20, 0, -Math.PI/2, 0, 'rpg', 6500);
     // === NUEVO: MOTOSIERRA premium ===
-    addWallBuy(-10, 1.6, -39.85, 0, 0, 0, 'chainsaw', 3500);
     // ===== TRAMPA DEL PASILLO SPAWN ↔ PATIO (única en esta zona) =====
-    addBuyableTrap(0, -12, 'electric');
+    // Trampa eléctrica → centro Patio Ramblas
+    addBuyableTrap(0, -25, 'electric');
 
     // 2 luces ambiente exterior (sin postes ni mallas)
     for (const [fx, fz] of [[-15, -25], [15, -25]]) {
@@ -3385,7 +3570,7 @@ window.addEventListener('popstate', () => {
     }
 
     // Techo: bóveda oscura
-    addCeilingPlane(0, 45, 30, 20, H, new TH.MeshStandardMaterial({ color:0x05010a }));
+    addCeilingPlane(0, 45, 30, 20, H, ceilMat);
 
     // Cruz luminosa en el techo (decor)
     {
@@ -3454,9 +3639,7 @@ window.addEventListener('popstate', () => {
     addDrinkMachine(-13, 50, Math.atan2(13, -5), 'chuchuwa');
 
     // === NUEVO: RAILGUN wall buy (pared oeste, altura norte) ===
-    addWallBuy(-14.85, 1.6, 42, 0, Math.PI/2, 0, 'railgun', 8000);
     // === NUEVO: PERKY NUKE wall buy (pared este, altura norte) ===
-    addWallBuy(14.85, 1.6, 42, 0, -Math.PI/2, 0, 'perkynuke', 12000);
 
     // ========= INTERRUPTOR DE LA ELECTRICIDAD =========
     // Pegado a la pared sur del lab de mejoras, cerca de la máquina de mejoras
@@ -3620,102 +3803,7 @@ window.addEventListener('popstate', () => {
     swingLamps.push({ chain, shade, bulb, light:lt, baseX:lx, baseZ:lz, phase:Math.random()*Math.PI*2 });
   }
 
-  // ===== WALL BUY (arma en pared) =====
-  function addWallBuy(px, py, pz, rotX, rotY, rotZ, weapon, cost) {
-    const grp = new TH.Group();
-
-    // === MARCO EXTERIOR amarillo grueso (visible desde lejos) ===
-    const frameMat = new TH.MeshStandardMaterial({
-      color: COLS.yellow, emissive: COLS.yellow, emissiveIntensity: 0.9
-    });
-    // 4 barras del marco
-    const fT = new TH.Mesh(new TH.BoxGeometry(2.6, 0.15, 0.12), frameMat);
-    fT.position.set(0, 0.85, -0.04); grp.add(fT);
-    const fB = new TH.Mesh(new TH.BoxGeometry(2.6, 0.15, 0.12), frameMat);
-    fB.position.set(0, -0.85, -0.04); grp.add(fB);
-    const fL = new TH.Mesh(new TH.BoxGeometry(0.15, 1.85, 0.12), frameMat);
-    fL.position.set(-1.225, 0, -0.04); grp.add(fL);
-    const fR = new TH.Mesh(new TH.BoxGeometry(0.15, 1.85, 0.12), frameMat);
-    fR.position.set( 1.225, 0, -0.04); grp.add(fR);
-
-    // === PANEL DE FONDO VERDE EMISIVO grande ===
-    const panel = new TH.Mesh(
-      new TH.BoxGeometry(2.4, 1.7, 0.06),
-      new TH.MeshStandardMaterial({
-        color: 0x0a2a0a,
-        emissive: COLS.green,
-        emissiveIntensity: 0.7
-      })
-    );
-    panel.position.z = -0.05;
-    grp.add(panel);
-
-    // === Líneas decorativas tipo CRT en el panel (textura procedural simple) ===
-    for (let i=0; i<5; i++) {
-      const line = new TH.Mesh(
-        new TH.BoxGeometry(2.2, 0.02, 0.005),
-        new TH.MeshBasicMaterial({ color: COLS.green, transparent: true, opacity: 0.55 })
-      );
-      line.position.set(0, -0.6 + i*0.3, -0.01);
-      grp.add(line);
-    }
-
-    // === VIDRIO frontal sutil (transparente) ===
-    const glass = new TH.Mesh(
-      new TH.BoxGeometry(2.3, 1.6, 0.03),
-      new TH.MeshStandardMaterial({
-        color: 0xaaffcc,
-        transparent: true,
-        opacity: 0.18,
-        emissive: COLS.green,
-        emissiveIntensity: 0.3
-      })
-    );
-    glass.position.z = 0.06;
-    grp.add(glass);
-
-    // === MODELO DEL ARMA grande, despegado del panel para que se vea flotando ===
-    const wm = createWeaponModel(weapon, 1.7);
-    wm.position.set(0, 0.05, 0.28);
-    wm.rotation.y = Math.PI/2;
-    grp.add(wm);
-
-    // === CARTEL DE PRECIO arriba (texto generado en canvas) ===
-    const priceCanvas = document.createElement('canvas');
-    priceCanvas.width = 256; priceCanvas.height = 64;
-    const pctx = priceCanvas.getContext('2d');
-    pctx.fillStyle = '#000';
-    pctx.fillRect(0, 0, 256, 64);
-    pctx.fillStyle = '#ffe600';
-    pctx.font = 'bold 32px monospace';
-    pctx.textAlign = 'center';
-    pctx.textBaseline = 'middle';
-    pctx.fillText(WEAPONS[weapon].name, 128, 22);
-    pctx.fillStyle = '#39ff14';
-    pctx.font = 'bold 26px monospace';
-    pctx.fillText(cost + ' PTS', 128, 48);
-    const priceTex = new TH.CanvasTexture(priceCanvas);
-    const priceMat = new TH.MeshBasicMaterial({ map: priceTex, transparent: true });
-    const priceLabel = new TH.Mesh(new TH.PlaneGeometry(2.0, 0.5), priceMat);
-    priceLabel.position.set(0, -0.5, 0.32);
-    grp.add(priceLabel);
-
-    grp.position.set(px, py, pz);
-    grp.rotation.set(rotX, rotY, rotZ);
-    scene.add(grp);
-
-    // === LUZ propia FUERTE para que destaque desde el otro lado de la sala ===
-    const wbl = new TH.PointLight(0x39ff14, 2.2, 12, 1.6);
-    // Posicionar la luz un poco delante del panel según rotación
-    const offsetX = Math.sin(rotY) * 1.2;
-    const offsetZ = Math.cos(rotY) * 1.2;
-    wbl.position.set(px + offsetX, py, pz + offsetZ);
-    scene.add(wbl);
-    wbl.userData.f = { base: 2.2, t: Math.random()*10 };
-    lights.push(wbl);
-
-    wallBuys.push({ weapon, cost, mesh:grp, posV:new TH.Vector3(px,py,pz) });
-  }
+  // (Wall buys eliminados — ahora las armas solo se obtienen por la caja misteriosa)
 
   // ===== WEAPON MODEL FACTORY =====
   function createWeaponModel(type, scale) {
@@ -4337,12 +4425,17 @@ window.addEventListener('popstate', () => {
     bat:      'bate.glb',
     katana:   'katana.glb',
     machete:  'machete.glb',
-    // minigun y motosierra DESACTIVADAS (modelos rotos) — usan el procedural
-    // minigun:  'minigun.glb',
-    // chainsaw: 'motosierra.glb',
+    knife:    'cuchillo.glb',
+    deagle:   'deagle6.glb',
+    flamer:   'flamethrower.glb',
+    perkynuke:'perkynuke.glb',
+    rpg:      'rpg.glb',
+    smg:      'smg.glb',
+    tesla:    'teslagun.glb',
+    // crossbow: no hay modelo aún — procedural
+    // minigun y motosierra DESACTIVADAS (modelos rotos)
   };
 
-  // Tamaño objetivo (dimensión máxima del arma en metros del mundo)
   const WEAPON_TARGET_SIZE = {
     pistol: 0.35, magnum: 0.40,
     shotgun: 0.75, autoshot: 0.75,
@@ -4350,10 +4443,10 @@ window.addEventListener('popstate', () => {
     sniper: 0.95, lmg: 0.85,
     plasma: 0.65, perkygun: 0.65, railgun: 0.85,
     bat: 0.70, katana: 0.80, machete: 0.60,
+    knife: 0.30, deagle: 0.40, flamer: 0.80,
+    perkynuke: 0.90, rpg: 0.90, smg: 0.55, tesla: 0.70,
   };
 
-  // Posición (x, y, z) y rotación (rx, ry, rz) del arma en primera persona.
-  // TOCA SOLO ESTOS VALORES PARA AJUSTAR CADA ARMA.
   const WEAPON_MODEL_OVERRIDES = {
     pistol:   { x: 0.28, y:-0.28, z:-0.50, rx: 0, ry:-Math.PI/2, rz: 0 },
     magnum:   { x: 0.28, y:-0.28, z:-0.50, rx: 0, ry: Math.PI/2, rz: 0 },
@@ -4370,6 +4463,13 @@ window.addEventListener('popstate', () => {
     bat:      { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: 0,         rz: 0 },
     katana:   { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: 0,         rz: 0 },
     machete:  { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: 0,         rz: 0 },
+    knife:    { x: 0.25, y:-0.25, z:-0.45, rx: 0, ry: 0,         rz: 0 },
+    deagle:   { x: 0.28, y:-0.28, z:-0.50, rx: 0, ry: 0,         rz: 0 },
+    flamer:   { x: 0.32, y:-0.32, z:-0.65, rx: 0, ry: 0,         rz: 0 },
+    perkynuke:{ x: 0.35, y:-0.35, z:-0.70, rx: 0, ry: 0,         rz: 0 },
+    rpg:      { x: 0.32, y:-0.32, z:-0.70, rx: 0, ry: 0,         rz: 0 },
+    smg:      { x: 0.28, y:-0.28, z:-0.55, rx: 0, ry: 0,         rz: 0 },
+    tesla:    { x: 0.30, y:-0.28, z:-0.55, rx: 0, ry: 0,         rz: 0 },
   };
   const WEAPON_MODEL_CACHE = {};
 
@@ -5890,70 +5990,124 @@ window.addEventListener('popstate', () => {
     tesla:    { name:'TORRE TESLA',      cost:2000, dmg:140, radius:4.0, duration:16, cooldown:42, color:0xaa55ff },
   };
 
+  // Mapa de trampa → archivo .glb
+  const TRAP_MODEL_FILES = {
+    electric: 'trampaelectrica.glb',
+    sawblade: 'sierragiratoria.glb',
+    fire:     'lanzallamas.glb',
+    spikes:   'pinchos.glb',
+    tesla:    'torretesla.glb',
+  };
+  const TRAP_MODEL_CACHE = {};
+
+  function preloadTrapModels() {
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    const loader = new THREE.GLTFLoader();
+    Object.entries(TRAP_MODEL_FILES).forEach(([trapId, file]) => {
+      loader.load(
+        'models/' + encodeURIComponent(file),
+        (gltf) => {
+          const model = gltf.scene;
+          const box = new TH.Box3().setFromObject(model);
+          const size = new TH.Vector3(); box.getSize(size);
+          const center = new TH.Vector3(); box.getCenter(center);
+          const targetH = 2.0;
+          const scale = (size.y > 0 ? targetH / size.y : 1);
+          model.position.set(-center.x, -box.min.y, -center.z);
+          const inner = new TH.Group();
+          inner.add(model);
+          inner.scale.setScalar(scale);
+          const wrap = new TH.Group();
+          wrap.add(inner);
+          wrap.traverse(o => {
+            if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+              o.material.envMapIntensity = 0.3;
+            }
+          });
+          TRAP_MODEL_CACHE[trapId] = wrap;
+          console.log('[TRAP OK]', trapId, file);
+          // Aplicar a trampas ya creadas
+          for (const tr of buyableTraps) {
+            if (tr.id === trapId && !tr._modelApplied) applyTrapModel(tr);
+          }
+        },
+        undefined,
+        (err) => console.error('[TRAP FAIL]', file, err)
+      );
+    });
+  }
+
+  function applyTrapModel(trap) {
+    const cached = TRAP_MODEL_CACHE[trap.id];
+    if (!cached) return;
+    // Eliminar meshes procedurales del grupo
+    const toRemove = [];
+    trap.group.traverse(o => {
+      if (o.isMesh) toRemove.push(o);
+    });
+    toRemove.forEach(o => {
+      if (o.parent) o.parent.remove(o);
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+        else o.material.dispose();
+      }
+    });
+    const inst = cached.clone(true);
+    trap.group.add(inst);
+    trap._modelApplied = true;
+  }
+
   function addBuyableTrap(cx, cz, trapId) {
     const t = TRAPS[trapId];
     if (!t) return;
     const grp = new TH.Group();
     grp.position.set(cx, 0, cz);
 
-    // Base/poste
+    // Procedural fallback (se reemplaza cuando cargue el GLB)
     const baseMat = new TH.MeshStandardMaterial({ color:0x222222, metalness:0.8, roughness:0.4 });
     const base = new TH.Mesh(new TH.BoxGeometry(0.8, 0.2, 0.8), baseMat);
     base.position.y = 0.1; grp.add(base);
     const post = new TH.Mesh(new TH.CylinderGeometry(0.08, 0.08, 1.2, 6), baseMat);
     post.position.y = 0.7; grp.add(post);
 
-    // Elemento principal según tipo
     let active = null;
     if (trapId === 'electric' || trapId === 'tesla') {
-      active = new TH.Mesh(
-        new TH.SphereGeometry(0.35, 10, 8),
-        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2 })
-      );
+      active = new TH.Mesh(new TH.SphereGeometry(0.35, 8, 6),
+        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2 }));
       active.position.y = 1.5;
     } else if (trapId === 'sawblade') {
-      active = new TH.Mesh(
-        new TH.CylinderGeometry(0.7, 0.7, 0.06, 16),
-        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2, metalness:0.9 })
-      );
-      active.rotation.x = Math.PI/2;
-      active.position.y = 1.2;
+      active = new TH.Mesh(new TH.CylinderGeometry(0.7, 0.7, 0.06, 12),
+        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2, metalness:0.9 }));
+      active.rotation.x = Math.PI/2; active.position.y = 1.2;
     } else if (trapId === 'fire') {
-      active = new TH.Mesh(
-        new TH.ConeGeometry(0.3, 0.6, 8),
-        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2 })
-      );
+      active = new TH.Mesh(new TH.ConeGeometry(0.3, 0.6, 6),
+        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2 }));
       active.position.y = 1.5;
     } else if (trapId === 'spikes') {
-      active = new TH.Mesh(
-        new TH.BoxGeometry(0.7, 0.1, 0.7),
-        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2, metalness:0.7 })
-      );
+      active = new TH.Mesh(new TH.BoxGeometry(0.7, 0.1, 0.7),
+        new TH.MeshStandardMaterial({ color:t.color, emissive:t.color, emissiveIntensity:0.2, metalness:0.7 }));
       active.position.y = 0.25;
     }
     if (active) grp.add(active);
 
-    // Cartel con precio
-    const sign = new TH.Mesh(
-      new TH.BoxGeometry(0.7, 0.2, 0.05),
-      new TH.MeshBasicMaterial({ color:t.color })
-    );
-    sign.position.y = 1.95; grp.add(sign);
-
-    // Luz baja apagada al inicio
+    // Luz
     const tl = new TH.PointLight(t.color, 0.4, 6, 1.8);
     tl.position.set(0, 1.2, 0); grp.add(tl);
 
     scene.add(grp);
 
-    buyableTraps.push({
-      id: trapId, group: grp, active: active, sign: sign, light: tl,
+    const trapObj = {
+      id: trapId, group: grp, active: active, sign: null, light: tl,
       pos: new TH.Vector3(cx, 1.0, cz),
       cost: t.cost, dmg: t.dmg, radius: t.radius,
       duration: t.duration, cooldown: t.cooldown,
       armedUntil: 0, readyAt: 0, bought: false,
-      damageT: 0,
-    });
+      damageT: 0, _modelApplied: false,
+    };
+    buyableTraps.push(trapObj);
+    // Si el modelo ya está cargado, aplicar ya
+    if (TRAP_MODEL_CACHE[trapId]) applyTrapModel(trapObj);
   }
 
   function activateTrap(tr) {
@@ -6059,9 +6213,21 @@ window.addEventListener('popstate', () => {
         if (mysteryBox.mesh && mysteryBox.mesh.material && mysteryBox.mesh.material.emissiveIntensity !== undefined) {
           mysteryBox.mesh.material.emissiveIntensity = 1.4;
         }
-        const pool = ['smg','shotgun','rifle','sniper','lmg','magnum','minigun','flamer','perkygun',
-                      'deagle','ak47','burst','autoshot','crossbow','rpg','plasma','tesla','railgun','perkynuke','katana','chainsaw'];
-        const pick = pool[Math.floor(Math.random()*pool.length)];
+        // Pool con pesos: armas normales = peso 8, armas especiales = peso 1 (~1/8 chance)
+        const weightedPool = [
+          // Normales (peso alto)
+          {w:'smg',w8:8},{w:'shotgun',w8:8},{w:'rifle',w8:8},{w:'sniper',w8:8},
+          {w:'lmg',w8:8},{w:'magnum',w8:8},{w:'minigun',w8:8},{w:'flamer',w8:8},
+          {w:'deagle',w8:8},{w:'ak47',w8:8},{w:'burst',w8:8},{w:'autoshot',w8:8},
+          {w:'crossbow',w8:8},{w:'rpg',w8:8},{w:'katana',w8:8},{w:'chainsaw',w8:8},
+          {w:'bat',w8:8},{w:'machete',w8:8},{w:'knife',w8:8},
+          // Especiales (peso bajo ~1 cada 8 tiradas)
+          {w:'perkynuke',w8:1},{w:'perkygun',w8:1},{w:'railgun',w8:1},{w:'tesla',w8:1},{w:'plasma',w8:1},
+        ];
+        const totalW = weightedPool.reduce((a,b)=>a+b.w8,0);
+        let rr = Math.random()*totalW;
+        let pick = weightedPool[0].w;
+        for (const wp of weightedPool) { rr -= wp.w8; if (rr <= 0) { pick = wp.w; break; } }
         setTimeout(() => {
           if (!player.inventory.includes(pick)) player.inventory.push(pick);
           currentWeapon = pick;
@@ -6126,24 +6292,6 @@ window.addEventListener('popstate', () => {
         return;
       }
     }
-    // wall buys
-    for (const wb of wallBuys) {
-      if (pp.distanceTo(wb.posV) < 2.6) {
-        if (player.points >= wb.cost) {
-          player.points -= wb.cost;
-          if (!player.inventory.includes(wb.weapon)) player.inventory.push(wb.weapon);
-          currentWeapon = wb.weapon;
-          initAmmoFor(wb.weapon);
-          // Si ya la tenías, este wall buy te rellena la munición de reserva
-          if (player.ammo[wb.weapon]) {
-            addReserveAmmo(wb.weapon, WEAPONS[wb.weapon].reserve);
-          }
-          buildWeaponMesh();
-          updateHUD();
-        }
-        return;
-      }
-    }
     // TRAMPAS DE PAGO
     const nowS = performance.now()/1000;
     for (const tr of buyableTraps) {
@@ -6200,12 +6348,6 @@ window.addEventListener('popstate', () => {
         } else {
           txt = '[E] ' + DRINKS[dm.drinkId].name + ' — ' + dm.cost + ' PTS · ' + DRINKS[dm.drinkId].desc;
         }
-        break;
-      }
-    }
-    if (!txt) for (const wb of wallBuys) {
-      if (pp.distanceTo(wb.posV) < 2.6) {
-        txt = '[E] ' + WEAPONS[wb.weapon].name + ' — ' + wb.cost + ' PTS';
         break;
       }
     }
