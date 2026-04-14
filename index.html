@@ -2957,6 +2957,7 @@ window.addEventListener('popstate', () => {
     preloadWeaponModels();
     preloadDrinkModels();
     preloadTrapModels();
+    preloadZombieModels();
     scatterMexicanProps();
     setupInput();
     initAudio();
@@ -3380,11 +3381,10 @@ window.addEventListener('popstate', () => {
     addWallWithGap('x', 61, -20, 20, OH/2, OH, 0.5, wOutdoor, 11, 15);
     addWallWithGap('z',-20, 61, 91, OH/2, OH, 0.5, wOutdoor, null, null); // oeste
     addWallWithGap('z', 20, 61, 91, OH/2, OH, 0.5, wOutdoor, null, null); // este
-    // Pared norte con DOS huecos para las salas del fondo (PAP en x[-18..-14], Perk en x[14..18])
-    addWall(-19, OH/2, 91, 2, OH, 0.5, wOutdoor);   // extremo oeste
-    addWall( -8, OH/2, 91, 12, OH, 0.5, wOutdoor);  // entre huecos (x:-14..-2)... centro en -8, len 12
-    addWall(  8, OH/2, 91, 12, OH, 0.5, wOutdoor);  // entre huecos (x:2..14)... centro en 8, len 12
-    addWall( 19, OH/2, 91, 2, OH, 0.5, wOutdoor);   // extremo este
+    // Pared norte con DOS huecos para las puertas PAP (x[-18..-14]) y Perk (x[14..18])
+    addWall(-19, OH/2, 91, 2, OH, 0.5, wOutdoor);   // x[-20..-18] extremo oeste
+    addWall(  0, OH/2, 91, 28, OH, 0.5, wOutdoor);  // x[-14..14] centro entre los dos huecos
+    addWall( 19, OH/2, 91, 2, OH, 0.5, wOutdoor);   // x[18..20] extremo este
     // Props del patio: farolas
     makeHangingLamp(-10, 68, COLS.yellow);
     makeHangingLamp( 10, 68, COLS.orange);
@@ -3512,7 +3512,7 @@ window.addEventListener('popstate', () => {
       }
     }
 
-    // ===== INTERRUPTOR DE ELECTRICIDAD (en el patio, pegado a la pared sur) =====
+    // ===== INTERRUPTOR DE ELECTRICIDAD (en la sala del chuchuwa, pared oeste) =====
     {
       const psGrp = new TH.Group();
       const boxMat = new TH.MeshStandardMaterial({ color:0x2a1a00, metalness:0.7, roughness:0.4 });
@@ -3531,14 +3531,15 @@ window.addEventListener('popstate', () => {
       knob.position.y = -0.55;
       leverPivot.add(knob);
       psGrp.add(leverPivot);
-      psGrp.position.set(-10, 0, 61.5);
-      psGrp.rotation.y = 0;
+      // Pegado a la pared oeste de la sala Perk Final (x=12), mirando al centro (este)
+      psGrp.position.set(12.3, 0, 95);
+      psGrp.rotation.y = Math.PI/2;
       scene.add(psGrp);
       const psL = new TH.PointLight(0xff2222, 0.8, 6, 1.8);
-      psL.position.set(-10, 1.6, 62.5); scene.add(psL); lights.push(psL);
+      psL.position.set(13, 1.6, 95); scene.add(psL); lights.push(psL);
       powerSwitch = {
         group: psGrp, leverPivot, lever, knob, light: psL,
-        pos: new TH.Vector3(-10, 1.5, 62),
+        pos: new TH.Vector3(13, 1.5, 95),
       };
     }
 
@@ -5013,47 +5014,120 @@ window.addEventListener('popstate', () => {
     return 'normal';
   }
 
+  // ===== MODELOS 3D DE ZOMBIS (GLTF con animaciones) =====
+  const ZOMBIE_MODEL_FILES = ['zombie1.glb', 'zombie2.glb'];
+  const ZOMBIE_MODEL_CACHE = []; // { scene, animations }
+
+  function preloadZombieModels() {
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    const loader = new THREE.GLTFLoader();
+    ZOMBIE_MODEL_FILES.forEach(file => {
+      loader.load(
+        'models/' + file,
+        (gltf) => {
+          ZOMBIE_MODEL_CACHE.push({ scene: gltf.scene, animations: gltf.animations || [] });
+          console.log('[ZOMBIE OK]', file, 'anims:', (gltf.animations || []).map(a => a.name));
+        },
+        undefined,
+        (err) => console.error('[ZOMBIE FAIL]', file, err)
+      );
+    });
+  }
+
+  // Helper: clonar un GLTF preservando el SkeletonUtils (para animaciones esqueléticas)
+  function cloneSkinned(source) {
+    const clone = source.clone(true);
+    // Three.js clone() no duplica skeletons/bones correctamente para SkinnedMesh.
+    // Hacemos un manual remap: recogemos los bones del clone y remapeamos en cada SkinnedMesh.
+    const sourceBones = [];
+    const cloneBones = [];
+    source.traverse(o => { if (o.isBone) sourceBones.push(o); });
+    clone.traverse(o => { if (o.isBone) cloneBones.push(o); });
+    clone.traverse(o => {
+      if (o.isSkinnedMesh) {
+        const srcSkinned = (() => {
+          let found = null;
+          source.traverse(s => {
+            if (!found && s.isSkinnedMesh && s.name === o.name) found = s;
+          });
+          return found;
+        })();
+        if (srcSkinned) {
+          const newBones = srcSkinned.skeleton.bones.map(b => {
+            const idx = sourceBones.indexOf(b);
+            return idx >= 0 ? cloneBones[idx] : b;
+          });
+          o.skeleton = new THREE.Skeleton(newBones, srcSkinned.skeleton.boneInverses);
+          o.bind(o.skeleton, o.bindMatrix);
+        }
+      }
+    });
+    return clone;
+  }
+
   function spawnZombie() {
     // elegir un spawner activo aleatorio (de salas desbloqueadas)
     const activeSpawners = spawners.filter(s => s.active);
     if (!activeSpawners.length) return;
     const sp = activeSpawners[Math.floor(Math.random()*activeSpawners.length)];
-    // flash rojo en el spawner
     sp.pulseT = 0;
 
     const typeName = pickZombieType();
     const type = ZOMBIE_TYPES[typeName];
 
     const grp = new TH.Group();
-    const skinMat  = new TH.MeshStandardMaterial({ color:type.skin, roughness:0.85 });
-    const clothMat = new TH.MeshStandardMaterial({ color:type.cloth, roughness:0.95 });
 
-    const body = new TH.Mesh(new TH.BoxGeometry(0.6, 1.0, 0.35), clothMat);
+    // === Hitboxes invisibles para raycast (body + head) ===
+    // Mantienen la misma lógica de disparos sin depender del modelo GLB
+    const hitboxMat = new TH.MeshBasicMaterial({ visible: false });
+    const body = new TH.Mesh(new TH.BoxGeometry(0.6, 1.0, 0.4), hitboxMat);
     body.position.y = 1.0; grp.add(body);
-
-    const head = new TH.Mesh(new TH.BoxGeometry(0.42, 0.42, 0.42), skinMat);
+    const head = new TH.Mesh(new TH.BoxGeometry(0.42, 0.42, 0.42), hitboxMat);
     head.position.y = 1.78; grp.add(head);
 
-    const jaw = new TH.Mesh(new TH.BoxGeometry(0.36, 0.08, 0.3), skinMat);
-    jaw.position.set(0, 1.6, 0.06); grp.add(jaw);
-
-    const lLeg = new TH.Mesh(new TH.BoxGeometry(0.22, 0.85, 0.22), clothMat);
-    lLeg.position.set(-0.16, 0.45, 0); grp.add(lLeg);
-    const rLeg = new TH.Mesh(new TH.BoxGeometry(0.22, 0.85, 0.22), clothMat);
-    rLeg.position.set( 0.16, 0.45, 0); grp.add(rLeg);
-
-    const lArm = new TH.Mesh(new TH.BoxGeometry(0.18, 0.85, 0.18), skinMat);
-    lArm.position.set(-0.42, 1.15, 0.18); lArm.rotation.x = -0.7; grp.add(lArm);
-    const rArm = new TH.Mesh(new TH.BoxGeometry(0.18, 0.85, 0.18), skinMat);
-    rArm.position.set( 0.42, 1.15, 0.18); rArm.rotation.x = -0.7; grp.add(rArm);
-
-    // ojos según tipo
-    const eyeColor = typeName==='spitter'?0x00ffcc:(typeName==='tank'?0xffaa00:(typeName==='fast'?0xff00ff:0xff2222));
-    const eyeMat = new TH.MeshBasicMaterial({ color: eyeColor });
-    const lEye = new TH.Mesh(new TH.BoxGeometry(0.07,0.07,0.02), eyeMat);
-    lEye.position.set(-0.1, 1.82, 0.21); grp.add(lEye);
-    const rEye = new TH.Mesh(new TH.BoxGeometry(0.07,0.07,0.02), eyeMat);
-    rEye.position.set( 0.1, 1.82, 0.21); grp.add(rEye);
+    // === Modelo visual 3D (si hay GLB cargado) ===
+    let mixer = null;
+    let modelRoot = null;
+    if (ZOMBIE_MODEL_CACHE.length > 0) {
+      const src = ZOMBIE_MODEL_CACHE[Math.floor(Math.random()*ZOMBIE_MODEL_CACHE.length)];
+      // Clonar respetando skinning
+      const cloned = cloneSkinned(src.scene);
+      // Normalizar escala: el modelo debe medir ~1.8m de alto
+      const box = new TH.Box3().setFromObject(cloned);
+      const size = new TH.Vector3(); box.getSize(size);
+      const center = new TH.Vector3(); box.getCenter(center);
+      const targetH = 1.8;
+      const scale = size.y > 0 ? targetH / size.y : 1;
+      const wrap = new TH.Group();
+      cloned.position.set(-center.x, -box.min.y, -center.z);
+      wrap.add(cloned);
+      wrap.scale.setScalar(scale);
+      grp.add(wrap);
+      modelRoot = wrap;
+      // envmap bajo para que no se tiña
+      cloned.traverse(o => {
+        if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+          o.material.envMapIntensity = 0.3;
+        }
+      });
+      // Animaciones
+      if (src.animations && src.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(cloned);
+        // Preferir animación de caminar si existe por nombre, sino usar la primera
+        let walkClip = src.animations.find(a => /walk|run|move/i.test(a.name));
+        if (!walkClip) walkClip = src.animations[0];
+        const action = mixer.clipAction(walkClip);
+        action.play();
+      }
+    } else {
+      // Fallback procedural mínimo (si los GLB no han cargado)
+      const skinMat  = new TH.MeshStandardMaterial({ color:type.skin, roughness:0.85 });
+      const clothMat = new TH.MeshStandardMaterial({ color:type.cloth, roughness:0.95 });
+      const bodyVis = new TH.Mesh(new TH.BoxGeometry(0.6, 1.0, 0.35), clothMat);
+      bodyVis.position.y = 1.0; grp.add(bodyVis);
+      const headVis = new TH.Mesh(new TH.BoxGeometry(0.42, 0.42, 0.42), skinMat);
+      headVis.position.y = 1.78; grp.add(headVis);
+    }
 
     grp.scale.setScalar(type.scale);
     grp.position.copy(sp.pos);
@@ -5063,7 +5137,9 @@ window.addEventListener('popstate', () => {
     const baseSpeed = Math.min(1.4 + (wave - 1) * 0.18, 4.0) * type.spdMult;
 
     zombies.push({
-      group:grp, body, head, lLeg, rLeg, lArm, rArm,
+      group:grp, body, head, modelRoot, mixer,
+      // Placeholders para que no rompa el código antiguo (no se usan con GLB)
+      lLeg:null, rLeg:null, lArm:null, rArm:null,
       pos:grp.position,
       health:baseHp, maxHealth:baseHp, speed:baseSpeed,
       alive:true, lastAttack:0, walkT:Math.random()*10,
@@ -5119,12 +5195,19 @@ window.addEventListener('popstate', () => {
         const step = z.speed * dt;
         z.pos.x += nx * step;
         z.pos.z += nz * step;
-        z.walkT += dt * z.speed * 2.6;
-        const sw = Math.sin(z.walkT) * 0.55;
-        z.lLeg.rotation.x =  sw;
-        z.rLeg.rotation.x = -sw;
-        z.lArm.rotation.x = -0.7 + sw*0.35;
-        z.rArm.rotation.x = -0.7 - sw*0.35;
+        // Si es fallback procedural, animar piernas/brazos manualmente
+        if (z.lLeg) {
+          z.walkT += dt * z.speed * 2.6;
+          const sw = Math.sin(z.walkT) * 0.55;
+          z.lLeg.rotation.x =  sw;
+          z.rLeg.rotation.x = -sw;
+          z.lArm.rotation.x = -0.7 + sw*0.35;
+          z.rArm.rotation.x = -0.7 - sw*0.35;
+        }
+        // Si hay mixer de animación GLB, avanzarlo (escalado por velocidad)
+        if (z.mixer) {
+          z.mixer.update(dt * Math.max(0.8, z.speed / 1.8));
+        }
       } else {
         const now = performance.now();
         if (now - z.lastAttack > 1100) {
@@ -5133,23 +5216,31 @@ window.addEventListener('popstate', () => {
           if (activePowerups.resist) dmg *= 0.4;
           if (persistentBuffs.mojito) dmg *= 0.6;
           damagePlayer(dmg, z.pos);
-          z.lArm.rotation.x = -1.7;
-          z.rArm.rotation.x = -1.7;
-          setTimeout(() => { if (z.alive) { z.lArm.rotation.x = -0.7; z.rArm.rotation.x = -0.7; } }, 220);
+          if (z.lArm) {
+            z.lArm.rotation.x = -1.7;
+            z.rArm.rotation.x = -1.7;
+            setTimeout(() => { if (z.alive && z.lArm) { z.lArm.rotation.x = -0.7; z.rArm.rotation.x = -0.7; } }, 220);
+          }
+          // Con GLB, seguimos avanzando el mixer para que siga animándose durante el ataque
+          if (z.mixer) z.mixer.update(dt);
         }
       }
 
       z.group.rotation.y = Math.atan2(nx, nz);
 
+      // Flash rojo al recibir daño (solo funciona con fallback procedural;
+      // con GLB el body es invisible, así que se omite)
       if (z.flashTime > 0) {
         z.flashTime -= dt;
-        if (!z._flashing) {
+        if (!z._flashing && z.body.material && z.body.material.emissive) {
           z.body.material.emissive.copy(_flashColor);
           z.body.material.emissiveIntensity = 0.6;
           z._flashing = true;
         }
       } else if (z._flashing) {
-        z.body.material.emissiveIntensity = 0;
+        if (z.body.material && z.body.material.emissive) {
+          z.body.material.emissiveIntensity = 0;
+        }
         z._flashing = false;
       }
     }
