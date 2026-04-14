@@ -5204,9 +5204,11 @@ window.addEventListener('popstate', () => {
           z.lArm.rotation.x = -0.7 + sw*0.35;
           z.rArm.rotation.x = -0.7 - sw*0.35;
         }
-        // Si hay mixer de animación GLB, avanzarlo (escalado por velocidad)
+        // Si hay mixer de animación GLB, avanzarlo proporcional a la velocidad real.
+        // La animación de walk del modelo asume ~1 m/s como base, así que multiplicamos
+        // el dt por la velocidad real del zombi para que los pies sigan el desplazamiento.
         if (z.mixer) {
-          z.mixer.update(dt * Math.max(0.8, z.speed / 1.8));
+          z.mixer.update(dt * z.speed * 1.6);
         }
       } else {
         const now = performance.now();
