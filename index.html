@@ -5152,18 +5152,16 @@ window.addEventListener('popstate', () => {
   const ZOMBIE_MODEL_FILES = ['zombie1.glb'];
   const ZOMBIE_MODEL_CACHE = []; // { scene, animations }
 
-  // Materiales verdes por tipo de zombi (compartidos entre instancias del mismo tipo).
-  // skinning:true es OBLIGATORIO para que los SkinnedMesh respeten el esqueleto.
-  const ZOMBIE_MATS = {
-    normal:  new TH.MeshLambertMaterial({ color: 0x4a7a2a, skinning: true, emissive: 0x0a1a05, emissiveIntensity: 0.3 }),
-    fast:    new TH.MeshLambertMaterial({ color: 0xa83a3a, skinning: true, emissive: 0x2a0505, emissiveIntensity: 0.4 }),
-    tank:    new TH.MeshLambertMaterial({ color: 0x3a3a4a, skinning: true, emissive: 0x05050a, emissiveIntensity: 0.3 }),
-    spitter: new TH.MeshLambertMaterial({ color: 0x2a8a6a, skinning: true, emissive: 0x05201a, emissiveIntensity: 0.5 }),
-    runner:  new TH.MeshLambertMaterial({ color: 0x8a4a1a, skinning: true, emissive: 0x1a0a05, emissiveIntensity: 0.4 }),
+  // Tintes de color por tipo de zombi (se multiplican sobre la textura original).
+  // Blanco = sin teñir (textura tal cual). Tonos sutiles para distinguir tipos sin
+  // matar las texturas originales del modelo.
+  const ZOMBIE_TINTS = {
+    normal:  0xffffff, // blanco = textura original sin tintar
+    fast:    0xffaaaa, // ligeramente rojizo
+    tank:    0xaaaacc, // ligeramente azulado oscuro
+    spitter: 0x88ffcc, // verdoso turquesa
+    runner:  0xffccaa, // ligeramente naranja
   };
-  function _matForType(typeName) {
-    return ZOMBIE_MATS[typeName] || ZOMBIE_MATS.normal;
-  }
 
   function preloadZombieModels() {
     if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
@@ -5172,15 +5170,8 @@ window.addEventListener('popstate', () => {
       loader.load(
         'models/' + file,
         (gltf) => {
-          // Dispose de los materiales originales (texturas que daban rayas).
-          // El material real se aplica por instancia en spawnZombie según el tipo.
-          gltf.scene.traverse(o => {
-            if (o.isMesh && o.material) {
-              if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
-              else o.material.dispose();
-              o.material = ZOMBIE_MATS.normal; // placeholder para que no crashee al clonar
-            }
-          });
+          // Conservamos los materiales originales del GLB (texturas, normal maps).
+          // No tocamos nada para que el zombi se vea como vino del modelado.
           ZOMBIE_MODEL_CACHE.push({ scene: gltf.scene, animations: gltf.animations || [] });
           console.log('[ZOMBIE OK]', file, 'anims:', (gltf.animations || []).map(a => a.name));
         },
@@ -5248,10 +5239,17 @@ window.addEventListener('popstate', () => {
       const src = ZOMBIE_MODEL_CACHE[Math.floor(Math.random()*ZOMBIE_MODEL_CACHE.length)];
       // Clonar respetando skinning
       const cloned = cloneSkinned(src.scene);
-      // Asignar material según el tipo de zombi (color distinto por tipo)
-      const typeMat = _matForType(typeName);
+      // Mantener las texturas originales del GLB. Para diferenciar tipos de zombi,
+      // clonamos los materiales y aplicamos un TINTE de color según el tipo.
+      // Material clonado por instancia para que el tinte no afecte a otros zombis.
+      const tintColor = ZOMBIE_TINTS[typeName] || ZOMBIE_TINTS.normal;
       cloned.traverse(o => {
-        if (o.isMesh) o.material = typeMat;
+        if (o.isMesh && o.material) {
+          const matSrc = Array.isArray(o.material) ? o.material[0] : o.material;
+          const matClone = matSrc.clone();
+          if (matClone.color) matClone.color.setHex(tintColor);
+          o.material = matClone;
+        }
       });
       // Normalizar escala base (~1.8m de alto)
       const box = new TH.Box3().setFromObject(cloned);
@@ -5320,8 +5318,11 @@ window.addEventListener('popstate', () => {
       const z = zombies[i];
       if (!z.alive) {
         z.deathTime += dt;
+        // Rotar hacia tumbado (cara abajo) y mantener pegado al suelo
         z.group.rotation.x = Math.min(Math.PI/2, z.group.rotation.x + dt*6);
-        z.group.position.y = Math.max(0, z.group.position.y - dt*0.8);
+        // Forzar que la base del grupo siempre toque el suelo (y=0).
+        // Cuando rota completamente (90°), la cabeza queda en el suelo hacia delante.
+        z.group.position.y = 0;
         if (z.deathTime > 1.2) {
           scene.remove(z.group);
           z.group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
@@ -5393,11 +5394,6 @@ window.addEventListener('popstate', () => {
           z.lArm.rotation.x = -0.7 + sw*0.35;
           z.rArm.rotation.x = -0.7 - sw*0.35;
         }
-        // Si hay mixer de animación GLB, avanzarlo SOLO si el zombi está cerca
-        // del jugador (a más de 30m el fog casi los oculta y no se nota).
-        if (z.mixer && dist < 30) {
-          z.mixer.update(dt * z.speed * 1.6);
-        }
       } else {
         const now = performance.now();
         if (now - z.lastAttack > 1100) {
@@ -5411,9 +5407,17 @@ window.addEventListener('popstate', () => {
             z.rArm.rotation.x = -1.7;
             setTimeout(() => { if (z.alive && z.lArm) { z.lArm.rotation.x = -0.7; z.rArm.rotation.x = -0.7; } }, 220);
           }
-          // Con GLB, seguimos avanzando el mixer para que siga animándose durante el ataque
-          if (z.mixer) z.mixer.update(dt);
         }
+      }
+
+      // === MIXER: actualizar SIEMPRE cada frame (incluso atacando o lejos) ===
+      // Si solo lo actualizamos cuando se mueve, hay tirones al pararse a atacar.
+      // El factor de velocidad lo escalamos suavemente, no por dist.
+      if (z.mixer && dist < 35) {
+        const animSpeed = (dist > 1.35)
+          ? Math.max(0.6, z.speed * 1.4)   // moviéndose: ritmo según velocidad
+          : 0.7;                            // parado/atacando: ritmo lento pero no congelado
+        z.mixer.update(dt * animSpeed);
       }
 
       z.group.rotation.y = Math.atan2(nx, nz);
