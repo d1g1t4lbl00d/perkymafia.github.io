@@ -2983,6 +2983,7 @@ window.addEventListener('popstate', () => {
     preloadDrinkModels();
     preloadTrapModels();
     preloadZombieModels();
+    preloadGardenModels();
     scatterMexicanProps();
     setupInput();
     initAudio();
@@ -3171,6 +3172,8 @@ window.addEventListener('popstate', () => {
   //   [3 ALMACEN] ——————— [4 PATIO JARDIN] ——— [6 SALA PERKY VIP]
   //
   // Rooms: ~20×20 cada una, conectadas por pasillos
+
+
   function buildWorld() {
     // =========================================================
     // MATERIALES
@@ -3179,435 +3182,186 @@ window.addEventListener('popstate', () => {
       map: textures.pbrConcrete.color, normalMap: textures.pbrConcrete.normal,
       roughnessMap: textures.pbrConcrete.rough, roughness: 1.0
     });
-    const fNeon     = new TH.MeshStandardMaterial({ map:textures.floorNeon, roughness:0.75 });
-    const fGrass    = new TH.MeshStandardMaterial({
+    const fGrass = new TH.MeshStandardMaterial({
       map: textures.pbrGrass.color, normalMap: textures.pbrGrass.normal,
       roughnessMap: textures.pbrGrass.rough, roughness: 1.0
     });
-    const fMetal    = new TH.MeshStandardMaterial({
+    const fMetal = new TH.MeshStandardMaterial({
       map: textures.pbrMetal.color, normalMap: textures.pbrMetal.normal,
       roughnessMap: textures.pbrMetal.rough, metalnessMap: textures.pbrMetal.metal,
       roughness: 1.0, metalness: 1.0
     });
-    const fBrick    = new TH.MeshStandardMaterial({
+    const fBrick = new TH.MeshStandardMaterial({
       map: textures.pbrPaving.color, normalMap: textures.pbrPaving.normal,
       roughnessMap: textures.pbrPaving.rough, roughness: 1.0
     });
-
-    const wBrick    = new TH.MeshStandardMaterial({
+    const wBrick = new TH.MeshStandardMaterial({
       map: textures.pbrBricks.color, normalMap: textures.pbrBricks.normal,
       roughnessMap: textures.pbrBricks.rough, roughness: 1.0
     });
-    const wNeon     = new TH.MeshStandardMaterial({ map:textures.wallNeon, roughness:0.75 });
-    const wMetal    = new TH.MeshStandardMaterial({
-      map: textures.pbrMetal.color, normalMap: textures.pbrMetal.normal,
-      roughnessMap: textures.pbrMetal.rough, metalnessMap: textures.pbrMetal.metal,
-      roughness: 1.0, metalness: 1.0
-    });
-    const wOutdoor  = new TH.MeshStandardMaterial({
+    const wOutdoor = new TH.MeshStandardMaterial({
       map: textures.pbrBricks.color, normalMap: textures.pbrBricks.normal,
       roughnessMap: textures.pbrBricks.rough, roughness: 1.0
     });
-
-    const crateMat  = new TH.MeshStandardMaterial({ map:textures.crate, roughness:0.85 });
-
-    // Material compartido para TECHOS (concrete oscurecido con PBR)
+    const crateMat = new TH.MeshStandardMaterial({ map: textures.crate, roughness: 0.85 });
     const ceilMat = new TH.MeshStandardMaterial({
       map: textures.pbrConcrete.color, normalMap: textures.pbrConcrete.normal,
       roughnessMap: textures.pbrConcrete.rough, roughness: 1.0,
-      color: 0x222222  // oscurece el techo sin perder la textura
+      color: 0x222222
     });
-    const darkMetal = new TH.MeshStandardMaterial({ color:0x1a1c22, roughness:0.4, metalness:0.85 });
-    const platMat   = new TH.MeshStandardMaterial({ color:0x2a2a30, roughness:0.7, metalness:0.5 });
-    const stairMat  = new TH.MeshStandardMaterial({ color:0x222024, roughness:0.8, metalness:0.4 });
-    const railMat   = new TH.MeshStandardMaterial({ color:COLS.yellow, emissive:COLS.yellow, emissiveIntensity:0.4 });
 
-    const H  = 6;   // altura sala estándar
+    const H = 6;    // altura sala estándar
     const OH = 8;   // altura del muro perimetral del patio
 
-    // =================================================================
-    // NUEVO LAYOUT — barrio del Raval estilo COD Zombies
-    //
-    //                    ┌────────────────────────┐
-    //                    │       PATIO            │   Sala PAP
-    //                    │    40x30 grass         │◄──────┐
-    //                    │                        │       │
-    //                    │                        │   Sala 2 perk
-    //                    │                        │◄──────┤
-    //                    └───────────┬────────────┘
-    //                                │
-    //                        pasillo corto
-    //                                │
-    //                    ┌───────────┴────────────┐
-    //                    │  SALA B (camino B)     │
-    //                    │  20x14 rectangular     │
-    //                    │  con trampa            │
-    //                    └───────────┬────────────┘
-    //                                │
-    //                       pasillo bifurcación
-    //                          /         \
-    //               ┌──────────┘           └──────┐
-    //               │ SALA A                      │
-    //               │ 10x10                       │
-    //               │ 1 perk                      │
-    //               └─────────────────────────────┘
-    //                                │
-    //                    ┌───────────┴────────────┐
-    //                    │  SALA MYSTERY          │
-    //                    │  24x16 rectangular     │
-    //                    │  mystery box + 2 perks │
-    //                    └───────────┬────────────┘
-    //                                │
-    //                           PASILLO 1
-    //                          (4x10, trampa)
-    //                                │
-    //                    ┌───────────┴────────────┐
-    //                    │  SPAWN  10x10          │
-    //                    │  1 perk                │
-    //                    │  (0,0,0)               │
-    //                    └────────────────────────┘
-    // =================================================================
-
-    // ===== SALA 0: SPAWN (10×10 concreto) =====
+    // ====== SALA 0: SPAWN (10×10 concreto) ======
     rooms.push({ id:0, name:'SPAWN', bounds:{minX:-5,maxX:5,minZ:-5,maxZ:5}, unlocked:true });
     addFloorPlane(0, 0, 10, 10, fConcrete);
     addCeilingPlane(0, 0, 10, 10, H, ceilMat);
-    // Paredes: norte, este, oeste cerradas; sur con hueco (puerta al pasillo 1)
-    addWallWithGap('x', -5, -5, 5, H/2, H, 0.5, wBrick, null, null); // norte
-    addWallWithGap('z', -5, -5, 5, H/2, H, 0.5, wBrick, null, null); // oeste
-    addWallWithGap('z',  5, -5, 5, H/2, H, 0.5, wBrick, null, null); // este
-    addWallWithGap('x',  5, -5, 5, H/2, H, 0.5, wBrick, -2, 2);      // sur con hueco
-    // Luz cenital del spawn
+    addWallWithGap('x', -5, -5, 5, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z', -5, -5, 5, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z',  5, -5, 5, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('x',  5, -5, 5, H/2, H, 0.5, wBrick, -2, 2);
     { const l = new TH.PointLight(COLS.orange, 1.8, 14, 1.6);
       l.position.set(0, H-0.5, 0); scene.add(l); lights.push(l); }
-    // Perk del spawn: REDBULL (pared norte, mirando al centro/sur)
     addDrinkMachine(0, -4.2, 0, 'redbull');
-    // Spawners iniciales (los zombis aparecen dentro del spawn al principio)
     addSpawner(-4.5, 1.2, 0, Math.PI/2, 0);
     addSpawner( 4.5, 1.2, 0,-Math.PI/2, 0);
 
-    // ===== PASILLO 1 (4×10 concreto, con trampa) =====
+    // ====== PASILLO 1 (4×10 con trampa de pinchos) ======
     rooms.push({ id:10, name:'PASILLO1', bounds:{minX:-2,maxX:2,minZ:5,maxZ:15}, unlocked:true });
     addFloorPlane(0, 10, 4, 10, fConcrete);
     addCeilingPlane(0, 10, 4, 10, H, ceilMat);
-    addWallWithGap('z', -2, 5, 15, H/2, H, 0.5, wBrick, null, null); // oeste
-    addWallWithGap('z',  2, 5, 15, H/2, H, 0.5, wBrick, null, null); // este
-    // Puerta sur del spawn → entrada al pasillo 1 (cost 500) — activa spawners sala mystery al cruzarlo
+    addWallWithGap('z', -2, 5, 15, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z',  2, 5, 15, H/2, H, 0.5, wBrick, null, null);
     addDoor(0, 5, 0, 500, 1, 'PASILLO');
-    // Trampa del pasillo 1: PINCHOS (centro del pasillo)
     addBuyableTrap(0, 10, 'spikes');
-    // Luz
     { const l = new TH.PointLight(0xffaa44, 1.2, 10, 1.8);
       l.position.set(0, H-0.5, 10); scene.add(l); lights.push(l); }
 
-    // ===== SALA 1: MYSTERY (24×16 rectangular, ladrillo) =====
+    // ====== SALA MYSTERY (24×16 paving) ======
     rooms.push({ id:1, name:'MYSTERY', bounds:{minX:-12,maxX:12,minZ:15,maxZ:31}, unlocked:false });
     addFloorPlane(0, 23, 24, 16, fBrick);
     addCeilingPlane(0, 23, 24, 16, H, ceilMat);
-    // Paredes: norte conecta con pasillo1 (hueco central), sur conecta con pasillo2 (hueco central)
-    addWallWithGap('x', 15, -12, 12, H/2, H, 0.5, wBrick, -2, 2); // norte con hueco para pasillo1
-    addWallWithGap('x', 31, -12, 12, H/2, H, 0.5, wBrick, -2, 2); // sur con hueco para pasillo2
-    addWallWithGap('z',-12, 15, 31, H/2, H, 0.5, wBrick, null, null); // oeste
-    addWallWithGap('z', 12, 15, 31, H/2, H, 0.5, wBrick, null, null); // este
-    // Puerta sur del pasillo1 → entrada a sala mystery (cost 1000)
+    addWallWithGap('x', 15, -12, 12, H/2, H, 0.5, wBrick, -2, 2);
+    addWallWithGap('x', 31, -12, 12, H/2, H, 0.5, wBrick, -2, 2);
+    addWallWithGap('z',-12, 15, 31, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z', 12, 15, 31, H/2, H, 0.5, wBrick, null, null);
     addDoor(0, 15, 0, 1000, 2, 'SALA MYSTERY');
-    // Luces hangantes
     makeHangingLamp(-6, 20, COLS.pink);
     makeHangingLamp( 6, 26, COLS.cyan);
-    // 2 perks pegados a paredes, mirando al centro
-    // KATXORRO en pared oeste (x=-11.5), mira a +x (centro)
     addDrinkMachine(-11.3, 20, Math.PI/2, 'katxorro');
-    // CHUPITO en pared este (x=11.5), mira a -x (centro)
     addDrinkMachine( 11.3, 26, -Math.PI/2, 'chupito');
-    // Spawners
     addSpawner(-11.5, 1.2, 23, Math.PI/2, 1);
     addSpawner( 11.5, 1.2, 23,-Math.PI/2, 1);
 
-    // ===== PASILLO 2 (bifurcación) =====
-    // El pasillo2 va de z=31 a z=37 (sala mystery → zona T de bifurcación).
-    // En z=37 hay un "vestíbulo" ancho x[-10..10] z[37..41] desde el que se accede
-    // tanto a Sala A (oeste) como a Sala B (este).
+    // ====== PASILLO 2 (bifurcación con vestíbulo) ======
     rooms.push({ id:11, name:'PASILLO2', bounds:{minX:-2,maxX:2,minZ:31,maxZ:37}, unlocked:false });
     addFloorPlane(0, 34, 4, 6, fConcrete);
     addCeilingPlane(0, 34, 4, 6, H, ceilMat);
-    addWallWithGap('z', -2, 31, 37, H/2, H, 0.5, wBrick, null, null); // oeste
-    addWallWithGap('z',  2, 31, 37, H/2, H, 0.5, wBrick, null, null); // este
-    // Puerta sur del sala mystery → pasillo2
+    addWallWithGap('z', -2, 31, 37, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z',  2, 31, 37, H/2, H, 0.5, wBrick, null, null);
     addDoor(0, 31, 0, 1500, 3, 'BIFURCACION');
-
-    // ===== VESTÍBULO DE BIFURCACIÓN (zona T, x[-10..10] z[37..41]) =====
+    // Vestíbulo
     addFloorPlane(0, 39, 20, 4, fConcrete);
     addCeilingPlane(0, 39, 20, 4, H, ceilMat);
-    // Pared norte del vestíbulo con hueco central x[-2..2] (viene del pasillo2)
     addWallWithGap('x', 37, -10, 10, H/2, H, 0.5, wBrick, -2, 2);
-    // Pared sur del vestíbulo con DOS huecos: uno al camino A (x[-8..-5]) y otro al camino B (x[5..8])
-    // Como addWallWithGap solo soporta 1 hueco, lo hacemos a mano con 3 segmentos
-    addWall(-9, H/2, 41, 2, H, 0.5, wBrick);  // extremo oeste
-    addWall( 0, H/2, 41, 6, H, 0.5, wBrick);  // centro
-    addWall( 9, H/2, 41, 2, H, 0.5, wBrick);  // extremo este
-    // Paredes oeste y este del vestíbulo
+    addWall(-9, H/2, 41, 2, H, 0.5, wBrick);
+    addWall( 0, H/2, 41, 6, H, 0.5, wBrick);
+    addWall( 9, H/2, 41, 2, H, 0.5, wBrick);
     addWallWithGap('z',-10, 37, 41, H/2, H, 0.5, wBrick, null, null);
     addWallWithGap('z', 10, 37, 41, H/2, H, 0.5, wBrick, null, null);
 
-    // ===== CAMINO A: SALA A (10×10 pequeña, ladrillo) =====
-    // La sala A está en x[-13..-3] z[41..51] (centro -8, 46)
+    // ====== SALA A — Camino A (10×10) ======
     rooms.push({ id:2, name:'SALA_A', bounds:{minX:-13,maxX:-3,minZ:41,maxZ:51}, unlocked:false });
     addFloorPlane(-8, 46, 10, 10, fBrick);
     addCeilingPlane(-8, 46, 10, 10, H, ceilMat);
-    // Pared norte: hueco x[-8..-5] que conecta con el vestíbulo
     addWallWithGap('x', 41, -13, -3, H/2, H, 0.5, wBrick, -8, -5);
-    addWallWithGap('x', 51, -13, -3, H/2, H, 0.5, wBrick, null, null); // sur cerrado
-    addWallWithGap('z',-13, 41, 51, H/2, H, 0.5, wBrick, null, null); // oeste
-    addWallWithGap('z', -3, 41, 51, H/2, H, 0.5, wBrick, null, null); // este
-    // Perk en Sala A: MOJITO (pared sur, mirando al norte)
+    addWallWithGap('x', 51, -13, -3, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z',-13, 41, 51, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z', -3, 41, 51, H/2, H, 0.5, wBrick, null, null);
     addDrinkMachine(-8, 50.2, Math.PI, 'mojito');
-    // Luz
     { const l = new TH.PointLight(COLS.cyan, 1.4, 10, 1.8);
       l.position.set(-8, H-0.5, 46); scene.add(l); lights.push(l); }
     addSpawner(-12.5, 1.2, 46, Math.PI/2, 2);
 
-    // ===== CAMINO B: SALA B (20×14 rectangular mediana, con trampa) =====
-    // Sala B en x[3..23] z[41..55] (centro 13, 48)
+    // ====== SALA B — Camino B (20×14) ======
     rooms.push({ id:3, name:'SALA_B', bounds:{minX:3,maxX:23,minZ:41,maxZ:55}, unlocked:false });
     addFloorPlane(13, 48, 20, 14, fBrick);
     addCeilingPlane(13, 48, 20, 14, H, ceilMat);
-    // Pared norte: hueco x[5..8] que conecta con el vestíbulo
     addWallWithGap('x', 41, 3, 23, H/2, H, 0.5, wBrick, 5, 8);
-    addWallWithGap('z',  3, 41, 55, H/2, H, 0.5, wBrick, null, null); // oeste
-    addWallWithGap('z', 23, 41, 55, H/2, H, 0.5, wBrick, null, null); // este
-    // sur con hueco para puerta al patio (x[12..14])
+    addWallWithGap('z',  3, 41, 55, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z', 23, 41, 55, H/2, H, 0.5, wBrick, null, null);
     addWallWithGap('x', 55, 3, 23, H/2, H, 0.5, wBrick, 12, 14);
-    // Trampa de la sala B: SIERRA GIRATORIA (centro)
     addBuyableTrap(13, 48, 'sawblade');
-    // Luces
     makeHangingLamp( 8, 44, COLS.yellow);
     makeHangingLamp(18, 52, COLS.pink);
-    // Spawners
     addSpawner(22.5, 1.2, 48,-Math.PI/2, 3);
     addSpawner( 3.5, 1.2, 52, Math.PI/2, 3);
-    // Puerta sur de la sala B → patio
     addDoor(13, 55, 0, 2000, 4, 'PATIO');
 
-    // ===== CORREDOR CORTO SALA B → PATIO (4×6) =====
-    // Va de z=55 a z=61, centrado en x=13
+    // ====== PRE-PATIO ======
     rooms.push({ id:12, name:'PREPATIO', bounds:{minX:11,maxX:15,minZ:55,maxZ:61}, unlocked:false });
     addFloorPlane(13, 58, 4, 6, fBrick);
     addCeilingPlane(13, 58, 4, 6, H, ceilMat);
     addWallWithGap('z', 11, 55, 61, H/2, H, 0.5, wBrick, null, null);
     addWallWithGap('z', 15, 55, 61, H/2, H, 0.5, wBrick, null, null);
 
-    // ===== PATIO EXTERIOR (40×30, grass) =====
-    // Centro en (0, 76), bounds x[-20..20], z[61..91]
+    // ====== PATIO / JARDÍN (40×30 grass) ======
     rooms.push({ id:4, name:'PATIO', bounds:{minX:-20,maxX:20,minZ:61,maxZ:91}, unlocked:false });
     addFloorPlane(0, 76, 40, 30, fGrass);
-    // NO techo en el patio (exterior)
-    // Paredes perimetrales altas (OH=8)
-    // Sur con hueco para el corredor pre-patio (x[11..15])
+    // Pared sur con hueco para el pre-patio
     addWallWithGap('x', 61, -20, 20, OH/2, OH, 0.5, wOutdoor, 11, 15);
-    // Pared OESTE del patio en 4 trozos para dejar 2 ventanas grandes
-    // Ventanas en z[68..73] y z[80..85] a altura 2..5
-    // Trozo bajo y trozo alto en cada ventana, y trozos completos entre/extremos
-    addWall(-20, OH/2, 64.5, 0.5, OH, 7, wOutdoor);   // extremo sur z[61..68]
-    addWall(-20, 1, 70.5, 0.5, 2, 5, wOutdoor);       // bajo de ventana 1 z[68..73] y[0..2]
-    addWall(-20, 6.5, 70.5, 0.5, 3, 5, wOutdoor);     // alto de ventana 1 y[5..8]
-    addWall(-20, OH/2, 76.5, 0.5, OH, 7, wOutdoor);   // entre ventanas z[73..80]
-    addWall(-20, 1, 82.5, 0.5, 2, 5, wOutdoor);       // bajo de ventana 2 z[80..85]
-    addWall(-20, 6.5, 82.5, 0.5, 3, 5, wOutdoor);     // alto de ventana 2
-    addWall(-20, OH/2, 88, 0.5, OH, 6, wOutdoor);     // extremo norte z[85..91]
-    // Pared ESTE del patio igual estructura simétrica
-    addWall( 20, OH/2, 64.5, 0.5, OH, 7, wOutdoor);
-    addWall( 20, 1, 70.5, 0.5, 2, 5, wOutdoor);
-    addWall( 20, 6.5, 70.5, 0.5, 3, 5, wOutdoor);
-    addWall( 20, OH/2, 76.5, 0.5, OH, 7, wOutdoor);
-    addWall( 20, 1, 82.5, 0.5, 2, 5, wOutdoor);
-    addWall( 20, 6.5, 82.5, 0.5, 3, 5, wOutdoor);
-    addWall( 20, OH/2, 88, 0.5, OH, 6, wOutdoor);
-    // Pared norte con DOS huecos para las puertas PAP (x[-18..-14]) y Perk (x[14..18])
-    addWall(-19, OH/2, 91, 2, OH, 0.5, wOutdoor);   // x[-20..-18] extremo oeste
-    addWall(  0, OH/2, 91, 28, OH, 0.5, wOutdoor);  // x[-14..14] centro entre los dos huecos
-    addWall( 19, OH/2, 91, 2, OH, 0.5, wOutdoor);   // x[18..20] extremo este
-
-    // Cristales de las ventanas del patio (translúcidos, dejan ver el campo de fuera)
-    {
-      const patioGlass = new TH.MeshBasicMaterial({ color: 0x081020, transparent: true, opacity: 0.35, side: TH.DoubleSide });
-      // Oeste: 2 cristales
-      const g1 = new TH.Mesh(new TH.PlaneGeometry(5, 3), patioGlass);
-      g1.rotation.y = Math.PI/2; g1.position.set(-19.95, 3.5, 70.5); scene.add(g1);
-      const g2 = new TH.Mesh(new TH.PlaneGeometry(5, 3), patioGlass);
-      g2.rotation.y = Math.PI/2; g2.position.set(-19.95, 3.5, 82.5); scene.add(g2);
-      // Este: 2 cristales
-      const g3 = new TH.Mesh(new TH.PlaneGeometry(5, 3), patioGlass);
-      g3.rotation.y = -Math.PI/2; g3.position.set( 19.95, 3.5, 70.5); scene.add(g3);
-      const g4 = new TH.Mesh(new TH.PlaneGeometry(5, 3), patioGlass);
-      g4.rotation.y = -Math.PI/2; g4.position.set( 19.95, 3.5, 82.5); scene.add(g4);
-    }
-    // Props del patio: farolas
-    makeHangingLamp(-10, 68, COLS.yellow);
-    makeHangingLamp( 10, 68, COLS.orange);
-    makeHangingLamp(-10, 84, COLS.pink);
-    makeHangingLamp( 10, 84, COLS.cyan);
-    // Trampa eléctrica en el centro del patio
-    addBuyableTrap(0, 76, 'electric');
-    // Trampa lanzallamas en un lateral
+    // Paredes oeste y este: NO existen como muros — son vallas (en bloque PATIO JARDÍN).
+    // Pared norte con DOS huecos para puertas PAP y Perk Final
+    addWall(-19, OH/2, 91, 2, OH, 0.5, wOutdoor);
+    addWall(  0, OH/2, 91, 28, OH, 0.5, wOutdoor);
+    addWall( 19, OH/2, 91, 2, OH, 0.5, wOutdoor);
+    // Trampa eléctrica al lado oeste (la fuente ocupa el centro)
+    addBuyableTrap(-12, 76, 'electric');
+    // Trampas adicionales
     addBuyableTrap(-14, 70, 'fire');
-    // Torre tesla al otro lado del patio
-    addBuyableTrap(14, 70, 'tesla');
-    // 2 perks extra en el patio (pegados a paredes oeste/este, mirando al centro)
+    addBuyableTrap( 14, 70, 'tesla');
+    // Perks del patio (4 en muros, mirando al centro)
     addDrinkMachine(-19.5, 70, Math.PI/2, 'cafelito');
     addDrinkMachine( 19.5, 70,-Math.PI/2, 'cubata');
-    // Spawners del patio
+    addDrinkMachine(-19.5, 84, Math.PI/2, 'absenta');
+    addDrinkMachine( 19.5, 84,-Math.PI/2, 'bloody');
+    addDrinkMachine( 22.5, 44,-Math.PI/2, 'chartreuse');
+    addDrinkMachine(  4,   48, Math.PI/2, 'quintos');
+    // Spawners
     addSpawner(-19, 1.2, 76, Math.PI/2, 4);
     addSpawner( 19, 1.2, 76,-Math.PI/2, 4);
     addSpawner(-19, 1.2, 86, Math.PI/2, 4);
     addSpawner( 19, 1.2, 86,-Math.PI/2, 4);
 
-    // ===== PROPS DECORATIVOS DEL PATIO (contenedores metálicos, barriles) =====
-    // Geometría + material compartidos para eficiencia
-    {
-      const containerGeo = new TH.BoxGeometry(2.2, 2.2, 1.6);
-      const barrelGeo    = new TH.CylinderGeometry(0.5, 0.5, 1.1, 10);
-      // Crates cercanas a la trampa de fuego (esquina SO)
-      const addContainer = (x, z, rotY, matKey) => {
-        const mat = matKey === 'metal' ? fMetal : crateMat;
-        const m = new TH.Mesh(containerGeo, mat);
-        m.position.set(x, 1.1, z);
-        m.rotation.y = rotY;
-        scene.add(m);
-        walls.push({
-          min: new TH.Vector3(x-1.1, 0, z-0.8),
-          max: new TH.Vector3(x+1.1, 2.2, z+0.8),
-          mesh: m, isDoor: false
-        });
-      };
-      const addBarrel = (x, z) => {
-        const m = new TH.Mesh(barrelGeo, fMetal);
-        m.position.set(x, 0.55, z);
-        scene.add(m);
-        walls.push({
-          min: new TH.Vector3(x-0.5, 0, z-0.5),
-          max: new TH.Vector3(x+0.5, 1.1, z+0.5),
-          mesh: m, isDoor: false
-        });
-      };
-      // Contenedores metálicos repartidos por el patio (lejos de trampas y spawners)
-      addContainer(-6, 64, 0.2, 'metal');
-      addContainer( 6, 64,-0.2, 'metal');
-      addContainer(-16, 80, 0.5, 'wood');
-      addContainer( 16, 80, -0.3, 'wood');
-      addContainer(-4, 82, 0, 'metal');
-      addContainer( 4, 82, 0.1, 'wood');
-      // Barriles
-      addBarrel(-8, 72);
-      addBarrel(-6, 74);
-      addBarrel( 8, 72);
-      addBarrel( 6, 74);
-      addBarrel(-12, 85);
-      addBarrel( 12, 85);
-    }
-
-    // ===== PROPS EN SALA MYSTERY (cajas de madera) =====
-    {
-      const crateGeo = new TH.BoxGeometry(1.4, 1.4, 1.4);
-      const addCrate = (x, z) => {
-        const m = new TH.Mesh(crateGeo, crateMat);
-        m.position.set(x, 0.7, z);
-        m.rotation.y = Math.random()*0.3;
-        scene.add(m);
-        walls.push({
-          min: new TH.Vector3(x-0.7, 0, z-0.7),
-          max: new TH.Vector3(x+0.7, 1.4, z+0.7),
-          mesh: m, isDoor: false
-        });
-      };
-      addCrate(-9, 18);
-      addCrate(-10, 28);
-      addCrate( 10, 19);
-      addCrate(  9, 29);
-    }
-
-    // ===== PROPS EN SALA B (contenedores metálicos) =====
-    {
-      const pipeGeo = new TH.CylinderGeometry(0.15, 0.15, H, 6);
-      // Tuberías metálicas verticales (solo decorativas)
-      const pipe1 = new TH.Mesh(pipeGeo, fMetal);
-      pipe1.position.set(5, H/2, 42); scene.add(pipe1);
-      const pipe2 = new TH.Mesh(pipeGeo, fMetal);
-      pipe2.position.set(21, H/2, 54); scene.add(pipe2);
-      const pipe3 = new TH.Mesh(pipeGeo, fMetal);
-      pipe3.position.set(5, H/2, 54); scene.add(pipe3);
-      // Contenedor metálico en esquina
-      const metalBoxGeo = new TH.BoxGeometry(1.6, 1.6, 1.6);
-      const mb = new TH.Mesh(metalBoxGeo, fMetal);
-      mb.position.set(20, 0.8, 43);
-      scene.add(mb);
-      walls.push({
-        min: new TH.Vector3(19.2, 0, 42.2),
-        max: new TH.Vector3(20.8, 1.6, 43.8),
-        mesh: mb, isDoor: false
-      });
-    }
-
-    // ===== PROPS EN SALA MEJORA (PAP) — cajas del laboratorio =====
-    {
-      const crateGeo = new TH.BoxGeometry(1.0, 1.0, 1.0);
-      const addCrateMini = (x, z, mat) => {
-        const m = new TH.Mesh(crateGeo, mat);
-        m.position.set(x, 0.5, z);
-        scene.add(m);
-        walls.push({
-          min: new TH.Vector3(x-0.5, 0, z-0.5),
-          max: new TH.Vector3(x+0.5, 1.0, z+0.5),
-          mesh: m, isDoor: false
-        });
-      };
-      addCrateMini(-19, 92.5, fMetal);
-      addCrateMini(-13, 92.5, crateMat);
-      addCrateMini(-19, 97.5, crateMat);
-      addCrateMini(-13, 97.5, fMetal);
-    }
-
-    // ===== SALA 5: PACK-A-PUNCH (8×8, NW del fondo del patio) =====
-    // x[-20..-12] z[91..99]
+    // ====== SALA PACK-A-PUNCH (8×8 NW del patio) ======
     rooms.push({ id:5, name:'PAP', bounds:{minX:-20,maxX:-12,minZ:91,maxZ:99}, unlocked:false });
     addFloorPlane(-16, 95, 8, 8, fBrick);
     addCeilingPlane(-16, 95, 8, 8, H, ceilMat);
-    addWallWithGap('z',-20, 91, 99, H/2, H, 0.5, wBrick, null, null); // oeste
-    addWallWithGap('z',-12, 91, 99, H/2, H, 0.5, wBrick, null, null); // este
-    addWallWithGap('x', 99, -20,-12, H/2, H, 0.5, wBrick, null, null); // norte cerrado
-    // Puerta al Pack-a-Punch (desde patio, x=-16 z=91)
+    addWallWithGap('z',-20, 91, 99, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z',-12, 91, 99, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('x', 99, -20,-12, H/2, H, 0.5, wBrick, null, null);
     addDoor(-16, 91, 0, 4000, 5, 'PACK-A-PUNCH');
-    // Luces rosa/cyan
     { const l1 = new TH.PointLight(COLS.pink, 2.0, 12, 1.8);
       l1.position.set(-16, H-0.5, 95); scene.add(l1); lights.push(l1);
       const l2 = new TH.PointLight(COLS.cyan, 1.4, 10, 1.8);
       l2.position.set(-16, 2, 95); scene.add(l2); lights.push(l2); }
     addSpawner(-19.5, 1.2, 95, Math.PI/2, 5);
 
-    // ===== SALA 6: PERK FINAL (8×8, NE del fondo del patio) =====
-    // x[12..20] z[91..99]
+    // ====== SALA PERK FINAL (8×8 NE del patio) — chuchuwa + interruptor luz ======
     rooms.push({ id:6, name:'PERK_FINAL', bounds:{minX:12,maxX:20,minZ:91,maxZ:99}, unlocked:false });
     addFloorPlane(16, 95, 8, 8, fBrick);
     addCeilingPlane(16, 95, 8, 8, H, ceilMat);
-    addWallWithGap('z', 12, 91, 99, H/2, H, 0.5, wBrick, null, null); // oeste
-    addWallWithGap('z', 20, 91, 99, H/2, H, 0.5, wBrick, null, null); // este
-    addWallWithGap('x', 99, 12, 20, H/2, H, 0.5, wBrick, null, null); // norte cerrado
-    // Puerta al perk final (desde patio, x=16 z=91)
+    addWallWithGap('z', 12, 91, 99, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z', 20, 91, 99, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('x', 99, 12, 20, H/2, H, 0.5, wBrick, null, null);
     addDoor(16, 91, 0, 3000, 6, 'SALA PERK');
     addDrinkMachine(16, 98.2, Math.PI, 'chuchuwa');
     { const l = new TH.PointLight(COLS.green, 1.8, 12, 1.8);
       l.position.set(16, H-0.5, 95); scene.add(l); lights.push(l); }
     addSpawner(19.5, 1.2, 95,-Math.PI/2, 6);
 
-    // ===== PERKS "EXTRA" (las restantes hasta gastar 11 máquinas) =====
-    // Ya colocadas: redbull, katxorro, chupito, mojito, cafelito, cubata, chuchuwa = 7
-    // Faltan 4: absenta, bloody, chartreuse, quintos → repartidas en patio y sala B
-    addDrinkMachine(-19.5, 84, Math.PI/2, 'absenta');    // patio, pared oeste
-    addDrinkMachine( 19.5, 84,-Math.PI/2, 'bloody');     // patio, pared este
-    addDrinkMachine( 22.5, 44,-Math.PI/2, 'chartreuse'); // sala B, pared este
-    addDrinkMachine(  4,   48, Math.PI/2, 'quintos');    // sala B, pared oeste
-
-    // ===== MYSTERY BOX en sala mystery (centro-este) =====
-    // (la mystery box se crea con el modelo 3D ya cargado, aquí solo su grupo+pos)
+    // ====== MYSTERY BOX ======
     {
       const mbGrp = new TH.Group();
       mbGrp.position.set(6, 0.5, 23);
@@ -3627,19 +3381,13 @@ window.addEventListener('popstate', () => {
           inner.add(model);
           inner.scale.setScalar(scale);
           mbGrp.add(inner);
-          inner.traverse(o => {
-            if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
-              o.material.envMapIntensity = 0.3;
-              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
-            }
-          });
           mysteryBox.modelRoot = inner;
           inner.traverse(o => { if (!mysteryBox.mesh && o.isMesh && o.material) mysteryBox.mesh = o; });
         }, undefined, err => console.error('[MYSTERYBOX FAIL]', err));
       }
     }
 
-    // ===== MÁQUINA DE MEJORA (Pack-a-Punch) en el CENTRO de la sala PAP =====
+    // ====== PACK-A-PUNCH ======
     {
       const grp = new TH.Group();
       grp.position.set(-16, 0, 95);
@@ -3664,18 +3412,12 @@ window.addEventListener('popstate', () => {
           inner.add(model);
           inner.scale.setScalar(scale);
           grp.add(inner);
-          inner.traverse(o => {
-            if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
-              o.material.envMapIntensity = 0.3;
-              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
-            }
-          });
           upgradeMachine.modelRoot = inner;
         }, undefined, err => console.error('[UPGRADE FAIL]', err));
       }
     }
 
-    // ===== INTERRUPTOR DE ELECTRICIDAD (en la sala del chuchuwa, pared oeste) =====
+    // ====== INTERRUPTOR ELÉCTRICO (sala chuchuwa) ======
     {
       const psGrp = new TH.Group();
       const boxMat = new TH.MeshStandardMaterial({ color:0x2a1a00, metalness:0.7, roughness:0.4 });
@@ -3694,7 +3436,6 @@ window.addEventListener('popstate', () => {
       knob.position.y = -0.55;
       leverPivot.add(knob);
       psGrp.add(leverPivot);
-      // Pegado a la pared oeste de la sala Perk Final (x=12), mirando al centro (este)
       psGrp.position.set(12.3, 0, 95);
       psGrp.rotation.y = Math.PI/2;
       scene.add(psGrp);
@@ -3706,447 +3447,168 @@ window.addEventListener('popstate', () => {
       };
     }
 
-    // =================================================================
-    // DETALLES Y PROPS PROCEDURALES — ambientación
-    // =================================================================
-
-    // Materiales compartidos para props (color sólido, baratos)
-    const woodMat   = new TH.MeshLambertMaterial({ color: 0x4a2810 });
-    const woodDark  = new TH.MeshLambertMaterial({ color: 0x281408 });
-    const ironMat   = new TH.MeshLambertMaterial({ color: 0x2a2a2e });
-    const rustMat   = new TH.MeshLambertMaterial({ color: 0x6a3010 });
-    const stoneMat  = new TH.MeshLambertMaterial({ color: 0x4a4a4e });
-    const stainMat  = new TH.MeshBasicMaterial({ color: 0x1a0608, transparent: true, opacity: 0.55 });
-    const glassMat  = new TH.MeshBasicMaterial({ color: 0x081020, transparent: true, opacity: 0.55 });
-    const frameMatW = new TH.MeshLambertMaterial({ color: 0x1a1a1e });
-    const cornStem  = new TH.MeshLambertMaterial({ color: 0x183010 });
-    const cornHead  = new TH.MeshLambertMaterial({ color: 0x6a5012 });
-    const grassNight= new TH.MeshLambertMaterial({ color: 0x0a1808 });
-    const dirtMat   = new TH.MeshLambertMaterial({ color: 0x1a1008 });
-    const moonMat   = new TH.MeshBasicMaterial({ color: 0xccd8ff });
-
-    // ----- HELPER: ventana decorativa (marco en relieve + cristal oscuro) -----
-    // pos = posición de la ventana, rotY = orientación, w/h = tamaño
-    function addWindow(px, py, pz, rotY, w, h) {
-      const grp = new TH.Group();
-      // Marco (4 barras)
-      const tBar = new TH.Mesh(new TH.BoxGeometry(w + 0.2, 0.12, 0.15), frameMatW);
-      tBar.position.y = h/2; grp.add(tBar);
-      const bBar = new TH.Mesh(new TH.BoxGeometry(w + 0.2, 0.12, 0.15), frameMatW);
-      bBar.position.y = -h/2; grp.add(bBar);
-      const lBar = new TH.Mesh(new TH.BoxGeometry(0.12, h, 0.15), frameMatW);
-      lBar.position.x = -w/2; grp.add(lBar);
-      const rBar = new TH.Mesh(new TH.BoxGeometry(0.12, h, 0.15), frameMatW);
-      rBar.position.x = w/2; grp.add(rBar);
-      // Cruz central (vidriera estilo industrial)
-      const cV = new TH.Mesh(new TH.BoxGeometry(0.08, h, 0.1), frameMatW);
-      grp.add(cV);
-      const cH = new TH.Mesh(new TH.BoxGeometry(w, 0.08, 0.1), frameMatW);
-      grp.add(cH);
-      // Cristal oscuro (translúcido)
-      const glass = new TH.Mesh(new TH.PlaneGeometry(w, h), glassMat);
-      glass.position.z = -0.02;
-      grp.add(glass);
-      grp.position.set(px, py, pz);
-      grp.rotation.y = rotY;
-      scene.add(grp);
-    }
-
-    // ----- HELPER: props simples con collider opcional -----
-    function addProp(geo, mat, x, y, z, rotY, collider) {
-      const m = new TH.Mesh(geo, mat);
-      m.position.set(x, y, z);
-      if (rotY) m.rotation.y = rotY;
-      scene.add(m);
-      if (collider) {
-        walls.push({
-          min: new TH.Vector3(x - collider.x/2, 0, z - collider.z/2),
-          max: new TH.Vector3(x + collider.x/2, collider.y, z + collider.z/2),
-          mesh: m, isDoor: false
-        });
-      }
-      return m;
-    }
-
-    // =================================================================
-    // VENTANAS EN PAREDES + CAMPO DE SIEMBRA NOCTURNO AL FONDO
-    // =================================================================
-
-    // Ventanas en SPAWN (pared norte) — dan al campo norte
-    addWindow(-3, 2.5, -4.99, 0, 1.6, 1.4);
-    addWindow( 3, 2.5, -4.99, 0, 1.6, 1.4);
-
-    // Ventanas en SALA MYSTERY (pared oeste) — dan al campo oeste
-    addWindow(-11.99, 2.5, 19, Math.PI/2, 1.8, 1.4);
-    addWindow(-11.99, 2.5, 27, Math.PI/2, 1.8, 1.4);
-
-    // Ventanas en SALA MYSTERY (pared este) — dan al campo este
-    addWindow( 11.99, 2.5, 19, -Math.PI/2, 1.8, 1.4);
-    addWindow( 11.99, 2.5, 27, -Math.PI/2, 1.8, 1.4);
-
-    // Ventanas en SALA B (pared este) — dan al campo este
-    addWindow( 22.99, 2.5, 45, -Math.PI/2, 1.8, 1.4);
-    addWindow( 22.99, 2.5, 51, -Math.PI/2, 1.8, 1.4);
-
-    // ===== CAMPO DE SIEMBRA NOCTURNO (fuera del mapa, no se accede) =====
-    // Suelo de tierra al norte del spawn (z negativo, fuera del worldBounds)
+    // ====== PATIO JARDÍN — placeholders + sistema de carga GLB automática ======
     {
-      // Plano de tierra/hierba nocturna gigante alrededor del mapa
-      const fieldGeo = new TH.PlaneGeometry(140, 60);
-      const fieldNorth = new TH.Mesh(fieldGeo, grassNight);
-      fieldNorth.rotation.x = -Math.PI/2;
-      fieldNorth.position.set(0, -0.05, -35);
-      scene.add(fieldNorth);
+      const matStone = new TH.MeshLambertMaterial({ color: 0x6a6a70 });
+      const matWood  = new TH.MeshLambertMaterial({ color: 0x4a3018 });
+      const matGreen = new TH.MeshLambertMaterial({ color: 0x1a4a1a });
+      const matDarkGr= new TH.MeshLambertMaterial({ color: 0x0a2a0a });
+      const matMetal = new TH.MeshLambertMaterial({ color: 0x2a2a2e });
+      const matWater = new TH.MeshBasicMaterial({ color: 0x4a8aa0, transparent:true, opacity:0.7 });
 
-      const fieldWest = new TH.Mesh(new TH.PlaneGeometry(40, 200), grassNight);
-      fieldWest.rotation.x = -Math.PI/2;
-      fieldWest.position.set(-32, -0.05, 50);
-      scene.add(fieldWest);
+      window._gardenProps = window._gardenProps || [];
 
-      const fieldEast = new TH.Mesh(new TH.PlaneGeometry(40, 200), grassNight);
-      fieldEast.rotation.x = -Math.PI/2;
-      fieldEast.position.set( 32, -0.05, 50);
-      scene.add(fieldEast);
-
-      // Surcos de tierra (líneas oscuras simulando arados)
-      const furrowGeo = new TH.PlaneGeometry(60, 0.4);
-      for (let i = 0; i < 12; i++) {
-        const f = new TH.Mesh(furrowGeo, dirtMat);
-        f.rotation.x = -Math.PI/2;
-        f.position.set(0, -0.04, -10 - i*4);
-        scene.add(f);
-      }
-      // Surcos laterales este (perpendiculares)
-      for (let i = 0; i < 18; i++) {
-        const f = new TH.Mesh(new TH.PlaneGeometry(0.4, 80), dirtMat);
-        f.rotation.x = -Math.PI/2;
-        f.position.set(20 + i*1.5, -0.04, 50);
-        scene.add(f);
-      }
-      // Surcos laterales oeste
-      for (let i = 0; i < 18; i++) {
-        const f = new TH.Mesh(new TH.PlaneGeometry(0.4, 80), dirtMat);
-        f.rotation.x = -Math.PI/2;
-        f.position.set(-20 - i*1.5, -0.04, 50);
-        scene.add(f);
-      }
-
-      // ===== PLANTAS DE MAÍZ (palos verdes con cabeza marrón) =====
-      // Geometrías compartidas
-      const stemGeo = new TH.CylinderGeometry(0.04, 0.05, 1.4, 4);
-      const headGeo = new TH.ConeGeometry(0.12, 0.45, 4);
-      const leafGeo = new TH.PlaneGeometry(0.35, 0.6);
-
-      function plantCorn(x, z) {
-        const stem = new TH.Mesh(stemGeo, cornStem);
-        stem.position.set(x, 0.7, z);
-        stem.rotation.y = Math.random()*Math.PI*2;
-        stem.rotation.z = (Math.random()-0.5)*0.15;
-        scene.add(stem);
-        const head = new TH.Mesh(headGeo, cornHead);
-        head.position.set(x, 1.5, z);
-        head.rotation.y = Math.random()*Math.PI*2;
-        scene.add(head);
-        // 2 hojas a media altura
-        const l1 = new TH.Mesh(leafGeo, cornStem);
-        l1.position.set(x, 0.9, z);
-        l1.rotation.y = Math.random()*Math.PI*2;
-        l1.rotation.z = 0.4;
-        scene.add(l1);
-      }
-
-      // Plantar maíz en filas (campo norte detrás del spawn)
-      for (let row = 0; row < 12; row++) {
-        for (let col = 0; col < 30; col++) {
-          const x = -30 + col*2 + (row%2)*0.5;
-          const z = -10 - row*4 + (Math.random()-0.5)*0.4;
-          if (Math.random() < 0.85) plantCorn(x, z);
+      function gardenProp(modelName, posX, posY, posZ, rotY, scale, placeholderMesh, collider) {
+        placeholderMesh.position.set(posX, posY, posZ);
+        placeholderMesh.rotation.y = rotY;
+        scene.add(placeholderMesh);
+        if (collider) {
+          walls.push({
+            min: new TH.Vector3(posX - collider.x/2, 0, posZ - collider.z/2),
+            max: new TH.Vector3(posX + collider.x/2, collider.y, posZ + collider.z/2),
+            mesh: placeholderMesh, isDoor: false
+          });
         }
+        window._gardenProps.push({
+          modelName, x: posX, y: posY, z: posZ, rotY, scale, placeholder: placeholderMesh
+        });
       }
-      // Campo este (al lado de mystery, sala B y patio — z grande)
-      for (let row = 0; row < 30; row++) {
-        for (let col = 0; col < 14; col++) {
-          const x = 22 + col*1.6;
-          const z = -10 + row*3.5 + (Math.random()-0.5)*0.3;
-          if (Math.random() < 0.85) plantCorn(x, z);
+
+      // Caminos en cruz (losas)
+      const losaGeo = new TH.BoxGeometry(2, 0.05, 2);
+      [62, 64, 66, 68, 70, 72, 80, 82, 84, 86, 88, 90].forEach(z => {
+        gardenProp('losa_camino', 0, 0.025, z, 0, 1, new TH.Mesh(losaGeo, matStone));
+      });
+      [-18, -16, -14, -12, -10, -8, -6, 6, 8, 10, 12, 14, 16, 18].forEach(x => {
+        gardenProp('losa_camino', x, 0.025, 76, 0, 1, new TH.Mesh(losaGeo, matStone));
+      });
+
+      // Fuente central
+      {
+        const fGrp = new TH.Group();
+        const base = new TH.Mesh(new TH.CylinderGeometry(2, 2.2, 0.6, 12), matStone);
+        base.position.y = 0.3; fGrp.add(base);
+        const water = new TH.Mesh(new TH.CylinderGeometry(1.7, 1.7, 0.05, 12), matWater);
+        water.position.y = 0.62; fGrp.add(water);
+        const colu = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.4, 1.5, 8), matStone);
+        colu.position.y = 1.4; fGrp.add(colu);
+        const top = new TH.Mesh(new TH.SphereGeometry(0.4, 10, 8), matStone);
+        top.position.y = 2.2; fGrp.add(top);
+        gardenProp('fuente', 0, 0, 76, 0, 1, fGrp, { x:4.4, y:2.5, z:4.4 });
+      }
+
+      // Árboles esquinas
+      function makeTree() {
+        const g = new TH.Group();
+        const t = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.4, 3, 6), matWood);
+        t.position.y = 1.5; g.add(t);
+        const top = new TH.Mesh(new TH.SphereGeometry(1.6, 8, 6), matGreen);
+        top.position.y = 4; g.add(top);
+        return g;
+      }
+      gardenProp('arbol_grande', -16, 0, 65, 0, 1, makeTree(), { x:1, y:5, z:1 });
+      gardenProp('arbol_grande',  16, 0, 65, 0, 1, makeTree(), { x:1, y:5, z:1 });
+      gardenProp('arbol_grande', -16, 0, 87, 0, 1, makeTree(), { x:1, y:5, z:1 });
+      gardenProp('arbol_grande',  16, 0, 87, 0, 1, makeTree(), { x:1, y:5, z:1 });
+
+      // Arbustos
+      function makeBush() {
+        const m = new TH.Mesh(new TH.SphereGeometry(0.6, 8, 6), matDarkGr);
+        m.scale.set(1, 0.7, 1); return m;
+      }
+      [[-8,66],[-10,81],[8,66],[10,81],[-6,86],[6,86]].forEach(p =>
+        gardenProp('arbusto', p[0], 0.4, p[1], 0, 1, makeBush())
+      );
+
+      // Setos (bordes de los caminos)
+      function makeHedge(w, d) {
+        return new TH.Mesh(new TH.BoxGeometry(w, 0.8, d), matDarkGr);
+      }
+      gardenProp('seto_largo', -1.6, 0.4, 67, 0, 1, makeHedge(0.4, 4), {x:0.5,y:0.9,z:4});
+      gardenProp('seto_largo',  1.6, 0.4, 67, 0, 1, makeHedge(0.4, 4), {x:0.5,y:0.9,z:4});
+      gardenProp('seto_largo', -1.6, 0.4, 85, 0, 1, makeHedge(0.4, 4), {x:0.5,y:0.9,z:4});
+      gardenProp('seto_largo',  1.6, 0.4, 85, 0, 1, makeHedge(0.4, 4), {x:0.5,y:0.9,z:4});
+      gardenProp('seto_largo', -10, 0.4, 74.4, 0, 1, makeHedge(4, 0.4), {x:4,y:0.9,z:0.5});
+      gardenProp('seto_largo',  10, 0.4, 74.4, 0, 1, makeHedge(4, 0.4), {x:4,y:0.9,z:0.5});
+      gardenProp('seto_largo', -10, 0.4, 77.6, 0, 1, makeHedge(4, 0.4), {x:4,y:0.9,z:0.5});
+      gardenProp('seto_largo',  10, 0.4, 77.6, 0, 1, makeHedge(4, 0.4), {x:4,y:0.9,z:0.5});
+
+      // Bancos alrededor de la fuente
+      function makeBench() {
+        const g = new TH.Group();
+        const seat = new TH.Mesh(new TH.BoxGeometry(2, 0.1, 0.5), matWood);
+        seat.position.y = 0.5; g.add(seat);
+        const back = new TH.Mesh(new TH.BoxGeometry(2, 0.7, 0.08), matWood);
+        back.position.set(0, 0.85, -0.25); g.add(back);
+        const lg1 = new TH.Mesh(new TH.BoxGeometry(0.08, 0.5, 0.5), matMetal);
+        lg1.position.set(-0.9, 0.25, 0); g.add(lg1);
+        const lg2 = new TH.Mesh(new TH.BoxGeometry(0.08, 0.5, 0.5), matMetal);
+        lg2.position.set(0.9, 0.25, 0); g.add(lg2);
+        return g;
+      }
+      gardenProp('banco_jardin', -5, 0, 71, 0, 1, makeBench(), {x:2,y:0.9,z:0.6});
+      gardenProp('banco_jardin',  5, 0, 71, 0, 1, makeBench(), {x:2,y:0.9,z:0.6});
+      gardenProp('banco_jardin', -5, 0, 81, Math.PI, 1, makeBench(), {x:2,y:0.9,z:0.6});
+      gardenProp('banco_jardin',  5, 0, 81, Math.PI, 1, makeBench(), {x:2,y:0.9,z:0.6});
+
+      // Farolas en las esquinas (con luz real)
+      function makeLamp() {
+        const g = new TH.Group();
+        const post = new TH.Mesh(new TH.CylinderGeometry(0.08, 0.1, 3, 6), matMetal);
+        post.position.y = 1.5; g.add(post);
+        const top = new TH.Mesh(new TH.SphereGeometry(0.25, 8, 6),
+          new TH.MeshBasicMaterial({ color: 0xffeecc }));
+        top.position.y = 3; g.add(top);
+        return g;
+      }
+      [[-18,64],[18,64],[-18,88],[18,88]].forEach(p => {
+        gardenProp('farola_jardin', p[0], 0, p[1], 0, 1, makeLamp());
+        const fl = new TH.PointLight(0xffeecc, 1.2, 14, 1.6);
+        fl.position.set(p[0], 3.2, p[1]);
+        scene.add(fl); lights.push(fl);
+      });
+
+      // Macetas con flores alrededor de la fuente
+      function makeMaceta() {
+        const g = new TH.Group();
+        const pot = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.25, 0.4, 8), matWood);
+        pot.position.y = 0.2; g.add(pot);
+        const fl = new TH.Mesh(new TH.SphereGeometry(0.25, 8, 6),
+          new TH.MeshLambertMaterial({ color: 0xff5577 }));
+        fl.position.y = 0.55; g.add(fl);
+        return g;
+      }
+      gardenProp('flor_maceta', -3, 0, 73, 0, 1, makeMaceta());
+      gardenProp('flor_maceta',  3, 0, 73, 0, 1, makeMaceta());
+      gardenProp('flor_maceta', -3, 0, 79, 0, 1, makeMaceta());
+      gardenProp('flor_maceta',  3, 0, 79, 0, 1, makeMaceta());
+
+      // Vallas metálicas en oeste y este (cada 2m)
+      function makeFence() {
+        const g = new TH.Group();
+        const postGeo = new TH.CylinderGeometry(0.05, 0.05, 2, 4);
+        const p1 = new TH.Mesh(postGeo, matMetal); p1.position.set(-1, 1, 0); g.add(p1);
+        const p2 = new TH.Mesh(postGeo, matMetal); p2.position.set( 1, 1, 0); g.add(p2);
+        const barGeo = new TH.BoxGeometry(2, 0.05, 0.05);
+        const bH = new TH.Mesh(barGeo, matMetal); bH.position.set(0, 1.95, 0); g.add(bH);
+        const bL = new TH.Mesh(barGeo, matMetal); bL.position.set(0, 0.05, 0); g.add(bL);
+        for (let i = 0; i < 5; i++) {
+          const bv = new TH.Mesh(new TH.BoxGeometry(0.04, 1.9, 0.04), matMetal);
+          bv.position.set(-0.8 + i*0.4, 1, 0);
+          g.add(bv);
         }
+        return g;
       }
-      // Campo oeste
-      for (let row = 0; row < 30; row++) {
-        for (let col = 0; col < 14; col++) {
-          const x = -22 - col*1.6;
-          const z = -10 + row*3.5 + (Math.random()-0.5)*0.3;
-          if (Math.random() < 0.85) plantCorn(x, z);
-        }
+      for (let z = 62; z <= 90; z += 2) {
+        gardenProp('valla_metalica', -20, 0, z, 0, 1, makeFence());
+        gardenProp('valla_metalica',  20, 0, z, 0, 1, makeFence());
       }
-
-      // ===== LUNA Y NUBES SOBRE EL CAMPO =====
-      // Luna (sphere blanca brillante)
-      const moon = new TH.Mesh(new TH.SphereGeometry(3, 12, 8), moonMat);
-      moon.position.set(-30, 35, -45);
-      scene.add(moon);
-      // Halo de luz tenue de la luna
-      const moonLight = new TH.PointLight(0xccd8ff, 0.4, 120, 1);
-      moonLight.position.set(-30, 35, -45);
-      scene.add(moonLight);
-
-      // ===== SILUETAS DE ÁRBOLES LEJANOS (planos tipo skybox 2D) =====
-      const treeMat = new TH.MeshBasicMaterial({ color: 0x050810, side: TH.DoubleSide });
-      function tree(x, z, h) {
-        const trunk = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.4, h*0.6, 5), treeMat);
-        trunk.position.set(x, h*0.3, z);
-        scene.add(trunk);
-        const top = new TH.Mesh(new TH.ConeGeometry(h*0.4, h*0.8, 6), treeMat);
-        top.position.set(x, h*0.7, z);
-        scene.add(top);
-      }
-      // Línea de árboles al fondo del campo norte
-      for (let i = 0; i < 20; i++) {
-        tree(-50 + i*5 + Math.random()*2, -55 + Math.random()*5, 6 + Math.random()*4);
-      }
-      // Línea de árboles al fondo este
-      for (let i = 0; i < 20; i++) {
-        tree(50 + Math.random()*5, -10 + i*6 + Math.random()*3, 6 + Math.random()*4);
-      }
-      // Línea de árboles al fondo oeste
-      for (let i = 0; i < 20; i++) {
-        tree(-50 - Math.random()*5, -10 + i*6 + Math.random()*3, 6 + Math.random()*4);
-      }
+      // Barreras invisibles tras las vallas
+      addInvisibleBarrier(-20, OH/2, 76, 0.4, OH, 30);
+      addInvisibleBarrier( 20, OH/2, 76, 0.4, OH, 30);
     }
 
-    // =================================================================
-    // PROPS INTERIORES — mobiliario, deterioro, manchas
-    // =================================================================
-
-    // === SPAWN ===
-    {
-      // Mesa de madera con sillas
-      const tableTop = new TH.Mesh(new TH.BoxGeometry(1.6, 0.08, 0.9), woodMat);
-      tableTop.position.set(-2.5, 0.85, 2);
-      scene.add(tableTop);
-      // 4 patas
-      const legGeo = new TH.BoxGeometry(0.08, 0.85, 0.08);
-      [[-3.2, 1.5],[-1.8, 1.5],[-3.2, 2.5],[-1.8, 2.5]].forEach(p => {
-        const leg = new TH.Mesh(legGeo, woodDark);
-        leg.position.set(p[0], 0.42, p[1]);
-        scene.add(leg);
-      });
-      walls.push({
-        min: new TH.Vector3(-3.3, 0, 1.5), max: new TH.Vector3(-1.7, 0.95, 2.5),
-        mesh: tableTop, isDoor: false
-      });
-      // Manchas en el suelo (decals planos)
-      for (let i = 0; i < 5; i++) {
-        const stain = new TH.Mesh(new TH.CircleGeometry(0.3 + Math.random()*0.4, 8), stainMat);
-        stain.rotation.x = -Math.PI/2;
-        stain.position.set((Math.random()-0.5)*8, 0.01, (Math.random()-0.5)*8);
-        scene.add(stain);
-      }
-    }
-
-    // === SALA MYSTERY ===
-    {
-      // Estantería contra la pared sur
-      const shelf = new TH.Mesh(new TH.BoxGeometry(3, 2.5, 0.4), woodDark);
-      shelf.position.set(8, 1.25, 30.7);
-      scene.add(shelf);
-      walls.push({
-        min: new TH.Vector3(6.5, 0, 30.4), max: new TH.Vector3(9.5, 2.5, 31),
-        mesh: shelf, isDoor: false
-      });
-      // Tablones decorativos en la estantería
-      for (let i = 0; i < 4; i++) {
-        const plank = new TH.Mesh(new TH.BoxGeometry(2.8, 0.05, 0.35), woodMat);
-        plank.position.set(8, 0.4 + i*0.6, 30.65);
-        scene.add(plank);
-      }
-      // Barriles
-      const barrelGeo2 = new TH.CylinderGeometry(0.5, 0.55, 1.1, 8);
-      [[-9, 25],[-10, 27],[10, 17]].forEach(p => {
-        const b = new TH.Mesh(barrelGeo2, rustMat);
-        b.position.set(p[0], 0.55, p[1]);
-        scene.add(b);
-        walls.push({
-          min: new TH.Vector3(p[0]-0.55, 0, p[1]-0.55),
-          max: new TH.Vector3(p[0]+0.55, 1.1, p[1]+0.55),
-          mesh: b, isDoor: false
-        });
-      });
-      // Tuberías pegadas a la pared norte
-      const pipe1 = new TH.Mesh(new TH.CylinderGeometry(0.12, 0.12, 24, 6), ironMat);
-      pipe1.rotation.z = Math.PI/2;
-      pipe1.position.set(0, 5.2, 15.3);
-      scene.add(pipe1);
-      const pipe2 = new TH.Mesh(new TH.CylinderGeometry(0.1, 0.1, 24, 6), rustMat);
-      pipe2.rotation.z = Math.PI/2;
-      pipe2.position.set(0, 4.7, 15.3);
-      scene.add(pipe2);
-      // Manchas
-      for (let i = 0; i < 6; i++) {
-        const stain = new TH.Mesh(new TH.CircleGeometry(0.4 + Math.random()*0.5, 8), stainMat);
-        stain.rotation.x = -Math.PI/2;
-        stain.position.set(-10 + Math.random()*20, 0.01, 16 + Math.random()*14);
-        scene.add(stain);
-      }
-    }
-
-    // === SALA B ===
-    {
-      // Mesa de trabajo larga
-      const worktop = new TH.Mesh(new TH.BoxGeometry(3, 0.1, 1), ironMat);
-      worktop.position.set(13, 1, 42);
-      scene.add(worktop);
-      const wlegGeo = new TH.BoxGeometry(0.08, 1, 0.08);
-      [[11.7, 41.6],[14.3, 41.6],[11.7, 42.4],[14.3, 42.4]].forEach(p => {
-        const lg = new TH.Mesh(wlegGeo, ironMat);
-        lg.position.set(p[0], 0.5, p[1]);
-        scene.add(lg);
-      });
-      walls.push({
-        min: new TH.Vector3(11.5, 0, 41.5), max: new TH.Vector3(14.5, 1.1, 42.5),
-        mesh: worktop, isDoor: false
-      });
-      // Caja fuerte / archivador
-      const safe = new TH.Mesh(new TH.BoxGeometry(0.9, 1.4, 0.7), ironMat);
-      safe.position.set(4, 0.7, 53.5);
-      scene.add(safe);
-      walls.push({
-        min: new TH.Vector3(3.55, 0, 53.15), max: new TH.Vector3(4.45, 1.4, 53.85),
-        mesh: safe, isDoor: false
-      });
-      // Tubería vertical
-      const pV = new TH.Mesh(new TH.CylinderGeometry(0.12, 0.12, H, 6), rustMat);
-      pV.position.set(22.5, H/2, 53);
-      scene.add(pV);
-    }
-
-    // === PATIO — mobiliario urbano ===
-    {
-      // Bancos
-      const benchTop = new TH.BoxGeometry(2.4, 0.12, 0.5);
-      const benchLeg = new TH.BoxGeometry(0.12, 0.5, 0.5);
-      function bench(x, z, rot) {
-        const grp = new TH.Group();
-        const top = new TH.Mesh(benchTop, woodMat);
-        top.position.y = 0.6;
-        grp.add(top);
-        const lg1 = new TH.Mesh(benchLeg, ironMat);
-        lg1.position.set(-1, 0.25, 0); grp.add(lg1);
-        const lg2 = new TH.Mesh(benchLeg, ironMat);
-        lg2.position.set( 1, 0.25, 0); grp.add(lg2);
-        grp.position.set(x, 0, z);
-        grp.rotation.y = rot;
-        scene.add(grp);
-      }
-      bench(-12, 76, 0);
-      bench( 12, 76, 0);
-      bench( 0,  88, 0);
-
-      // Cubos de basura
-      const trashGeo = new TH.CylinderGeometry(0.4, 0.45, 1.0, 8);
-      const trashMat = new TH.MeshLambertMaterial({ color: 0x1a1a1a });
-      [[-18, 75],[18, 75],[-18, 84]].forEach(p => {
-        const t = new TH.Mesh(trashGeo, trashMat);
-        t.position.set(p[0], 0.5, p[1]);
-        scene.add(t);
-        walls.push({
-          min: new TH.Vector3(p[0]-0.45, 0, p[1]-0.45),
-          max: new TH.Vector3(p[0]+0.45, 1, p[1]+0.45),
-          mesh: t, isDoor: false
-        });
-      });
-
-      // Charcos en el suelo del patio
-      const puddleMat = new TH.MeshBasicMaterial({ color: 0x081218, transparent: true, opacity: 0.7 });
-      for (let i = 0; i < 6; i++) {
-        const p = new TH.Mesh(new TH.CircleGeometry(0.6 + Math.random()*0.7, 12), puddleMat);
-        p.rotation.x = -Math.PI/2;
-        p.position.set(-15 + Math.random()*30, 0.02, 65 + Math.random()*22);
-        scene.add(p);
-      }
-
-      // Vallas/contenedores extra contra las paredes laterales
-      const containerGeo2 = new TH.BoxGeometry(2.5, 2.5, 1.8);
-      [[-17, 88, 0.3],[17, 88, -0.3]].forEach(p => {
-        const c = new TH.Mesh(containerGeo2, rustMat);
-        c.position.set(p[0], 1.25, p[1]);
-        c.rotation.y = p[2];
-        scene.add(c);
-        walls.push({
-          min: new TH.Vector3(p[0]-1.3, 0, p[1]-0.95),
-          max: new TH.Vector3(p[0]+1.3, 2.5, p[1]+0.95),
-          mesh: c, isDoor: false
-        });
-      });
-    }
-
-    // === SALA PAP — laboratorio ===
-    {
-      // Estantes laterales
-      const shelfMat = ironMat;
-      const sh1 = new TH.Mesh(new TH.BoxGeometry(0.5, 2.5, 3), shelfMat);
-      sh1.position.set(-19.7, 1.25, 95);
-      scene.add(sh1);
-      walls.push({
-        min: new TH.Vector3(-20, 0, 93.5), max: new TH.Vector3(-19.4, 2.5, 96.5),
-        mesh: sh1, isDoor: false
-      });
-      // Tableros de mesa metálicos en los lados
-      for (let i = 0; i < 3; i++) {
-        const board = new TH.Mesh(new TH.BoxGeometry(0.4, 0.05, 2.8), woodMat);
-        board.position.set(-19.7, 0.5 + i*0.7, 95);
-        scene.add(board);
-      }
-    }
-
-    // === SALA PERK FINAL (chuchuwa) ===
-    {
-      // Panel de control vertical (decorativo)
-      const panelMat = new TH.MeshLambertMaterial({ color: 0x1a3010, emissive: 0x080a04, emissiveIntensity: 0.3 });
-      const panel = new TH.Mesh(new TH.BoxGeometry(2, 1.2, 0.2), panelMat);
-      panel.position.set(19.7, 1.5, 95);
-      panel.rotation.y = -Math.PI/2;
-      scene.add(panel);
-      // Botones rojos en el panel
-      const redBtn = new TH.MeshBasicMaterial({ color: 0xff3030 });
-      for (let i = 0; i < 4; i++) {
-        const b = new TH.Mesh(new TH.SphereGeometry(0.05, 6, 5), redBtn);
-        b.position.set(19.6, 1.7 + (i%2)*0.3, 94.5 + Math.floor(i/2)*0.5);
-        scene.add(b);
-      }
-    }
-
-    // === DETALLES EN TECHOS — vigas y conductos ===
-    {
-      // Vigas de madera en el techo de SALA MYSTERY (z=15..31)
-      const beamMat = new TH.MeshLambertMaterial({ color: 0x281408 });
-      for (let z = 17; z <= 29; z += 4) {
-        const beam = new TH.Mesh(new TH.BoxGeometry(24, 0.3, 0.4), beamMat);
-        beam.position.set(0, H - 0.18, z);
-        scene.add(beam);
-      }
-      // Vigas en SALA B
-      for (let z = 43; z <= 53; z += 4) {
-        const beam = new TH.Mesh(new TH.BoxGeometry(20, 0.3, 0.4), beamMat);
-        beam.position.set(13, H - 0.18, z);
-        scene.add(beam);
-      }
-      // Conducto metálico atravesando spawn
-      const ductMat = new TH.MeshLambertMaterial({ color: 0x3a3a40 });
-      const duct = new TH.Mesh(new TH.BoxGeometry(0.6, 0.6, 10), ductMat);
-      duct.position.set(2, H - 0.4, 0);
-      scene.add(duct);
-      // Vigas del PAP
-      const beamPAP = new TH.Mesh(new TH.BoxGeometry(8, 0.3, 0.4), beamMat);
-      beamPAP.position.set(-16, H - 0.18, 95);
-      scene.add(beamPAP);
-      // Vigas del perk final
-      const beamPerk = new TH.Mesh(new TH.BoxGeometry(8, 0.3, 0.4), beamMat);
-      beamPerk.position.set(16, H - 0.18, 95);
-      scene.add(beamPerk);
-    }
-
-    // ===== Ambient + sky dome =====
+    // ===== AMBIENTE + SKY =====
     scene.add(new TH.AmbientLight(0x556070, 0.6));
     {
       const skyGeo = new TH.SphereGeometry(140, 24, 12, 0, Math.PI*2, 0, Math.PI/2);
@@ -4156,8 +3618,8 @@ window.addEventListener('popstate', () => {
       scene.add(sky);
     }
 
-    // ===== Anti-trampas: confinar al mundo =====
-    addInvisibleBarrier(0, 11, 76, 44, 0.5, 34); // techo invisible del patio
+    // ===== BARRERAS GLOBALES Y BOUNDS =====
+    addInvisibleBarrier(0, 11, 76, 44, 0.5, 34);
     addInvisibleBarrier(-60, 10, 45, 0.5, 22, 250);
     addInvisibleBarrier( 60, 10, 45, 0.5, 22, 250);
     addInvisibleBarrier(  0, 10,-15, 250, 22, 0.5);
@@ -6544,6 +6006,62 @@ window.addEventListener('popstate', () => {
     tesla:    'torretesla.glb',
   };
   const TRAP_MODEL_CACHE = {};
+
+  // ===== CARGA DE MODELOS GLB DE JARDÍN (placeholders → GLB cuando llegan) =====
+  // Cada prop registrado en window._gardenProps con su modelName se va a buscar
+  // en /models/{modelName}.glb. Si existe, reemplaza al placeholder respetando
+  // posición, rotación y escala. Si no existe, el placeholder se queda visible.
+  const GARDEN_MODEL_CACHE = {};
+  function preloadGardenModels() {
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    if (!window._gardenProps || !window._gardenProps.length) return;
+    // Recopilar nombres únicos
+    const uniqueNames = [...new Set(window._gardenProps.map(p => p.modelName))];
+    const loader = new THREE.GLTFLoader();
+    uniqueNames.forEach(name => {
+      const path = 'models/' + name + '.glb';
+      loader.load(path,
+        (gltf) => {
+          // Normalizar: centrar en X/Z, base en Y=0, escalar a 1m de alto base
+          const model = gltf.scene;
+          const box = new TH.Box3().setFromObject(model);
+          const size = new TH.Vector3(); box.getSize(size);
+          const center = new TH.Vector3(); box.getCenter(center);
+          model.position.set(-center.x, -box.min.y, -center.z);
+          GARDEN_MODEL_CACHE[name] = { scene: model, baseHeight: size.y || 1 };
+          console.log('[GARDEN OK]', name);
+          // Aplicar a todos los placeholders pendientes con este nombre
+          window._gardenProps.forEach(p => {
+            if (p.modelName === name && !p._applied) applyGardenModel(p);
+          });
+        },
+        undefined,
+        (err) => {
+          console.warn('[GARDEN MISS]', name, '— se queda el placeholder');
+        }
+      );
+    });
+  }
+
+  function applyGardenModel(propEntry) {
+    const cached = GARDEN_MODEL_CACHE[propEntry.modelName];
+    if (!cached) return;
+    // Quitar el placeholder de la escena y disponer su geometría
+    if (propEntry.placeholder && propEntry.placeholder.parent) {
+      propEntry.placeholder.parent.remove(propEntry.placeholder);
+      propEntry.placeholder.traverse(o => {
+        if (o.geometry) o.geometry.dispose();
+      });
+    }
+    // Clonar el modelo y posicionarlo
+    const inst = cached.scene.clone(true);
+    inst.position.set(propEntry.x, propEntry.y, propEntry.z);
+    inst.rotation.y = propEntry.rotY || 0;
+    if (propEntry.scale && propEntry.scale !== 1) inst.scale.setScalar(propEntry.scale);
+    scene.add(inst);
+    propEntry._applied = true;
+    propEntry.instance = inst;
+  }
 
   function preloadTrapModels() {
     if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
