@@ -2983,7 +2983,6 @@ window.addEventListener('popstate', () => {
     preloadDrinkModels();
     preloadTrapModels();
     preloadZombieModels();
-    preloadGardenModels();
     scatterMexicanProps();
     setupInput();
     initAudio();
@@ -3172,171 +3171,420 @@ window.addEventListener('popstate', () => {
   //   [3 ALMACEN] ——————— [4 PATIO JARDIN] ——— [6 SALA PERKY VIP]
   //
   // Rooms: ~20×20 cada una, conectadas por pasillos
-
   function buildWorld() {
     // =========================================================
-    // VERSIÓN SIMPLE: cargar UN mapa GLB completo + mystery box
+    // MATERIALES
     // =========================================================
-    // No hay puertas, trampas, perks ni pack-a-punch.
-    // El GLB es todo el mapa, sus meshes son los colliders.
-    // El jugador se mueve y cae al suelo automáticamente (gravedad).
+    const fConcrete = new TH.MeshStandardMaterial({
+      map: textures.pbrConcrete.color, normalMap: textures.pbrConcrete.normal,
+      roughnessMap: textures.pbrConcrete.rough, roughness: 1.0
+    });
+    const fNeon     = new TH.MeshStandardMaterial({ map:textures.floorNeon, roughness:0.75 });
+    const fGrass    = new TH.MeshStandardMaterial({
+      map: textures.pbrGrass.color, normalMap: textures.pbrGrass.normal,
+      roughnessMap: textures.pbrGrass.rough, roughness: 1.0
+    });
+    const fMetal    = new TH.MeshStandardMaterial({
+      map: textures.pbrMetal.color, normalMap: textures.pbrMetal.normal,
+      roughnessMap: textures.pbrMetal.rough, metalnessMap: textures.pbrMetal.metal,
+      roughness: 1.0, metalness: 1.0
+    });
+    const fBrick    = new TH.MeshStandardMaterial({
+      map: textures.pbrPaving.color, normalMap: textures.pbrPaving.normal,
+      roughnessMap: textures.pbrPaving.rough, roughness: 1.0
+    });
 
-    // Suelo "fantasma" gigante por si el GLB no tiene suelo o cae fuera.
-    // Es un plano negro lejos abajo para que no se quede el jugador cayendo eterno.
-    const safetyFloor = new TH.Mesh(
-      new TH.PlaneGeometry(800, 800),
-      new TH.MeshBasicMaterial({ color: 0x000000 })
-    );
-    safetyFloor.rotation.x = -Math.PI/2;
-    safetyFloor.position.y = -50;
-    scene.add(safetyFloor);
+    const wBrick    = new TH.MeshStandardMaterial({
+      map: textures.pbrBricks.color, normalMap: textures.pbrBricks.normal,
+      roughnessMap: textures.pbrBricks.rough, roughness: 1.0
+    });
+    const wNeon     = new TH.MeshStandardMaterial({ map:textures.wallNeon, roughness:0.75 });
+    const wMetal    = new TH.MeshStandardMaterial({
+      map: textures.pbrMetal.color, normalMap: textures.pbrMetal.normal,
+      roughnessMap: textures.pbrMetal.rough, metalnessMap: textures.pbrMetal.metal,
+      roughness: 1.0, metalness: 1.0
+    });
+    const wOutdoor  = new TH.MeshStandardMaterial({
+      map: textures.pbrBricks.color, normalMap: textures.pbrBricks.normal,
+      roughnessMap: textures.pbrBricks.rough, roughness: 1.0
+    });
 
-    // Luz ambiente fuerte (las texturas del GLB pueden ser oscuras)
-    scene.add(new TH.AmbientLight(0xffffff, 0.8));
-    // Luz direccional tipo sol
-    const sun = new TH.DirectionalLight(0xfff0e0, 1.0);
-    sun.position.set(50, 100, 50);
-    scene.add(sun);
+    const crateMat  = new TH.MeshStandardMaterial({ map:textures.crate, roughness:0.85 });
 
-    // Sky dome básico (azul oscuro)
+    // Material compartido para TECHOS (concrete oscurecido con PBR)
+    const ceilMat = new TH.MeshStandardMaterial({
+      map: textures.pbrConcrete.color, normalMap: textures.pbrConcrete.normal,
+      roughnessMap: textures.pbrConcrete.rough, roughness: 1.0,
+      color: 0x222222  // oscurece el techo sin perder la textura
+    });
+    const darkMetal = new TH.MeshStandardMaterial({ color:0x1a1c22, roughness:0.4, metalness:0.85 });
+    const platMat   = new TH.MeshStandardMaterial({ color:0x2a2a30, roughness:0.7, metalness:0.5 });
+    const stairMat  = new TH.MeshStandardMaterial({ color:0x222024, roughness:0.8, metalness:0.4 });
+    const railMat   = new TH.MeshStandardMaterial({ color:COLS.yellow, emissive:COLS.yellow, emissiveIntensity:0.4 });
+
+    const H  = 6;   // altura sala estándar
+    const OH = 8;   // altura del muro perimetral del patio
+
+    // =================================================================
+    // NUEVO LAYOUT — barrio del Raval estilo COD Zombies
+    //
+    //                    ┌────────────────────────┐
+    //                    │       PATIO            │   Sala PAP
+    //                    │    40x30 grass         │◄──────┐
+    //                    │                        │       │
+    //                    │                        │   Sala 2 perk
+    //                    │                        │◄──────┤
+    //                    └───────────┬────────────┘
+    //                                │
+    //                        pasillo corto
+    //                                │
+    //                    ┌───────────┴────────────┐
+    //                    │  SALA B (camino B)     │
+    //                    │  20x14 rectangular     │
+    //                    │  con trampa            │
+    //                    └───────────┬────────────┘
+    //                                │
+    //                       pasillo bifurcación
+    //                          /         \
+    //               ┌──────────┘           └──────┐
+    //               │ SALA A                      │
+    //               │ 10x10                       │
+    //               │ 1 perk                      │
+    //               └─────────────────────────────┘
+    //                                │
+    //                    ┌───────────┴────────────┐
+    //                    │  SALA MYSTERY          │
+    //                    │  24x16 rectangular     │
+    //                    │  mystery box + 2 perks │
+    //                    └───────────┬────────────┘
+    //                                │
+    //                           PASILLO 1
+    //                          (4x10, trampa)
+    //                                │
+    //                    ┌───────────┴────────────┐
+    //                    │  SPAWN  10x10          │
+    //                    │  1 perk                │
+    //                    │  (0,0,0)               │
+    //                    └────────────────────────┘
+    // =================================================================
+
+    // ===== SALA 0: SPAWN (10×10 concreto) =====
+    rooms.push({ id:0, name:'SPAWN', bounds:{minX:-5,maxX:5,minZ:-5,maxZ:5}, unlocked:true });
+    addFloorPlane(0, 0, 10, 10, fConcrete);
+    addCeilingPlane(0, 0, 10, 10, H, ceilMat);
+    // Paredes: norte, este, oeste cerradas; sur con hueco (puerta al pasillo 1)
+    addWallWithGap('x', -5, -5, 5, H/2, H, 0.5, wBrick, null, null); // norte
+    addWallWithGap('z', -5, -5, 5, H/2, H, 0.5, wBrick, null, null); // oeste
+    addWallWithGap('z',  5, -5, 5, H/2, H, 0.5, wBrick, null, null); // este
+    addWallWithGap('x',  5, -5, 5, H/2, H, 0.5, wBrick, -2, 2);      // sur con hueco
+    // Luz cenital del spawn
+    { const l = new TH.PointLight(COLS.orange, 1.8, 14, 1.6);
+      l.position.set(0, H-0.5, 0); scene.add(l); lights.push(l); }
+    // Perk del spawn: REDBULL (pared norte, mirando al centro/sur)
+    addDrinkMachine(0, -4.2, 0, 'redbull');
+    // Spawners iniciales (los zombis aparecen dentro del spawn al principio)
+    addSpawner(-4.5, 1.2, 0, Math.PI/2, 0);
+    addSpawner( 4.5, 1.2, 0,-Math.PI/2, 0);
+
+    // ===== PASILLO 1 (4×10 concreto, con trampa) =====
+    rooms.push({ id:10, name:'PASILLO1', bounds:{minX:-2,maxX:2,minZ:5,maxZ:15}, unlocked:true });
+    addFloorPlane(0, 10, 4, 10, fConcrete);
+    addCeilingPlane(0, 10, 4, 10, H, ceilMat);
+    addWallWithGap('z', -2, 5, 15, H/2, H, 0.5, wBrick, null, null); // oeste
+    addWallWithGap('z',  2, 5, 15, H/2, H, 0.5, wBrick, null, null); // este
+    // Puerta sur del spawn → entrada al pasillo 1 (cost 500) — activa spawners sala mystery al cruzarlo
+    addDoor(0, 5, 0, 500, 1, 'PASILLO');
+    // Trampa del pasillo 1: PINCHOS (centro del pasillo)
+    addBuyableTrap(0, 10, 'spikes');
+    // Luz
+    { const l = new TH.PointLight(0xffaa44, 1.2, 10, 1.8);
+      l.position.set(0, H-0.5, 10); scene.add(l); lights.push(l); }
+
+    // ===== SALA 1: MYSTERY (24×16 rectangular, ladrillo) =====
+    rooms.push({ id:1, name:'MYSTERY', bounds:{minX:-12,maxX:12,minZ:15,maxZ:31}, unlocked:false });
+    addFloorPlane(0, 23, 24, 16, fBrick);
+    addCeilingPlane(0, 23, 24, 16, H, ceilMat);
+    // Paredes: norte conecta con pasillo1 (hueco central), sur conecta con pasillo2 (hueco central)
+    addWallWithGap('x', 15, -12, 12, H/2, H, 0.5, wBrick, -2, 2); // norte con hueco para pasillo1
+    addWallWithGap('x', 31, -12, 12, H/2, H, 0.5, wBrick, -2, 2); // sur con hueco para pasillo2
+    addWallWithGap('z',-12, 15, 31, H/2, H, 0.5, wBrick, null, null); // oeste
+    addWallWithGap('z', 12, 15, 31, H/2, H, 0.5, wBrick, null, null); // este
+    // Puerta sur del pasillo1 → entrada a sala mystery (cost 1000)
+    addDoor(0, 15, 0, 1000, 2, 'SALA MYSTERY');
+    // Luces hangantes
+    makeHangingLamp(-6, 20, COLS.pink);
+    makeHangingLamp( 6, 26, COLS.cyan);
+    // 2 perks pegados a paredes, mirando al centro
+    // KATXORRO en pared oeste (x=-11.5), mira a +x (centro)
+    addDrinkMachine(-11.3, 20, Math.PI/2, 'katxorro');
+    // CHUPITO en pared este (x=11.5), mira a -x (centro)
+    addDrinkMachine( 11.3, 26, -Math.PI/2, 'chupito');
+    // Spawners
+    addSpawner(-11.5, 1.2, 23, Math.PI/2, 1);
+    addSpawner( 11.5, 1.2, 23,-Math.PI/2, 1);
+
+    // ===== PASILLO 2 (bifurcación) =====
+    // El pasillo2 va de z=31 a z=37 (sala mystery → zona T de bifurcación).
+    // En z=37 hay un "vestíbulo" ancho x[-10..10] z[37..41] desde el que se accede
+    // tanto a Sala A (oeste) como a Sala B (este).
+    rooms.push({ id:11, name:'PASILLO2', bounds:{minX:-2,maxX:2,minZ:31,maxZ:37}, unlocked:false });
+    addFloorPlane(0, 34, 4, 6, fConcrete);
+    addCeilingPlane(0, 34, 4, 6, H, ceilMat);
+    addWallWithGap('z', -2, 31, 37, H/2, H, 0.5, wBrick, null, null); // oeste
+    addWallWithGap('z',  2, 31, 37, H/2, H, 0.5, wBrick, null, null); // este
+    // Puerta sur del sala mystery → pasillo2
+    addDoor(0, 31, 0, 1500, 3, 'BIFURCACION');
+
+    // ===== VESTÍBULO DE BIFURCACIÓN (zona T, x[-10..10] z[37..41]) =====
+    addFloorPlane(0, 39, 20, 4, fConcrete);
+    addCeilingPlane(0, 39, 20, 4, H, ceilMat);
+    // Pared norte del vestíbulo con hueco central x[-2..2] (viene del pasillo2)
+    addWallWithGap('x', 37, -10, 10, H/2, H, 0.5, wBrick, -2, 2);
+    // Pared sur del vestíbulo con DOS huecos: uno al camino A (x[-8..-5]) y otro al camino B (x[5..8])
+    // Como addWallWithGap solo soporta 1 hueco, lo hacemos a mano con 3 segmentos
+    addWall(-9, H/2, 41, 2, H, 0.5, wBrick);  // extremo oeste
+    addWall( 0, H/2, 41, 6, H, 0.5, wBrick);  // centro
+    addWall( 9, H/2, 41, 2, H, 0.5, wBrick);  // extremo este
+    // Paredes oeste y este del vestíbulo
+    addWallWithGap('z',-10, 37, 41, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z', 10, 37, 41, H/2, H, 0.5, wBrick, null, null);
+
+    // ===== CAMINO A: SALA A (10×10 pequeña, ladrillo) =====
+    // La sala A está en x[-13..-3] z[41..51] (centro -8, 46)
+    rooms.push({ id:2, name:'SALA_A', bounds:{minX:-13,maxX:-3,minZ:41,maxZ:51}, unlocked:false });
+    addFloorPlane(-8, 46, 10, 10, fBrick);
+    addCeilingPlane(-8, 46, 10, 10, H, ceilMat);
+    // Pared norte: hueco x[-8..-5] que conecta con el vestíbulo
+    addWallWithGap('x', 41, -13, -3, H/2, H, 0.5, wBrick, -8, -5);
+    addWallWithGap('x', 51, -13, -3, H/2, H, 0.5, wBrick, null, null); // sur cerrado
+    addWallWithGap('z',-13, 41, 51, H/2, H, 0.5, wBrick, null, null); // oeste
+    addWallWithGap('z', -3, 41, 51, H/2, H, 0.5, wBrick, null, null); // este
+    // Perk en Sala A: MOJITO (pared sur, mirando al norte)
+    addDrinkMachine(-8, 50.2, Math.PI, 'mojito');
+    // Luz
+    { const l = new TH.PointLight(COLS.cyan, 1.4, 10, 1.8);
+      l.position.set(-8, H-0.5, 46); scene.add(l); lights.push(l); }
+    addSpawner(-12.5, 1.2, 46, Math.PI/2, 2);
+
+    // ===== CAMINO B: SALA B (20×14 rectangular mediana, con trampa) =====
+    // Sala B en x[3..23] z[41..55] (centro 13, 48)
+    rooms.push({ id:3, name:'SALA_B', bounds:{minX:3,maxX:23,minZ:41,maxZ:55}, unlocked:false });
+    addFloorPlane(13, 48, 20, 14, fBrick);
+    addCeilingPlane(13, 48, 20, 14, H, ceilMat);
+    // Pared norte: hueco x[5..8] que conecta con el vestíbulo
+    addWallWithGap('x', 41, 3, 23, H/2, H, 0.5, wBrick, 5, 8);
+    addWallWithGap('z',  3, 41, 55, H/2, H, 0.5, wBrick, null, null); // oeste
+    addWallWithGap('z', 23, 41, 55, H/2, H, 0.5, wBrick, null, null); // este
+    // sur con hueco para puerta al patio (x[12..14])
+    addWallWithGap('x', 55, 3, 23, H/2, H, 0.5, wBrick, 12, 14);
+    // Trampa de la sala B: SIERRA GIRATORIA (centro)
+    addBuyableTrap(13, 48, 'sawblade');
+    // Luces
+    makeHangingLamp( 8, 44, COLS.yellow);
+    makeHangingLamp(18, 52, COLS.pink);
+    // Spawners
+    addSpawner(22.5, 1.2, 48,-Math.PI/2, 3);
+    addSpawner( 3.5, 1.2, 52, Math.PI/2, 3);
+    // Puerta sur de la sala B → patio
+    addDoor(13, 55, 0, 2000, 4, 'PATIO');
+
+    // ===== CORREDOR CORTO SALA B → PATIO (4×6) =====
+    // Va de z=55 a z=61, centrado en x=13
+    rooms.push({ id:12, name:'PREPATIO', bounds:{minX:11,maxX:15,minZ:55,maxZ:61}, unlocked:false });
+    addFloorPlane(13, 58, 4, 6, fBrick);
+    addCeilingPlane(13, 58, 4, 6, H, ceilMat);
+    addWallWithGap('z', 11, 55, 61, H/2, H, 0.5, wBrick, null, null);
+    addWallWithGap('z', 15, 55, 61, H/2, H, 0.5, wBrick, null, null);
+
+    // ===== PATIO EXTERIOR (40×30, grass) =====
+    // Centro en (0, 76), bounds x[-20..20], z[61..91]
+    rooms.push({ id:4, name:'PATIO', bounds:{minX:-20,maxX:20,minZ:61,maxZ:91}, unlocked:false });
+    addFloorPlane(0, 76, 40, 30, fGrass);
+    // NO techo en el patio (exterior)
+    // Paredes perimetrales altas (OH=8)
+    // Sur con hueco para el corredor pre-patio (x[11..15])
+    addWallWithGap('x', 61, -20, 20, OH/2, OH, 0.5, wOutdoor, 11, 15);
+    addWallWithGap('z',-20, 61, 91, OH/2, OH, 0.5, wOutdoor, null, null); // oeste
+    addWallWithGap('z', 20, 61, 91, OH/2, OH, 0.5, wOutdoor, null, null); // este
+    // Pared norte con DOS huecos para las puertas PAP (x[-18..-14]) y Perk (x[14..18])
+    addWall(-19, OH/2, 91, 2, OH, 0.5, wOutdoor);   // x[-20..-18] extremo oeste
+    addWall(  0, OH/2, 91, 28, OH, 0.5, wOutdoor);  // x[-14..14] centro entre los dos huecos
+    addWall( 19, OH/2, 91, 2, OH, 0.5, wOutdoor);   // x[18..20] extremo este
+    // Props del patio: farolas
+    makeHangingLamp(-10, 68, COLS.yellow);
+    makeHangingLamp( 10, 68, COLS.orange);
+    makeHangingLamp(-10, 84, COLS.pink);
+    makeHangingLamp( 10, 84, COLS.cyan);
+    // Trampa eléctrica en el centro del patio
+    addBuyableTrap(0, 76, 'electric');
+    // Trampa lanzallamas en un lateral
+    addBuyableTrap(-14, 70, 'fire');
+    // Torre tesla al otro lado del patio
+    addBuyableTrap(14, 70, 'tesla');
+    // 2 perks extra en el patio (pegados a paredes oeste/este, mirando al centro)
+    addDrinkMachine(-19.5, 70, Math.PI/2, 'cafelito');
+    addDrinkMachine( 19.5, 70,-Math.PI/2, 'cubata');
+    // Spawners del patio
+    addSpawner(-19, 1.2, 76, Math.PI/2, 4);
+    addSpawner( 19, 1.2, 76,-Math.PI/2, 4);
+    addSpawner(-19, 1.2, 86, Math.PI/2, 4);
+    addSpawner( 19, 1.2, 86,-Math.PI/2, 4);
+
+    // ===== PROPS DECORATIVOS DEL PATIO (contenedores metálicos, barriles) =====
+    // Geometría + material compartidos para eficiencia
     {
-      const skyGeo = new TH.SphereGeometry(400, 24, 12, 0, Math.PI*2, 0, Math.PI/2);
-      const skyMat = new TH.MeshBasicMaterial({ color: 0x4a6a8a, side: TH.BackSide });
-      const sky = new TH.Mesh(skyGeo, skyMat);
-      sky.position.set(0, -10, 0);
-      scene.add(sky);
+      const containerGeo = new TH.BoxGeometry(2.2, 2.2, 1.6);
+      const barrelGeo    = new TH.CylinderGeometry(0.5, 0.5, 1.1, 10);
+      // Crates cercanas a la trampa de fuego (esquina SO)
+      const addContainer = (x, z, rotY, matKey) => {
+        const mat = matKey === 'metal' ? fMetal : crateMat;
+        const m = new TH.Mesh(containerGeo, mat);
+        m.position.set(x, 1.1, z);
+        m.rotation.y = rotY;
+        scene.add(m);
+        walls.push({
+          min: new TH.Vector3(x-1.1, 0, z-0.8),
+          max: new TH.Vector3(x+1.1, 2.2, z+0.8),
+          mesh: m, isDoor: false
+        });
+      };
+      const addBarrel = (x, z) => {
+        const m = new TH.Mesh(barrelGeo, fMetal);
+        m.position.set(x, 0.55, z);
+        scene.add(m);
+        walls.push({
+          min: new TH.Vector3(x-0.5, 0, z-0.5),
+          max: new TH.Vector3(x+0.5, 1.1, z+0.5),
+          mesh: m, isDoor: false
+        });
+      };
+      // Contenedores metálicos repartidos por el patio (lejos de trampas y spawners)
+      addContainer(-6, 64, 0.2, 'metal');
+      addContainer( 6, 64,-0.2, 'metal');
+      addContainer(-16, 80, 0.5, 'wood');
+      addContainer( 16, 80, -0.3, 'wood');
+      addContainer(-4, 82, 0, 'metal');
+      addContainer( 4, 82, 0.1, 'wood');
+      // Barriles
+      addBarrel(-8, 72);
+      addBarrel(-6, 74);
+      addBarrel( 8, 72);
+      addBarrel( 6, 74);
+      addBarrel(-12, 85);
+      addBarrel( 12, 85);
     }
 
-    // ===== CARGA DEL MAPA GLB =====
-    if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
-      const loader = new THREE.GLTFLoader();
-      loader.load('models/mapa.glb',
-        (gltf) => {
-          const map = gltf.scene;
-          // Calcular bounding box para auto-escalar y centrar
-          const box = new TH.Box3().setFromObject(map);
-          const size = new TH.Vector3(); box.getSize(size);
-          const center = new TH.Vector3(); box.getCenter(center);
-          // Escalar para que el lado mayor sea ~150m (mapa jugable)
-          const targetSize = 150;
-          const maxDim = Math.max(size.x, size.z) || 1;
-          const scale = targetSize / maxDim;
-          map.scale.setScalar(scale);
-          // Recalcular bbox tras escalar
-          map.updateMatrixWorld(true);
-          const box2 = new TH.Box3().setFromObject(map);
-          const center2 = new TH.Vector3(); box2.getCenter(center2);
-          const size2 = new TH.Vector3(); box2.getSize(size2);
-          // Centrar X y Z, dejar Y para que la base esté en y=0
-          map.position.x -= center2.x;
-          map.position.z -= center2.z;
-          map.position.y -= box2.min.y;
-          scene.add(map);
-
-          // ===== COLISIONES AUTOMÁTICAS POR MESH =====
-          // Cada mesh interno se trata como una caja sólida (bounding box)
-          // y se añade al array global walls[].
-          map.updateMatrixWorld(true);
-          let colliderCount = 0;
-          map.traverse(o => {
-            if (o.isMesh) {
-              const mb = new TH.Box3().setFromObject(o);
-              // Solo añadimos colliders de tamaño razonable (no triángulos sueltos
-              // ni cosas enormes que cubran todo el mapa)
-              const w = mb.max.x - mb.min.x;
-              const h = mb.max.y - mb.min.y;
-              const d = mb.max.z - mb.min.z;
-              if (w > 0.3 && d > 0.3 && w < 100 && d < 100 && h > 0.5) {
-                walls.push({
-                  min: mb.min.clone(),
-                  max: mb.max.clone(),
-                  mesh: o, isDoor: false
-                });
-                colliderCount++;
-              }
-            }
-          });
-          console.log('[MAP OK] mapa.glb cargado, colliders:', colliderCount,
-                      'tamaño:', size2.x.toFixed(1), 'x', size2.z.toFixed(1));
-
-          // ===== AJUSTAR ALTURAS POST-CARGA =====
-          // Raycast hacia abajo para cada posición clave: encuentra el suelo
-          // del GLB y coloca al jugador / spawners / mystery box justo encima.
-          const ray = new TH.Raycaster();
-          const down = new TH.Vector3(0, -1, 0);
-          function findGroundY(x, z) {
-            ray.set(new TH.Vector3(x, 200, z), down);
-            ray.far = 500;
-            const hits = ray.intersectObject(map, true);
-            if (hits.length > 0) return hits[0].point.y;
-            return null;
-          }
-          // Exponer globalmente para que los zombis se peguen al suelo en runtime
-          window._mapLoaded = true;
-          window._findMapGroundY = findGroundY;
-
-          // Mover al jugador al suelo en (0, ?, 5) — su posición x,z inicial
-          const playerY = findGroundY(0, 5);
-          if (playerY !== null) {
-            camera.position.set(0, playerY + player.height + 0.1, 5);
-            console.log('[SPAWN PLAYER] suelo en y=' + playerY.toFixed(2));
-          } else {
-            console.warn('[SPAWN PLAYER] no se encontró suelo en (0,5), dejo y=' + player.height);
-          }
-
-          // Mover la mystery box al suelo
-          if (mysteryBox && mysteryBox.group) {
-            const mbY = findGroundY(mysteryBox.group.position.x, mysteryBox.group.position.z);
-            if (mbY !== null) mysteryBox.group.position.y = mbY + 0.05;
-          }
-
-          // Mover los spawners al suelo (cada uno en su x,z)
-          spawners.forEach(sp => {
-            const gy = findGroundY(sp.pos.x, sp.pos.z);
-            if (gy !== null) {
-              sp.pos.y = gy + 1.2;
-              if (sp.group) sp.group.position.y = gy + 1.2;
-            }
-          });
-
-          // worldBounds basado en el bbox real del mapa
-          const half = targetSize / 2 + 10;
-          worldBounds = {
-            minX: -half, maxX: half,
-            minZ: -half, maxZ: half,
-            minY: -2, maxY: 100
-          };
-        },
-        undefined,
-        (err) => {
-          console.error('[MAP FAIL] no se pudo cargar models/mapa.glb', err);
-        }
-      );
+    // ===== PROPS EN SALA MYSTERY (cajas de madera) =====
+    {
+      const crateGeo = new TH.BoxGeometry(1.4, 1.4, 1.4);
+      const addCrate = (x, z) => {
+        const m = new TH.Mesh(crateGeo, crateMat);
+        m.position.set(x, 0.7, z);
+        m.rotation.y = Math.random()*0.3;
+        scene.add(m);
+        walls.push({
+          min: new TH.Vector3(x-0.7, 0, z-0.7),
+          max: new TH.Vector3(x+0.7, 1.4, z+0.7),
+          mesh: m, isDoor: false
+        });
+      };
+      addCrate(-9, 18);
+      addCrate(-10, 28);
+      addCrate( 10, 19);
+      addCrate(  9, 29);
     }
 
-    // ===== MYSTERY BOX cerca del spawn =====
-    // Spawn del jugador es (0, height, 0). Caja a 5m delante.
+    // ===== PROPS EN SALA B (contenedores metálicos) =====
+    {
+      const pipeGeo = new TH.CylinderGeometry(0.15, 0.15, H, 6);
+      // Tuberías metálicas verticales (solo decorativas)
+      const pipe1 = new TH.Mesh(pipeGeo, fMetal);
+      pipe1.position.set(5, H/2, 42); scene.add(pipe1);
+      const pipe2 = new TH.Mesh(pipeGeo, fMetal);
+      pipe2.position.set(21, H/2, 54); scene.add(pipe2);
+      const pipe3 = new TH.Mesh(pipeGeo, fMetal);
+      pipe3.position.set(5, H/2, 54); scene.add(pipe3);
+      // Contenedor metálico en esquina
+      const metalBoxGeo = new TH.BoxGeometry(1.6, 1.6, 1.6);
+      const mb = new TH.Mesh(metalBoxGeo, fMetal);
+      mb.position.set(20, 0.8, 43);
+      scene.add(mb);
+      walls.push({
+        min: new TH.Vector3(19.2, 0, 42.2),
+        max: new TH.Vector3(20.8, 1.6, 43.8),
+        mesh: mb, isDoor: false
+      });
+    }
+
+    // ===== PROPS EN SALA MEJORA (PAP) — cajas del laboratorio =====
+    {
+      const crateGeo = new TH.BoxGeometry(1.0, 1.0, 1.0);
+      const addCrateMini = (x, z, mat) => {
+        const m = new TH.Mesh(crateGeo, mat);
+        m.position.set(x, 0.5, z);
+        scene.add(m);
+        walls.push({
+          min: new TH.Vector3(x-0.5, 0, z-0.5),
+          max: new TH.Vector3(x+0.5, 1.0, z+0.5),
+          mesh: m, isDoor: false
+        });
+      };
+      addCrateMini(-19, 92.5, fMetal);
+      addCrateMini(-13, 92.5, crateMat);
+      addCrateMini(-19, 97.5, crateMat);
+      addCrateMini(-13, 97.5, fMetal);
+    }
+
+    // ===== SALA 5: PACK-A-PUNCH (8×8, NW del fondo del patio) =====
+    // x[-20..-12] z[91..99]
+    rooms.push({ id:5, name:'PAP', bounds:{minX:-20,maxX:-12,minZ:91,maxZ:99}, unlocked:false });
+    addFloorPlane(-16, 95, 8, 8, fBrick);
+    addCeilingPlane(-16, 95, 8, 8, H, ceilMat);
+    addWallWithGap('z',-20, 91, 99, H/2, H, 0.5, wBrick, null, null); // oeste
+    addWallWithGap('z',-12, 91, 99, H/2, H, 0.5, wBrick, null, null); // este
+    addWallWithGap('x', 99, -20,-12, H/2, H, 0.5, wBrick, null, null); // norte cerrado
+    // Puerta al Pack-a-Punch (desde patio, x=-16 z=91)
+    addDoor(-16, 91, 0, 4000, 5, 'PACK-A-PUNCH');
+    // Luces rosa/cyan
+    { const l1 = new TH.PointLight(COLS.pink, 2.0, 12, 1.8);
+      l1.position.set(-16, H-0.5, 95); scene.add(l1); lights.push(l1);
+      const l2 = new TH.PointLight(COLS.cyan, 1.4, 10, 1.8);
+      l2.position.set(-16, 2, 95); scene.add(l2); lights.push(l2); }
+    addSpawner(-19.5, 1.2, 95, Math.PI/2, 5);
+
+    // ===== SALA 6: PERK FINAL (8×8, NE del fondo del patio) =====
+    // x[12..20] z[91..99]
+    rooms.push({ id:6, name:'PERK_FINAL', bounds:{minX:12,maxX:20,minZ:91,maxZ:99}, unlocked:false });
+    addFloorPlane(16, 95, 8, 8, fBrick);
+    addCeilingPlane(16, 95, 8, 8, H, ceilMat);
+    addWallWithGap('z', 12, 91, 99, H/2, H, 0.5, wBrick, null, null); // oeste
+    addWallWithGap('z', 20, 91, 99, H/2, H, 0.5, wBrick, null, null); // este
+    addWallWithGap('x', 99, 12, 20, H/2, H, 0.5, wBrick, null, null); // norte cerrado
+    // Puerta al perk final (desde patio, x=16 z=91)
+    addDoor(16, 91, 0, 3000, 6, 'SALA PERK');
+    addDrinkMachine(16, 98.2, Math.PI, 'chuchuwa');
+    { const l = new TH.PointLight(COLS.green, 1.8, 12, 1.8);
+      l.position.set(16, H-0.5, 95); scene.add(l); lights.push(l); }
+    addSpawner(19.5, 1.2, 95,-Math.PI/2, 6);
+
+    // ===== PERKS "EXTRA" (las restantes hasta gastar 11 máquinas) =====
+    // Ya colocadas: redbull, katxorro, chupito, mojito, cafelito, cubata, chuchuwa = 7
+    // Faltan 4: absenta, bloody, chartreuse, quintos → repartidas en patio y sala B
+    addDrinkMachine(-19.5, 84, Math.PI/2, 'absenta');    // patio, pared oeste
+    addDrinkMachine( 19.5, 84,-Math.PI/2, 'bloody');     // patio, pared este
+    addDrinkMachine( 22.5, 44,-Math.PI/2, 'chartreuse'); // sala B, pared este
+    addDrinkMachine(  4,   48, Math.PI/2, 'quintos');    // sala B, pared oeste
+
+    // ===== MYSTERY BOX en sala mystery (centro-este) =====
+    // (la mystery box se crea con el modelo 3D ya cargado, aquí solo su grupo+pos)
     {
       const mbGrp = new TH.Group();
-      mbGrp.position.set(0, 0.5, 5);
+      mbGrp.position.set(6, 0.5, 23);
       scene.add(mbGrp);
       mysteryBox = { mesh:null, group:mbGrp, qMark:null, pos:mbGrp.position, cost:950, busy:false };
-      // Placeholder visible hasta que cargue weapon_box.glb
-      const placeholder = new TH.Mesh(
-        new TH.BoxGeometry(1.4, 0.9, 1),
-        new TH.MeshStandardMaterial({ color:0x6a3010, emissive:0x4a2010, emissiveIntensity:0.4 })
-      );
-      placeholder.position.y = 0.45;
-      mbGrp.add(placeholder);
-      mysteryBox.mesh = placeholder;
-      // Carga del modelo real
       if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
         const loader = new THREE.GLTFLoader();
         loader.load('models/weapon_box.glb', (gltf) => {
-          // Quitar placeholder
-          mbGrp.remove(placeholder);
-          if (placeholder.geometry) placeholder.geometry.dispose();
-          if (placeholder.material) placeholder.material.dispose();
           const model = gltf.scene;
           const box = new TH.Box3().setFromObject(model);
           const size = new TH.Vector3(); box.getSize(size);
@@ -3348,29 +3596,102 @@ window.addEventListener('popstate', () => {
           inner.add(model);
           inner.scale.setScalar(scale);
           mbGrp.add(inner);
-          mysteryBox.modelRoot = inner;
           inner.traverse(o => {
-            if (!mysteryBox.mesh && o.isMesh && o.material) mysteryBox.mesh = o;
+            if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+              o.material.envMapIntensity = 0.3;
+              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
+            }
           });
+          mysteryBox.modelRoot = inner;
+          inner.traverse(o => { if (!mysteryBox.mesh && o.isMesh && o.material) mysteryBox.mesh = o; });
         }, undefined, err => console.error('[MYSTERYBOX FAIL]', err));
       }
     }
 
-    // ===== SPAWNERS DE ZOMBIS (alrededor del jugador, no en sitios fijos) =====
-    // Como no hay salas, creamos 8 spawners en círculo alrededor del spawn,
-    // todos activos desde el principio. Los zombis aparecerán de cualquier dirección.
-    const SPAWN_RING = 25;
-    for (let i = 0; i < 8; i++) {
-      const angle = (i / 8) * Math.PI * 2;
-      const sx = Math.cos(angle) * SPAWN_RING;
-      const sz = Math.sin(angle) * SPAWN_RING;
-      addSpawner(sx, 1.2, sz, -angle + Math.PI, 0);
+    // ===== MÁQUINA DE MEJORA (Pack-a-Punch) en el CENTRO de la sala PAP =====
+    {
+      const grp = new TH.Group();
+      grp.position.set(-16, 0, 95);
+      scene.add(grp);
+      upgradeMachine = {
+        group: grp, crystal: null, ring1: null, ring2: null,
+        pos: new TH.Vector3(-16, 1, 95),
+        cost: 5000, upgradedWeapons: new Set(),
+      };
+      const upgL = new TH.PointLight(0xff2a6d, 2.5, 14, 1.6);
+      upgL.position.set(-16, 3, 95); scene.add(upgL); lights.push(upgL);
+      if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
+        const loader = new THREE.GLTFLoader();
+        loader.load('models/maquinamejoradearma.glb', (gltf) => {
+          const model = gltf.scene;
+          const box = new TH.Box3().setFromObject(model);
+          const size = new TH.Vector3(); box.getSize(size);
+          const center = new TH.Vector3(); box.getCenter(center);
+          const scale = size.y > 0 ? 3.0 / size.y : 1;
+          const inner = new TH.Group();
+          model.position.set(-center.x, -box.min.y, -center.z);
+          inner.add(model);
+          inner.scale.setScalar(scale);
+          grp.add(inner);
+          inner.traverse(o => {
+            if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
+              o.material.envMapIntensity = 0.3;
+              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
+            }
+          });
+          upgradeMachine.modelRoot = inner;
+        }, undefined, err => console.error('[UPGRADE FAIL]', err));
+      }
     }
-    // Marcar todos los spawners como activos (no requieren puerta)
-    spawners.forEach(s => s.active = true);
 
-    // worldBounds inicial (se sobreescribe cuando carga el mapa)
-    worldBounds = { minX:-100, maxX:100, minZ:-100, maxZ:100, minY:-10, maxY:100 };
+    // ===== INTERRUPTOR DE ELECTRICIDAD (en la sala del chuchuwa, pared oeste) =====
+    {
+      const psGrp = new TH.Group();
+      const boxMat = new TH.MeshStandardMaterial({ color:0x2a1a00, metalness:0.7, roughness:0.4 });
+      const bx = new TH.Mesh(new TH.BoxGeometry(1.0, 1.3, 0.3), boxMat);
+      bx.position.y = 1.5; psGrp.add(bx);
+      const frameMat = new TH.MeshStandardMaterial({ color:0xffe600, emissive:0xffe600, emissiveIntensity:0.4 });
+      const fr = new TH.Mesh(new TH.BoxGeometry(0.85, 1.15, 0.32), frameMat);
+      fr.position.y = 1.5; psGrp.add(fr);
+      const leverMat = new TH.MeshStandardMaterial({ color:0xff2222, emissive:0xff2222, emissiveIntensity:0.6 });
+      const leverPivot = new TH.Group();
+      leverPivot.position.set(0, 1.5, 0.18);
+      const lever = new TH.Mesh(new TH.CylinderGeometry(0.04, 0.04, 0.55, 6), leverMat);
+      lever.position.y = -0.27;
+      leverPivot.add(lever);
+      const knob = new TH.Mesh(new TH.SphereGeometry(0.07, 8, 6), leverMat);
+      knob.position.y = -0.55;
+      leverPivot.add(knob);
+      psGrp.add(leverPivot);
+      // Pegado a la pared oeste de la sala Perk Final (x=12), mirando al centro (este)
+      psGrp.position.set(12.3, 0, 95);
+      psGrp.rotation.y = Math.PI/2;
+      scene.add(psGrp);
+      const psL = new TH.PointLight(0xff2222, 0.8, 6, 1.8);
+      psL.position.set(13, 1.6, 95); scene.add(psL); lights.push(psL);
+      powerSwitch = {
+        group: psGrp, leverPivot, lever, knob, light: psL,
+        pos: new TH.Vector3(13, 1.5, 95),
+      };
+    }
+
+    // ===== Ambient + sky dome =====
+    scene.add(new TH.AmbientLight(0x556070, 0.6));
+    {
+      const skyGeo = new TH.SphereGeometry(140, 24, 12, 0, Math.PI*2, 0, Math.PI/2);
+      const skyMat = new TH.MeshBasicMaterial({ color:0x0a0618, side:TH.BackSide });
+      const sky = new TH.Mesh(skyGeo, skyMat);
+      sky.position.set(0, 0, 50);
+      scene.add(sky);
+    }
+
+    // ===== Anti-trampas: confinar al mundo =====
+    addInvisibleBarrier(0, 11, 76, 44, 0.5, 34); // techo invisible del patio
+    addInvisibleBarrier(-60, 10, 45, 0.5, 22, 250);
+    addInvisibleBarrier( 60, 10, 45, 0.5, 22, 250);
+    addInvisibleBarrier(  0, 10,-15, 250, 22, 0.5);
+    addInvisibleBarrier(  0, 10,105, 250, 22, 0.5);
+    worldBounds = { minX:-55, maxX:55, minZ:-10, maxZ:102, minY:-2, maxY:14 };
 
     buildWeaponMesh();
   }
@@ -5041,15 +5362,6 @@ window.addEventListener('popstate', () => {
         const step = z.speed * dt;
         z.pos.x += nx * step;
         z.pos.z += nz * step;
-        // Cada 5 frames, raycast hacia abajo para pegar el zombi al suelo del mapa.
-        // Solo si tenemos el mapa cargado (window._mapLoaded).
-        if (window._mapLoaded) {
-          z._groundFrame = ((z._groundFrame || 0) + 1) % 5;
-          if (z._groundFrame === 0) {
-            const gy = window._findMapGroundY(z.pos.x, z.pos.z);
-            if (gy !== null) z.pos.y = gy;
-          }
-        }
 
         // === SEPARACIÓN ENTRE ZOMBIS (evita que se solapen) ===
         // Recorrido lineal pero limitado: solo revisamos zombis hasta 1.5m de distancia.
@@ -5761,62 +6073,6 @@ window.addEventListener('popstate', () => {
     tesla:    'torretesla.glb',
   };
   const TRAP_MODEL_CACHE = {};
-
-  // ===== CARGA DE MODELOS GLB DE JARDÍN (placeholders → GLB cuando llegan) =====
-  // Cada prop registrado en window._gardenProps con su modelName se va a buscar
-  // en /models/{modelName}.glb. Si existe, reemplaza al placeholder respetando
-  // posición, rotación y escala. Si no existe, el placeholder se queda visible.
-  const GARDEN_MODEL_CACHE = {};
-  function preloadGardenModels() {
-    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
-    if (!window._gardenProps || !window._gardenProps.length) return;
-    // Recopilar nombres únicos
-    const uniqueNames = [...new Set(window._gardenProps.map(p => p.modelName))];
-    const loader = new THREE.GLTFLoader();
-    uniqueNames.forEach(name => {
-      const path = 'models/' + name + '.glb';
-      loader.load(path,
-        (gltf) => {
-          // Normalizar: centrar en X/Z, base en Y=0, escalar a 1m de alto base
-          const model = gltf.scene;
-          const box = new TH.Box3().setFromObject(model);
-          const size = new TH.Vector3(); box.getSize(size);
-          const center = new TH.Vector3(); box.getCenter(center);
-          model.position.set(-center.x, -box.min.y, -center.z);
-          GARDEN_MODEL_CACHE[name] = { scene: model, baseHeight: size.y || 1 };
-          console.log('[GARDEN OK]', name);
-          // Aplicar a todos los placeholders pendientes con este nombre
-          window._gardenProps.forEach(p => {
-            if (p.modelName === name && !p._applied) applyGardenModel(p);
-          });
-        },
-        undefined,
-        (err) => {
-          console.warn('[GARDEN MISS]', name, '— se queda el placeholder');
-        }
-      );
-    });
-  }
-
-  function applyGardenModel(propEntry) {
-    const cached = GARDEN_MODEL_CACHE[propEntry.modelName];
-    if (!cached) return;
-    // Quitar el placeholder de la escena y disponer su geometría
-    if (propEntry.placeholder && propEntry.placeholder.parent) {
-      propEntry.placeholder.parent.remove(propEntry.placeholder);
-      propEntry.placeholder.traverse(o => {
-        if (o.geometry) o.geometry.dispose();
-      });
-    }
-    // Clonar el modelo y posicionarlo
-    const inst = cached.scene.clone(true);
-    inst.position.set(propEntry.x, propEntry.y, propEntry.z);
-    inst.rotation.y = propEntry.rotY || 0;
-    if (propEntry.scale && propEntry.scale !== 1) inst.scale.setScalar(propEntry.scale);
-    scene.add(inst);
-    propEntry._applied = true;
-    propEntry.instance = inst;
-  }
 
   function preloadTrapModels() {
     if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
