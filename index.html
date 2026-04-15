@@ -2853,11 +2853,72 @@ window.addEventListener('popstate', () => {
     camera.rotation.order = 'YXZ';
     camera.position.set(0, player.height, 0);
 
-    renderer = new TH.WebGLRenderer({ canvas, antialias:true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.0));
+    renderer = new TH.WebGLRenderer({
+      canvas,
+      antialias: false,              // PS1 no tenía antialias
+      powerPreference: 'high-performance',
+      stencil: false,
+      depth: true,
+    });
+    // ===== ESTÉTICA PS1 =====
+    // Resolución interna baja (como la PS1) escalada a pantalla con nearest-neighbor.
+    // pixelRatio < 1 renderiza a menor resolución y Three lo estira por nosotros.
+    renderer.setPixelRatio(0.45);
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    renderer.shadowMap.enabled = false;
+    // CSS: que el navegador NO interpole el canvas al estirarlo (píxeles duros)
+    canvas.style.imageRendering = 'pixelated';
+    canvas.style.imageRendering = '-moz-crisp-edges';
+    canvas.style.imageRendering = 'crisp-edges';
     if ('SRGBColorSpace' in TH) renderer.outputColorSpace = TH.SRGBColorSpace;
     else if ('sRGBEncoding' in TH) renderer.outputEncoding = TH.sRGBEncoding;
+
+    // ===== SHADER PS1 — vertex snapping + affine textures =====
+    // Se aplica a TODOS los materiales MeshStandardMaterial via onBeforeCompile.
+    // Hace dos cosas:
+    //  1) Cuantiza la posición del vértice en pantalla (jitter PS1)
+    //  2) Desactiva la corrección de perspectiva en la UV de la textura (affine mapping)
+    const PS1_RES = 160.0;  // resolución de cuantización — más bajo = más temblón
+    window._applyPS1Shader = function(material) {
+      if (!material || material._ps1Patched) return;
+      material._ps1Patched = true;
+      const origOBC = material.onBeforeCompile;
+      material.onBeforeCompile = function(shader) {
+        if (origOBC) origOBC.call(this, shader);
+        // === VERTEX: snapping + affine UV ===
+        // Tras project_vertex tenemos gl_Position válido. Ahí cuantizamos
+        // y también multiplicamos vUv por w para affine texture mapping.
+        shader.vertexShader = shader.vertexShader.replace(
+          '#include <project_vertex>',
+          `
+          #include <project_vertex>
+          // PS1 vertex snapping
+          vec4 ps1_pos = gl_Position;
+          vec2 ps1_grid = vec2(${PS1_RES.toFixed(1)}, ${PS1_RES.toFixed(1)});
+          ps1_pos.xyz /= ps1_pos.w;
+          ps1_pos.xy = floor(ps1_pos.xy * ps1_grid) / ps1_grid;
+          ps1_pos.xyz *= ps1_pos.w;
+          gl_Position = ps1_pos;
+          // PS1 affine UV (multiplicar por w, luego dividir en fragment por 1/w)
+          #ifdef USE_MAP
+            vUv = vUv * gl_Position.w;
+          #endif
+          `
+        );
+        // Fragment: dividir por w para completar el affine mapping
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <map_fragment>',
+          `
+          #ifdef USE_MAP
+            vec2 ps1_uv = vUv / gl_FragCoord.w;
+            vec4 sampledDiffuseColor = texture2D(map, ps1_uv);
+            diffuseColor *= sampledDiffuseColor;
+          #endif
+          `
+        );
+      };
+      material.needsUpdate = true;
+    };
 
     // ===== ENVIRONMENT MAP procedural para que los metales reflejen algo =====
     // Sin esto, los materiales con metalness > 0 se ven completamente negros.
@@ -2954,6 +3015,13 @@ window.addEventListener('popstate', () => {
       scene.environment = window.__envMap;
       scene.environmentIntensity = 0.15;
     }
+    // Aplicar shader PS1 a todos los materiales ya creados
+    scene.traverse(o => {
+      if (o.isMesh && o.material) {
+        if (Array.isArray(o.material)) o.material.forEach(m => window._applyPS1Shader(m));
+        else window._applyPS1Shader(o.material);
+      }
+    });
     preloadWeaponModels();
     preloadDrinkModels();
     preloadTrapModels();
@@ -3399,11 +3467,116 @@ window.addEventListener('popstate', () => {
     // 2 perks extra en el patio (pegados a paredes oeste/este, mirando al centro)
     addDrinkMachine(-19.5, 70, Math.PI/2, 'cafelito');
     addDrinkMachine( 19.5, 70,-Math.PI/2, 'cubata');
-    // Spawners
+    // Spawners del patio
     addSpawner(-19, 1.2, 76, Math.PI/2, 4);
     addSpawner( 19, 1.2, 76,-Math.PI/2, 4);
     addSpawner(-19, 1.2, 86, Math.PI/2, 4);
     addSpawner( 19, 1.2, 86,-Math.PI/2, 4);
+
+    // ===== PROPS DECORATIVOS DEL PATIO (contenedores metálicos, barriles) =====
+    // Geometría + material compartidos para eficiencia
+    {
+      const containerGeo = new TH.BoxGeometry(2.2, 2.2, 1.6);
+      const barrelGeo    = new TH.CylinderGeometry(0.5, 0.5, 1.1, 10);
+      // Crates cercanas a la trampa de fuego (esquina SO)
+      const addContainer = (x, z, rotY, matKey) => {
+        const mat = matKey === 'metal' ? fMetal : crateMat;
+        const m = new TH.Mesh(containerGeo, mat);
+        m.position.set(x, 1.1, z);
+        m.rotation.y = rotY;
+        scene.add(m);
+        walls.push({
+          min: new TH.Vector3(x-1.1, 0, z-0.8),
+          max: new TH.Vector3(x+1.1, 2.2, z+0.8),
+          mesh: m, isDoor: false
+        });
+      };
+      const addBarrel = (x, z) => {
+        const m = new TH.Mesh(barrelGeo, fMetal);
+        m.position.set(x, 0.55, z);
+        scene.add(m);
+        walls.push({
+          min: new TH.Vector3(x-0.5, 0, z-0.5),
+          max: new TH.Vector3(x+0.5, 1.1, z+0.5),
+          mesh: m, isDoor: false
+        });
+      };
+      // Contenedores metálicos repartidos por el patio (lejos de trampas y spawners)
+      addContainer(-6, 64, 0.2, 'metal');
+      addContainer( 6, 64,-0.2, 'metal');
+      addContainer(-16, 80, 0.5, 'wood');
+      addContainer( 16, 80, -0.3, 'wood');
+      addContainer(-4, 82, 0, 'metal');
+      addContainer( 4, 82, 0.1, 'wood');
+      // Barriles
+      addBarrel(-8, 72);
+      addBarrel(-6, 74);
+      addBarrel( 8, 72);
+      addBarrel( 6, 74);
+      addBarrel(-12, 85);
+      addBarrel( 12, 85);
+    }
+
+    // ===== PROPS EN SALA MYSTERY (cajas de madera) =====
+    {
+      const crateGeo = new TH.BoxGeometry(1.4, 1.4, 1.4);
+      const addCrate = (x, z) => {
+        const m = new TH.Mesh(crateGeo, crateMat);
+        m.position.set(x, 0.7, z);
+        m.rotation.y = Math.random()*0.3;
+        scene.add(m);
+        walls.push({
+          min: new TH.Vector3(x-0.7, 0, z-0.7),
+          max: new TH.Vector3(x+0.7, 1.4, z+0.7),
+          mesh: m, isDoor: false
+        });
+      };
+      addCrate(-9, 18);
+      addCrate(-10, 28);
+      addCrate( 10, 19);
+      addCrate(  9, 29);
+    }
+
+    // ===== PROPS EN SALA B (contenedores metálicos) =====
+    {
+      const pipeGeo = new TH.CylinderGeometry(0.15, 0.15, H, 6);
+      // Tuberías metálicas verticales (solo decorativas)
+      const pipe1 = new TH.Mesh(pipeGeo, fMetal);
+      pipe1.position.set(5, H/2, 42); scene.add(pipe1);
+      const pipe2 = new TH.Mesh(pipeGeo, fMetal);
+      pipe2.position.set(21, H/2, 54); scene.add(pipe2);
+      const pipe3 = new TH.Mesh(pipeGeo, fMetal);
+      pipe3.position.set(5, H/2, 54); scene.add(pipe3);
+      // Contenedor metálico en esquina
+      const metalBoxGeo = new TH.BoxGeometry(1.6, 1.6, 1.6);
+      const mb = new TH.Mesh(metalBoxGeo, fMetal);
+      mb.position.set(20, 0.8, 43);
+      scene.add(mb);
+      walls.push({
+        min: new TH.Vector3(19.2, 0, 42.2),
+        max: new TH.Vector3(20.8, 1.6, 43.8),
+        mesh: mb, isDoor: false
+      });
+    }
+
+    // ===== PROPS EN SALA MEJORA (PAP) — cajas del laboratorio =====
+    {
+      const crateGeo = new TH.BoxGeometry(1.0, 1.0, 1.0);
+      const addCrateMini = (x, z, mat) => {
+        const m = new TH.Mesh(crateGeo, mat);
+        m.position.set(x, 0.5, z);
+        scene.add(m);
+        walls.push({
+          min: new TH.Vector3(x-0.5, 0, z-0.5),
+          max: new TH.Vector3(x+0.5, 1.0, z+0.5),
+          mesh: m, isDoor: false
+        });
+      };
+      addCrateMini(-19, 92.5, fMetal);
+      addCrateMini(-13, 92.5, crateMat);
+      addCrateMini(-19, 97.5, crateMat);
+      addCrateMini(-13, 97.5, fMetal);
+    }
 
     // ===== SALA 5: PACK-A-PUNCH (8×8, NW del fondo del patio) =====
     // x[-20..-12] z[91..99]
@@ -3469,6 +3642,7 @@ window.addEventListener('popstate', () => {
           inner.traverse(o => {
             if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
               o.material.envMapIntensity = 0.3;
+              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
             }
           });
           mysteryBox.modelRoot = inner;
@@ -3505,6 +3679,7 @@ window.addEventListener('popstate', () => {
           inner.traverse(o => {
             if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
               o.material.envMapIntensity = 0.3;
+              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
             }
           });
           upgradeMachine.modelRoot = inner;
@@ -4351,6 +4526,7 @@ window.addEventListener('popstate', () => {
         inst.traverse(o => {
           if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
             o.material.envMapIntensity = 0.3;
+              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
           }
         });
         scene.add(inst);
@@ -5015,7 +5191,7 @@ window.addEventListener('popstate', () => {
   }
 
   // ===== MODELOS 3D DE ZOMBIS (GLTF con animaciones) =====
-  const ZOMBIE_MODEL_FILES = ['zombie1.glb', 'zombie2.glb'];
+  const ZOMBIE_MODEL_FILES = ['zombie1.glb', 'zombie2.glb', 'zombie3.glb', 'zombie4.glb', 'zombie5.glb'];
   const ZOMBIE_MODEL_CACHE = []; // { scene, animations }
 
   function preloadZombieModels() {
@@ -5108,16 +5284,21 @@ window.addEventListener('popstate', () => {
       cloned.traverse(o => {
         if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
           o.material.envMapIntensity = 0.3;
+              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
         }
       });
       // Animaciones
       if (src.animations && src.animations.length > 0) {
         mixer = new THREE.AnimationMixer(cloned);
-        // Preferir animación de caminar si existe por nombre, sino usar la primera
-        let walkClip = src.animations.find(a => /walk|run|move/i.test(a.name));
+        // SOLO reproducir la animación de walk. Si no hay ninguna con ese nombre,
+        // usar la primera animación disponible (probablemente la única).
+        let walkClip = src.animations.find(a => /walk/i.test(a.name));
+        if (!walkClip) walkClip = src.animations.find(a => /run|move|loco/i.test(a.name));
         if (!walkClip) walkClip = src.animations[0];
-        const action = mixer.clipAction(walkClip);
-        action.play();
+        if (walkClip) {
+          const action = mixer.clipAction(walkClip);
+          action.play();
+        }
       }
     } else {
       // Fallback procedural mínimo (si los GLB no han cargado)
@@ -5191,10 +5372,40 @@ window.addEventListener('popstate', () => {
         }
       }
 
+      // Ocultar zombis lejanos (más allá del fog) para ahorrar render + skinning
+      if (dist > 38) {
+        if (z.group.visible) z.group.visible = false;
+      } else if (!z.group.visible) {
+        z.group.visible = true;
+      }
+
       if (dist > 1.35) {
         const step = z.speed * dt;
         z.pos.x += nx * step;
         z.pos.z += nz * step;
+
+        // === SEPARACIÓN ENTRE ZOMBIS (evita que se solapen) ===
+        // Recorrido lineal pero limitado: solo revisamos zombis hasta 1.5m de distancia.
+        // No afecta al jugador, solo a otros zombis.
+        const minDist = 0.9; // distancia mínima entre centros
+        for (let j = 0; j < zombies.length; j++) {
+          if (j === i) continue;
+          const o = zombies[j];
+          if (!o.alive) continue;
+          const ddx = z.pos.x - o.pos.x;
+          const ddz = z.pos.z - o.pos.z;
+          const sq = ddx*ddx + ddz*ddz;
+          if (sq < minDist*minDist && sq > 0.0001) {
+            const d = Math.sqrt(sq);
+            const overlap = (minDist - d);
+            // Empujamos sólo a este zombi (el otro lo hará en su propia iteración)
+            const pushX = (ddx / d) * overlap * 0.5;
+            const pushZ = (ddz / d) * overlap * 0.5;
+            z.pos.x += pushX;
+            z.pos.z += pushZ;
+          }
+        }
+
         // Si es fallback procedural, animar piernas/brazos manualmente
         if (z.lLeg) {
           z.walkT += dt * z.speed * 2.6;
@@ -5204,10 +5415,9 @@ window.addEventListener('popstate', () => {
           z.lArm.rotation.x = -0.7 + sw*0.35;
           z.rArm.rotation.x = -0.7 - sw*0.35;
         }
-        // Si hay mixer de animación GLB, avanzarlo proporcional a la velocidad real.
-        // La animación de walk del modelo asume ~1 m/s como base, así que multiplicamos
-        // el dt por la velocidad real del zombi para que los pies sigan el desplazamiento.
-        if (z.mixer) {
+        // Si hay mixer de animación GLB, avanzarlo SOLO si el zombi está cerca
+        // del jugador (a más de 30m el fog casi los oculta y no se nota).
+        if (z.mixer && dist < 30) {
           z.mixer.update(dt * z.speed * 1.6);
         }
       } else {
@@ -5904,6 +6114,7 @@ window.addEventListener('popstate', () => {
           wrap.traverse(o => {
             if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
               o.material.envMapIntensity = 0.3;
+              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
             }
           });
           TRAP_MODEL_CACHE[trapId] = wrap;
