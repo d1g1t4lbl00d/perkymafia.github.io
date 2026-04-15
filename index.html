@@ -5148,8 +5148,22 @@ window.addEventListener('popstate', () => {
   }
 
   // ===== MODELOS 3D DE ZOMBIS (GLTF con animaciones) =====
-  const ZOMBIE_MODEL_FILES = ['zombie1.glb', 'zombie2.glb', 'zombie3.glb', 'zombie4.glb', 'zombie5.glb'];
+  // Solo usamos zombie1.glb. El color y tamaño se aplica por tipo en spawnZombie.
+  const ZOMBIE_MODEL_FILES = ['zombie1.glb'];
   const ZOMBIE_MODEL_CACHE = []; // { scene, animations }
+
+  // Materiales verdes por tipo de zombi (compartidos entre instancias del mismo tipo).
+  // skinning:true es OBLIGATORIO para que los SkinnedMesh respeten el esqueleto.
+  const ZOMBIE_MATS = {
+    normal:  new TH.MeshLambertMaterial({ color: 0x4a7a2a, skinning: true, emissive: 0x0a1a05, emissiveIntensity: 0.3 }),
+    fast:    new TH.MeshLambertMaterial({ color: 0xa83a3a, skinning: true, emissive: 0x2a0505, emissiveIntensity: 0.4 }),
+    tank:    new TH.MeshLambertMaterial({ color: 0x3a3a4a, skinning: true, emissive: 0x05050a, emissiveIntensity: 0.3 }),
+    spitter: new TH.MeshLambertMaterial({ color: 0x2a8a6a, skinning: true, emissive: 0x05201a, emissiveIntensity: 0.5 }),
+    runner:  new TH.MeshLambertMaterial({ color: 0x8a4a1a, skinning: true, emissive: 0x1a0a05, emissiveIntensity: 0.4 }),
+  };
+  function _matForType(typeName) {
+    return ZOMBIE_MATS[typeName] || ZOMBIE_MATS.normal;
+  }
 
   function preloadZombieModels() {
     if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
@@ -5158,6 +5172,15 @@ window.addEventListener('popstate', () => {
       loader.load(
         'models/' + file,
         (gltf) => {
+          // Dispose de los materiales originales (texturas que daban rayas).
+          // El material real se aplica por instancia en spawnZombie según el tipo.
+          gltf.scene.traverse(o => {
+            if (o.isMesh && o.material) {
+              if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+              else o.material.dispose();
+              o.material = ZOMBIE_MATS.normal; // placeholder para que no crashee al clonar
+            }
+          });
           ZOMBIE_MODEL_CACHE.push({ scene: gltf.scene, animations: gltf.animations || [] });
           console.log('[ZOMBIE OK]', file, 'anims:', (gltf.animations || []).map(a => a.name));
         },
@@ -5225,25 +5248,23 @@ window.addEventListener('popstate', () => {
       const src = ZOMBIE_MODEL_CACHE[Math.floor(Math.random()*ZOMBIE_MODEL_CACHE.length)];
       // Clonar respetando skinning
       const cloned = cloneSkinned(src.scene);
-      // Normalizar escala: el modelo debe medir ~1.8m de alto
+      // Asignar material según el tipo de zombi (color distinto por tipo)
+      const typeMat = _matForType(typeName);
+      cloned.traverse(o => {
+        if (o.isMesh) o.material = typeMat;
+      });
+      // Normalizar escala base (~1.8m de alto)
       const box = new TH.Box3().setFromObject(cloned);
       const size = new TH.Vector3(); box.getSize(size);
       const center = new TH.Vector3(); box.getCenter(center);
       const targetH = 1.8;
-      const scale = size.y > 0 ? targetH / size.y : 1;
+      const baseScale = size.y > 0 ? targetH / size.y : 1;
       const wrap = new TH.Group();
       cloned.position.set(-center.x, -box.min.y, -center.z);
       wrap.add(cloned);
-      wrap.scale.setScalar(scale);
+      wrap.scale.setScalar(baseScale);
       grp.add(wrap);
       modelRoot = wrap;
-      // envmap bajo para que no se tiña
-      cloned.traverse(o => {
-        if (o.isMesh && o.material && o.material.isMeshStandardMaterial) {
-          o.material.envMapIntensity = 0.3;
-              if (window._applyPS1Shader) window._applyPS1Shader(o.material);
-        }
-      });
       // Animaciones
       if (src.animations && src.animations.length > 0) {
         mixer = new THREE.AnimationMixer(cloned);
