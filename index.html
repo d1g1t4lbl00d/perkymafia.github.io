@@ -2855,70 +2855,27 @@ window.addEventListener('popstate', () => {
 
     renderer = new TH.WebGLRenderer({
       canvas,
-      antialias: false,              // PS1 no tenía antialias
+      antialias: false,
       powerPreference: 'high-performance',
       stencil: false,
       depth: true,
     });
-    // ===== ESTÉTICA PS1 =====
-    // Resolución interna baja (como la PS1) escalada a pantalla con nearest-neighbor.
-    // pixelRatio < 1 renderiza a menor resolución y Three lo estira por nosotros.
-    renderer.setPixelRatio(0.45);
+    // ===== ESTÉTICA PS1 (versión ligera — sin shaders, solo low-res) =====
+    // Renderizamos a ~50% de la resolución y CSS lo escala con nearest-neighbor.
+    // Esto da el look PS1 (píxeles grandes, edges duros) SIN tocar shaders,
+    // así que es gratis a nivel de coste y no rompe los modelos animados.
+    renderer.setPixelRatio(0.5);
     renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
     renderer.shadowMap.enabled = false;
-    // CSS: que el navegador NO interpole el canvas al estirarlo (píxeles duros)
     canvas.style.imageRendering = 'pixelated';
     canvas.style.imageRendering = '-moz-crisp-edges';
     canvas.style.imageRendering = 'crisp-edges';
     if ('SRGBColorSpace' in TH) renderer.outputColorSpace = TH.SRGBColorSpace;
     else if ('sRGBEncoding' in TH) renderer.outputEncoding = TH.sRGBEncoding;
 
-    // ===== SHADER PS1 — vertex snapping + affine textures =====
-    // Se aplica a TODOS los materiales MeshStandardMaterial via onBeforeCompile.
-    // Hace dos cosas:
-    //  1) Cuantiza la posición del vértice en pantalla (jitter PS1)
-    //  2) Desactiva la corrección de perspectiva en la UV de la textura (affine mapping)
-    const PS1_RES = 160.0;  // resolución de cuantización — más bajo = más temblón
-    window._applyPS1Shader = function(material) {
-      if (!material || material._ps1Patched) return;
-      material._ps1Patched = true;
-      const origOBC = material.onBeforeCompile;
-      material.onBeforeCompile = function(shader) {
-        if (origOBC) origOBC.call(this, shader);
-        // === VERTEX: snapping + affine UV ===
-        // Tras project_vertex tenemos gl_Position válido. Ahí cuantizamos
-        // y también multiplicamos vUv por w para affine texture mapping.
-        shader.vertexShader = shader.vertexShader.replace(
-          '#include <project_vertex>',
-          `
-          #include <project_vertex>
-          // PS1 vertex snapping
-          vec4 ps1_pos = gl_Position;
-          vec2 ps1_grid = vec2(${PS1_RES.toFixed(1)}, ${PS1_RES.toFixed(1)});
-          ps1_pos.xyz /= ps1_pos.w;
-          ps1_pos.xy = floor(ps1_pos.xy * ps1_grid) / ps1_grid;
-          ps1_pos.xyz *= ps1_pos.w;
-          gl_Position = ps1_pos;
-          // PS1 affine UV (multiplicar por w, luego dividir en fragment por 1/w)
-          #ifdef USE_MAP
-            vUv = vUv * gl_Position.w;
-          #endif
-          `
-        );
-        // Fragment: dividir por w para completar el affine mapping
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <map_fragment>',
-          `
-          #ifdef USE_MAP
-            vec2 ps1_uv = vUv / gl_FragCoord.w;
-            vec4 sampledDiffuseColor = texture2D(map, ps1_uv);
-            diffuseColor *= sampledDiffuseColor;
-          #endif
-          `
-        );
-      };
-      material.needsUpdate = true;
-    };
+    // Stub no-op (los materiales ya no se modifican). Conservamos la función
+    // por si algún sitio la llama, pero ahora no hace nada.
+    window._applyPS1Shader = function(material) { /* desactivado */ };
 
     // ===== ENVIRONMENT MAP procedural para que los metales reflejen algo =====
     // Sin esto, los materiales con metalness > 0 se ven completamente negros.
