@@ -3259,6 +3259,46 @@ window.addEventListener('popstate', () => {
           console.log('[MAP OK] mapa.glb cargado, colliders:', colliderCount,
                       'tamaño:', size2.x.toFixed(1), 'x', size2.z.toFixed(1));
 
+          // ===== AJUSTAR ALTURAS POST-CARGA =====
+          // Raycast hacia abajo para cada posición clave: encuentra el suelo
+          // del GLB y coloca al jugador / spawners / mystery box justo encima.
+          const ray = new TH.Raycaster();
+          const down = new TH.Vector3(0, -1, 0);
+          function findGroundY(x, z) {
+            ray.set(new TH.Vector3(x, 200, z), down);
+            ray.far = 500;
+            const hits = ray.intersectObject(map, true);
+            if (hits.length > 0) return hits[0].point.y;
+            return null;
+          }
+          // Exponer globalmente para que los zombis se peguen al suelo en runtime
+          window._mapLoaded = true;
+          window._findMapGroundY = findGroundY;
+
+          // Mover al jugador al suelo en (0, ?, 5) — su posición x,z inicial
+          const playerY = findGroundY(0, 5);
+          if (playerY !== null) {
+            camera.position.set(0, playerY + player.height + 0.1, 5);
+            console.log('[SPAWN PLAYER] suelo en y=' + playerY.toFixed(2));
+          } else {
+            console.warn('[SPAWN PLAYER] no se encontró suelo en (0,5), dejo y=' + player.height);
+          }
+
+          // Mover la mystery box al suelo
+          if (mysteryBox && mysteryBox.group) {
+            const mbY = findGroundY(mysteryBox.group.position.x, mysteryBox.group.position.z);
+            if (mbY !== null) mysteryBox.group.position.y = mbY + 0.05;
+          }
+
+          // Mover los spawners al suelo (cada uno en su x,z)
+          spawners.forEach(sp => {
+            const gy = findGroundY(sp.pos.x, sp.pos.z);
+            if (gy !== null) {
+              sp.pos.y = gy + 1.2;
+              if (sp.group) sp.group.position.y = gy + 1.2;
+            }
+          });
+
           // worldBounds basado en el bbox real del mapa
           const half = targetSize / 2 + 10;
           worldBounds = {
@@ -5001,6 +5041,15 @@ window.addEventListener('popstate', () => {
         const step = z.speed * dt;
         z.pos.x += nx * step;
         z.pos.z += nz * step;
+        // Cada 5 frames, raycast hacia abajo para pegar el zombi al suelo del mapa.
+        // Solo si tenemos el mapa cargado (window._mapLoaded).
+        if (window._mapLoaded) {
+          z._groundFrame = ((z._groundFrame || 0) + 1) % 5;
+          if (z._groundFrame === 0) {
+            const gy = window._findMapGroundY(z.pos.x, z.pos.z);
+            if (gy !== null) z.pos.y = gy;
+          }
+        }
 
         // === SEPARACIÓN ENTRE ZOMBIS (evita que se solapen) ===
         // Recorrido lineal pero limitado: solo revisamos zombis hasta 1.5m de distancia.
