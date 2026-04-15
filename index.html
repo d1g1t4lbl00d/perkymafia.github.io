@@ -3161,14 +3161,11 @@ window.addEventListener('popstate', () => {
     grp.rotation.y = rotY;
     scene.add(grp);
 
-    // ===== Reemplazar tablones procedurales por puerta_madera.glb cuando cargue =====
-    // El cartel y el marco se quedan (son del juego), pero los tablones se sustituyen.
-    // Para no perder marco/cartel, hacemos un sub-grupo solo para las tablas.
-    // Los meshes añadidos arriba con boardMat son los "tablones" (5 horizontales + 2 diagonales).
-    // Estrategia simple: cargamos el GLB y SI llega lo añadimos como hijo extra
-    // sin quitar lo procedural (queda detrás del modelo).
-    loadGenericGLB('puerta_madera', 2.6, (cached) => {
-      // Quitar SOLO los tablones procedurales
+    // ===== Reemplazar tablones procedurales por DOS puertas GLB =====
+    // El hueco entre paredes mide 4m. Una sola puerta GLB queda pequeña.
+    // Usamos 2 puertas pegadas (una a -1, otra a +1) para cubrir todo el ancho.
+    loadGenericGLB('puerta_madera', 2.0, (cached) => {
+      // Quitar tablones procedurales (mantener marco amarillo y cartel)
       const toRemove = [];
       grp.children.forEach(ch => {
         if (ch.isMesh && ch.material === boardMat) toRemove.push(ch);
@@ -3177,8 +3174,14 @@ window.addEventListener('popstate', () => {
         grp.remove(ch);
         if (ch.geometry) ch.geometry.dispose();
       });
-      const inst = cached.clone(true);
-      grp.add(inst);
+      // Puerta izquierda
+      const leftDoor = cached.clone(true);
+      leftDoor.position.set(-1, 0, 0);
+      grp.add(leftDoor);
+      // Puerta derecha
+      const rightDoor = cached.clone(true);
+      rightDoor.position.set(1, 0, 0);
+      grp.add(rightDoor);
     });
 
     // collider (pared bloqueante)
@@ -3245,17 +3248,58 @@ window.addEventListener('popstate', () => {
     light.position.set(px, py+0.5, pz);
     scene.add(light);
 
-    spawners.push({
+    const sp = {
       group: grp,
       pos: new TH.Vector3(px, 0, pz),
       light: light,
       roomId: roomId,
       active: (roomId === 0),
       pulseT: Math.random()*10,
-    });
+      mixer: null,
+    };
+    spawners.push(sp);
 
-    // Reemplazar grieta procedural por spawner_grieta.glb si existe
-    swapToGLB(grp, 'spawner_grieta', 1.5);
+    // Cargar spawner_grieta.glb con animación y base en y=0 aunque entre en pared.
+    if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
+      const loader = new THREE.GLTFLoader();
+      loader.load('models/spawner_grieta.glb', (gltf) => {
+        // Quitar meshes procedurales del grupo
+        const toRemove = [];
+        grp.traverse(o => { if (o.isMesh) toRemove.push(o); });
+        toRemove.forEach(o => {
+          if (o.parent) o.parent.remove(o);
+          if (o.geometry) o.geometry.dispose();
+          if (o.material) {
+            if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
+            else o.material.dispose();
+          }
+        });
+        const model = gltf.scene;
+        // Centrar en X/Z, base en Y=0 (aunque la grieta entre en pared, su base toca el suelo)
+        const box = new TH.Box3().setFromObject(model);
+        const size = new TH.Vector3(); box.getSize(size);
+        const center = new TH.Vector3(); box.getCenter(center);
+        // El grupo padre está a y=py (1.2), así que para que la base esté en y=0 mundial,
+        // el modelo debe quedar a y = -py respecto al grupo.
+        model.position.set(-center.x, -box.min.y - py, -center.z);
+        // Escalar a ~1.5m de alto
+        const targetH = 1.8;
+        const scale = size.y > 0 ? targetH / size.y : 1;
+        const wrap = new TH.Group();
+        wrap.add(model);
+        wrap.scale.setScalar(scale);
+        grp.add(wrap);
+        // Animación si la trae
+        if (gltf.animations && gltf.animations.length > 0) {
+          sp.mixer = new THREE.AnimationMixer(model);
+          const clip = gltf.animations[0]; // primera animación (probablemente la única)
+          sp.mixer.clipAction(clip).play();
+        }
+        console.log('[GLB OK] spawner_grieta');
+      }, undefined, (err) => {
+        console.warn('[GLB MISS] spawner_grieta — se queda procedural');
+      });
+    }
   }
 
   // ===== WORLD BUILD — 7 salas grandes temáticas =====
@@ -4414,20 +4458,20 @@ window.addEventListener('popstate', () => {
     autoshot: { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: 0,         rz: 0 },
     rifle:    { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: 0,         rz: 0 },
     burst:    { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: 0,         rz: 0 },
-    ak47:     { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: 0,         rz: 0 },
+    ak47:     { x: 0.30, y:-0.30, z:-0.60, rx: 0, ry: Math.PI,    rz: 0 },
     sniper:   { x: 0.30, y:-0.30, z:-0.70, rx: 0, ry: 0,         rz: 0 },
     lmg:      { x: 0.32, y:-0.32, z:-0.65, rx: 0, ry: 0,         rz: 0 },
     plasma:   { x: 0.30, y:-0.28, z:-0.55, rx: 0, ry:-Math.PI/2, rz: 0 },
     perkygun: { x: 0.30, y:-0.28, z:-0.55, rx: 0, ry:-Math.PI/2, rz: 0 },
     railgun:  { x: 0.32, y:-0.30, z:-0.65, rx: 0, ry: 0,         rz: 0 },
     bat:      { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: 0,         rz: 0 },
-    katana:   { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: 0,         rz: 0 },
-    machete:  { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: 0,         rz: 0 },
-    knife:    { x: 0.25, y:-0.25, z:-0.45, rx: 0, ry: 0,         rz: 0 },
-    deagle:   { x: 0.28, y:-0.28, z:-0.50, rx: 0, ry: 0,         rz: 0 },
-    flamer:   { x: 0.32, y:-0.32, z:-0.65, rx: 0, ry: 0,         rz: 0 },
+    katana:   { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: Math.PI,    rz: 0 },
+    machete:  { x: 0.30, y:-0.30, z:-0.55, rx: 0, ry: Math.PI,    rz: 0 },
+    knife:    { x: 0.25, y:-0.25, z:-0.45, rx: 0, ry: Math.PI/2,  rz: 0 },
+    deagle:   { x: 0.28, y:-0.28, z:-0.50, rx: 0, ry: Math.PI,    rz: 0 },
+    flamer:   { x: 0.32, y:-0.32, z:-0.65, rx: 0, ry: Math.PI,    rz: 0 },
     perkynuke:{ x: 0.35, y:-0.35, z:-0.70, rx: 0, ry: 0,         rz: 0 },
-    rpg:      { x: 0.32, y:-0.32, z:-0.70, rx: 0, ry: 0,         rz: 0 },
+    rpg:      { x: 0.32, y:-0.32, z:-0.70, rx: 0, ry: Math.PI/2,  rz: 0 },
     smg:      { x: 0.28, y:-0.28, z:-0.55, rx: 0, ry: 0,         rz: 0 },
     tesla:    { x: 0.30, y:-0.28, z:-0.55, rx: 0, ry: 0,         rz: 0 },
   };
@@ -6122,50 +6166,43 @@ window.addEventListener('popstate', () => {
   // Cada prop registrado en window._gardenProps con su modelName se va a buscar
   // en /models/{modelName}.glb. Si existe, reemplaza al placeholder respetando
   // posición, rotación y escala. Si no existe, el placeholder se queda visible.
-  const GARDEN_MODEL_CACHE = {};
   function preloadGardenModels() {
-    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
     if (!window._gardenProps || !window._gardenProps.length) return;
-    // Recopilar nombres únicos
+    // Usamos el sistema genérico loadGenericGLB que ya funciona con puerta/lámpara/etc.
     const uniqueNames = [...new Set(window._gardenProps.map(p => p.modelName))];
-    const loader = new THREE.GLTFLoader();
     uniqueNames.forEach(name => {
-      const path = 'models/' + name + '.glb';
-      loader.load(path,
-        (gltf) => {
-          // Normalizar: centrar en X/Z, base en Y=0, escalar a 1m de alto base
-          const model = gltf.scene;
-          const box = new TH.Box3().setFromObject(model);
-          const size = new TH.Vector3(); box.getSize(size);
-          const center = new TH.Vector3(); box.getCenter(center);
-          model.position.set(-center.x, -box.min.y, -center.z);
-          GARDEN_MODEL_CACHE[name] = { scene: model, baseHeight: size.y || 1 };
-          console.log('[GARDEN OK]', name);
-          // Aplicar a todos los placeholders pendientes con este nombre
-          window._gardenProps.forEach(p => {
-            if (p.modelName === name && !p._applied) applyGardenModel(p);
-          });
-        },
-        undefined,
-        (err) => {
-          console.warn('[GARDEN MISS]', name, '— se queda el placeholder');
-        }
-      );
+      loadGenericGLB(name, null, (cached) => {
+        // Aplicar a todos los placeholders con este nombre
+        window._gardenProps.forEach(p => {
+          if (p.modelName === name && !p._applied) {
+            // Quitar placeholder
+            if (p.placeholder && p.placeholder.parent) {
+              p.placeholder.parent.remove(p.placeholder);
+              p.placeholder.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+            }
+            // Clonar y posicionar
+            const inst = cached.clone(true);
+            inst.position.set(p.x, p.y, p.z);
+            inst.rotation.y = p.rotY || 0;
+            if (p.scale && p.scale !== 1) inst.scale.setScalar(p.scale);
+            scene.add(inst);
+            p._applied = true;
+            p.instance = inst;
+          }
+        });
+      });
     });
   }
 
   function applyGardenModel(propEntry) {
-    const cached = GARDEN_MODEL_CACHE[propEntry.modelName];
+    // Función legacy mantenida por si algo más la usa
+    const cached = _GENERIC_GLB_CACHE[propEntry.modelName];
     if (!cached) return;
-    // Quitar el placeholder de la escena y disponer su geometría
     if (propEntry.placeholder && propEntry.placeholder.parent) {
       propEntry.placeholder.parent.remove(propEntry.placeholder);
-      propEntry.placeholder.traverse(o => {
-        if (o.geometry) o.geometry.dispose();
-      });
+      propEntry.placeholder.traverse(o => { if (o.geometry) o.geometry.dispose(); });
     }
-    // Clonar el modelo y posicionarlo
-    const inst = cached.scene.clone(true);
+    const inst = cached.clone(true);
     inst.position.set(propEntry.x, propEntry.y, propEntry.z);
     inst.rotation.y = propEntry.rotY || 0;
     if (propEntry.scale && propEntry.scale !== 1) inst.scale.setScalar(propEntry.scale);
@@ -6681,6 +6718,10 @@ window.addEventListener('popstate', () => {
         sp.light.intensity = pulse * 0.9;
       });
     }
+    // Animaciones de los spawners GLB (cada frame, no throttled, para suavidad)
+    spawners.forEach(sp => {
+      if (sp.mixer) sp.mixer.update(dt);
+    });
     // puertas abriendo: baja y desaparece. Sin traverse por frame.
     doors.forEach(d => {
       if (!d.unlocked || d.removed) return;
