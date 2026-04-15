@@ -3161,29 +3161,6 @@ window.addEventListener('popstate', () => {
     grp.rotation.y = rotY;
     scene.add(grp);
 
-    // ===== Reemplazar tablones procedurales por DOS puertas GLB =====
-    // El hueco entre paredes mide 4m. Una sola puerta GLB queda pequeña.
-    // Usamos 2 puertas pegadas (una a -1, otra a +1) para cubrir todo el ancho.
-    loadGenericGLB('puerta_madera', 2.0, (cached) => {
-      // Quitar tablones procedurales (mantener marco amarillo y cartel)
-      const toRemove = [];
-      grp.children.forEach(ch => {
-        if (ch.isMesh && ch.material === boardMat) toRemove.push(ch);
-      });
-      toRemove.forEach(ch => {
-        grp.remove(ch);
-        if (ch.geometry) ch.geometry.dispose();
-      });
-      // Puerta izquierda
-      const leftDoor = cached.clone(true);
-      leftDoor.position.set(-1, 0, 0);
-      grp.add(leftDoor);
-      // Puerta derecha
-      const rightDoor = cached.clone(true);
-      rightDoor.position.set(1, 0, 0);
-      grp.add(rightDoor);
-    });
-
     // collider (pared bloqueante)
     const col = (rotY === 0 || Math.abs(rotY) === Math.PI)
       ? { min: new TH.Vector3(px-1.6, 0, pz-0.2), max: new TH.Vector3(px+1.6, 3.2, pz+0.2) }
@@ -3248,58 +3225,14 @@ window.addEventListener('popstate', () => {
     light.position.set(px, py+0.5, pz);
     scene.add(light);
 
-    const sp = {
+    spawners.push({
       group: grp,
       pos: new TH.Vector3(px, 0, pz),
       light: light,
       roomId: roomId,
       active: (roomId === 0),
       pulseT: Math.random()*10,
-      mixer: null,
-    };
-    spawners.push(sp);
-
-    // Cargar spawner_grieta.glb con animación y base en y=0 aunque entre en pared.
-    if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
-      const loader = new THREE.GLTFLoader();
-      loader.load('models/spawner_grieta.glb', (gltf) => {
-        // Quitar meshes procedurales del grupo
-        const toRemove = [];
-        grp.traverse(o => { if (o.isMesh) toRemove.push(o); });
-        toRemove.forEach(o => {
-          if (o.parent) o.parent.remove(o);
-          if (o.geometry) o.geometry.dispose();
-          if (o.material) {
-            if (Array.isArray(o.material)) o.material.forEach(m => m.dispose());
-            else o.material.dispose();
-          }
-        });
-        const model = gltf.scene;
-        // Centrar en X/Z, base en Y=0 (aunque la grieta entre en pared, su base toca el suelo)
-        const box = new TH.Box3().setFromObject(model);
-        const size = new TH.Vector3(); box.getSize(size);
-        const center = new TH.Vector3(); box.getCenter(center);
-        // El grupo padre está a y=py (1.2), así que para que la base esté en y=0 mundial,
-        // el modelo debe quedar a y = -py respecto al grupo.
-        model.position.set(-center.x, -box.min.y - py, -center.z);
-        // Escalar a ~1.5m de alto
-        const targetH = 1.8;
-        const scale = size.y > 0 ? targetH / size.y : 1;
-        const wrap = new TH.Group();
-        wrap.add(model);
-        wrap.scale.setScalar(scale);
-        grp.add(wrap);
-        // Animación si la trae
-        if (gltf.animations && gltf.animations.length > 0) {
-          sp.mixer = new THREE.AnimationMixer(model);
-          const clip = gltf.animations[0]; // primera animación (probablemente la única)
-          sp.mixer.clipAction(clip).play();
-        }
-        console.log('[GLB OK] spawner_grieta');
-      }, undefined, (err) => {
-        console.warn('[GLB MISS] spawner_grieta — se queda procedural');
-      });
-    }
+    });
   }
 
   // ===== WORLD BUILD — 7 salas grandes temáticas =====
@@ -3747,6 +3680,175 @@ window.addEventListener('popstate', () => {
       // Barreras invisibles tras las vallas
       addInvisibleBarrier(-20, OH/2, 76, 0.4, OH, 30);
       addInvisibleBarrier( 20, OH/2, 76, 0.4, OH, 30);
+    }
+
+    // =================================================================
+    // PROPS INTERIORES DECORATIVOS (con swap GLB opcional)
+    // =================================================================
+    // Cada prop tiene un placeholder procedural visible de entrada.
+    // Si existe su archivo GLB en /models/, lo reemplaza automáticamente.
+    // Si no existe, se queda el procedural (no rompe nada).
+    {
+      const woodMat  = new TH.MeshLambertMaterial({ color: 0x4a2810 });
+      const woodDark = new TH.MeshLambertMaterial({ color: 0x281408 });
+      const ironMat  = new TH.MeshLambertMaterial({ color: 0x2a2a2e });
+      const rustMat  = new TH.MeshLambertMaterial({ color: 0x6a3010 });
+
+      // Helper: crea grupo con placeholder y pide el GLB genérico (si existe, swap)
+      function addInteriorProp(modelName, x, y, z, rotY, targetSize, placeholderGrp, collider) {
+        placeholderGrp.position.set(x, y, z);
+        placeholderGrp.rotation.y = rotY;
+        scene.add(placeholderGrp);
+        if (collider) {
+          walls.push({
+            min: new TH.Vector3(x - collider.x/2, 0, z - collider.z/2),
+            max: new TH.Vector3(x + collider.x/2, collider.y, z + collider.z/2),
+            mesh: placeholderGrp, isDoor: false
+          });
+        }
+        // Intentar swap a GLB
+        swapToGLB(placeholderGrp, modelName, targetSize);
+      }
+
+      // === Placeholders procedurales reutilizables ===
+      function makeBarrel() {
+        const g = new TH.Group();
+        const body = new TH.Mesh(new TH.CylinderGeometry(0.5, 0.55, 1.1, 10), rustMat);
+        body.position.y = 0.55; g.add(body);
+        // 2 aros decorativos
+        const ring = new TH.Mesh(new TH.TorusGeometry(0.52, 0.04, 6, 12), ironMat);
+        ring.position.y = 0.3; ring.rotation.x = Math.PI/2; g.add(ring);
+        const ring2 = new TH.Mesh(new TH.TorusGeometry(0.52, 0.04, 6, 12), ironMat);
+        ring2.position.y = 0.8; ring2.rotation.x = Math.PI/2; g.add(ring2);
+        return g;
+      }
+      function makeCrate() {
+        const m = new TH.Mesh(new TH.BoxGeometry(1.2, 1.2, 1.2), woodMat);
+        m.position.y = 0.6;
+        const g = new TH.Group(); g.add(m);
+        return g;
+      }
+      function makeMesa() {
+        const g = new TH.Group();
+        const top = new TH.Mesh(new TH.BoxGeometry(1.6, 0.08, 0.9), woodMat);
+        top.position.y = 0.85; g.add(top);
+        const legGeo = new TH.BoxGeometry(0.08, 0.85, 0.08);
+        [[-0.7, 0.4],[0.7, 0.4],[-0.7, -0.4],[0.7, -0.4]].forEach(p => {
+          const l = new TH.Mesh(legGeo, woodDark);
+          l.position.set(p[0], 0.42, p[1]);
+          g.add(l);
+        });
+        return g;
+      }
+      function makeSilla() {
+        const g = new TH.Group();
+        const seat = new TH.Mesh(new TH.BoxGeometry(0.5, 0.08, 0.5), woodMat);
+        seat.position.y = 0.5; g.add(seat);
+        const back = new TH.Mesh(new TH.BoxGeometry(0.5, 0.8, 0.06), woodMat);
+        back.position.set(0, 0.9, -0.22); g.add(back);
+        const legGeo = new TH.BoxGeometry(0.06, 0.5, 0.06);
+        [[-0.2, 0.2],[0.2, 0.2],[-0.2, -0.2],[0.2, -0.2]].forEach(p => {
+          const l = new TH.Mesh(legGeo, woodDark);
+          l.position.set(p[0], 0.25, p[1]);
+          g.add(l);
+        });
+        return g;
+      }
+      function makeEstanteria() {
+        const g = new TH.Group();
+        const side1 = new TH.Mesh(new TH.BoxGeometry(0.1, 2.4, 0.4), woodDark);
+        side1.position.set(-0.9, 1.2, 0); g.add(side1);
+        const side2 = new TH.Mesh(new TH.BoxGeometry(0.1, 2.4, 0.4), woodDark);
+        side2.position.set( 0.9, 1.2, 0); g.add(side2);
+        for (let i = 0; i < 4; i++) {
+          const shelf = new TH.Mesh(new TH.BoxGeometry(1.8, 0.05, 0.4), woodMat);
+          shelf.position.y = 0.4 + i*0.6;
+          g.add(shelf);
+        }
+        return g;
+      }
+      function makeTuberia(vertical) {
+        const g = new TH.Group();
+        const len = vertical ? 3 : 4;
+        const pipe = new TH.Mesh(new TH.CylinderGeometry(0.12, 0.12, len, 8), ironMat);
+        if (vertical) pipe.position.y = len/2;
+        else { pipe.rotation.z = Math.PI/2; pipe.position.y = 2.2; }
+        g.add(pipe);
+        return g;
+      }
+      function makeCuadro() {
+        const g = new TH.Group();
+        const frame = new TH.Mesh(new TH.BoxGeometry(0.9, 0.7, 0.05), woodDark);
+        frame.position.y = 0.35; g.add(frame);
+        const canvas = new TH.Mesh(
+          new TH.BoxGeometry(0.75, 0.55, 0.04),
+          new TH.MeshLambertMaterial({ color: 0x3a1a3a })
+        );
+        canvas.position.set(0, 0.35, 0.02); g.add(canvas);
+        return g;
+      }
+      function makeArmario() {
+        const g = new TH.Group();
+        const body = new TH.Mesh(new TH.BoxGeometry(1.2, 2.2, 0.6), woodDark);
+        body.position.y = 1.1; g.add(body);
+        const puerta = new TH.Mesh(new TH.BoxGeometry(1.1, 2.0, 0.05), woodMat);
+        puerta.position.set(0, 1.1, 0.32); g.add(puerta);
+        return g;
+      }
+      function makeSangre() {
+        // calcomanía plana en el suelo
+        const m = new TH.Mesh(
+          new TH.CircleGeometry(0.6, 10),
+          new TH.MeshBasicMaterial({ color: 0x3a0606, transparent:true, opacity:0.7 })
+        );
+        m.rotation.x = -Math.PI/2;
+        m.position.y = 0.02;
+        const g = new TH.Group(); g.add(m);
+        return g;
+      }
+
+      // ===== DISTRIBUCIÓN DE PROPS POR SALAS =====
+
+      // --- Spawn: mesa + silla + cuadro en pared ---
+      addInteriorProp('mesa_madera',   -2.5, 0, 2, 0.3, 1.7, makeMesa(), {x:1.6, y:0.95, z:0.9});
+      addInteriorProp('silla_madera',  -2.5, 0, 3.3, Math.PI, 0.9, makeSilla(), {x:0.5, y:0.95, z:0.5});
+      addInteriorProp('cuadro_pared',   0, 3, -4.9, 0, 1.0, makeCuadro());
+      addInteriorProp('mancha_sangre',  3, 0, -1, 0, 1.2, makeSangre());
+
+      // --- Sala Mystery: barriles + cajas + estantería + tubería + manchas ---
+      addInteriorProp('barril_oxidado', -9, 0, 25, 0, 1.2, makeBarrel(), {x:1.1, y:1.2, z:1.1});
+      addInteriorProp('barril_oxidado', -10, 0, 27, 0.3, 1.2, makeBarrel(), {x:1.1, y:1.2, z:1.1});
+      addInteriorProp('barril_oxidado', 10, 0, 17, 0, 1.2, makeBarrel(), {x:1.1, y:1.2, z:1.1});
+      addInteriorProp('caja_madera',    -9, 0, 18, 0.2, 1.3, makeCrate(), {x:1.2, y:1.2, z:1.2});
+      addInteriorProp('caja_madera',    -10, 0, 29, -0.3, 1.3, makeCrate(), {x:1.2, y:1.2, z:1.2});
+      addInteriorProp('caja_madera',     9, 0, 29, 0, 1.3, makeCrate(), {x:1.2, y:1.2, z:1.2});
+      addInteriorProp('estanteria',      8, 0, 30.5, 0, 2.5, makeEstanteria(), {x:1.8, y:2.4, z:0.4});
+      addInteriorProp('tuberia',         -11, 0, 23, 0, 4, makeTuberia(false));
+      addInteriorProp('mancha_sangre',   -5, 0, 22, 0, 1.2, makeSangre());
+      addInteriorProp('mancha_sangre',    4, 0, 28, 0.5, 1.5, makeSangre());
+
+      // --- Sala A: armario + cuadro ---
+      addInteriorProp('armario',      -12, 0, 42, Math.PI/2, 2.3, makeArmario(), {x:0.6, y:2.2, z:1.2});
+      addInteriorProp('cuadro_pared', -8, 3, 41.1, 0, 1.0, makeCuadro());
+
+      // --- Sala B: mesa + 2 sillas + barriles + tubería ---
+      addInteriorProp('mesa_madera',   13, 0, 46, 0, 1.7, makeMesa(), {x:1.6, y:0.95, z:0.9});
+      addInteriorProp('silla_madera',  13, 0, 47, Math.PI, 0.9, makeSilla(), {x:0.5, y:0.95, z:0.5});
+      addInteriorProp('silla_madera',  13, 0, 45, 0, 0.9, makeSilla(), {x:0.5, y:0.95, z:0.5});
+      addInteriorProp('barril_oxidado',22, 0, 43, 0, 1.2, makeBarrel(), {x:1.1, y:1.2, z:1.1});
+      addInteriorProp('barril_oxidado',22, 0, 45, 0, 1.2, makeBarrel(), {x:1.1, y:1.2, z:1.1});
+      addInteriorProp('tuberia',       22, 0, 50, 0, 4, makeTuberia(true));
+      addInteriorProp('caja_madera',    4, 0, 53, 0.3, 1.3, makeCrate(), {x:1.2, y:1.2, z:1.2});
+
+      // --- Sala PAP: estantería + cajas + tubería ---
+      addInteriorProp('estanteria',    -19, 0, 92, Math.PI/2, 2.5, makeEstanteria(), {x:0.4, y:2.4, z:1.8});
+      addInteriorProp('caja_madera',   -13, 0, 92, 0, 1.3, makeCrate(), {x:1.2, y:1.2, z:1.2});
+      addInteriorProp('caja_madera',   -13, 0, 98, 0.5, 1.3, makeCrate(), {x:1.2, y:1.2, z:1.2});
+      addInteriorProp('tuberia',       -19, 0, 97, 0, 4, makeTuberia(true));
+
+      // --- Sala Chuchuwa: armario + barril ---
+      addInteriorProp('armario',       19, 0, 95, -Math.PI/2, 2.3, makeArmario(), {x:0.6, y:2.2, z:1.2});
+      addInteriorProp('barril_oxidado',14, 0, 92, 0, 1.2, makeBarrel(), {x:1.1, y:1.2, z:1.1});
     }
 
     // ===== AMBIENTE + SKY =====
@@ -6718,10 +6820,6 @@ window.addEventListener('popstate', () => {
         sp.light.intensity = pulse * 0.9;
       });
     }
-    // Animaciones de los spawners GLB (cada frame, no throttled, para suavidad)
-    spawners.forEach(sp => {
-      if (sp.mixer) sp.mixer.update(dt);
-    });
     // puertas abriendo: baja y desaparece. Sin traverse por frame.
     doors.forEach(d => {
       if (!d.unlocked || d.removed) return;
