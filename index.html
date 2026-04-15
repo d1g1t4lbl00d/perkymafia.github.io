@@ -3809,10 +3809,11 @@ window.addEventListener('popstate', () => {
 
       // ===== DISTRIBUCIÓN DE PROPS POR SALAS =====
 
-      // --- Spawn: mesa + silla + cuadro en pared ---
+      // --- Spawn: mesa + silla + cuadro en pared norte (mira al sur=centro) ---
       addInteriorProp('mesa_madera',   -2.5, 0, 2, 0.3, 1.7, makeMesa(), {x:1.6, y:0.95, z:0.9});
       addInteriorProp('silla_madera',  -2.5, 0, 3.3, Math.PI, 0.9, makeSilla(), {x:0.5, y:0.95, z:0.5});
-      addInteriorProp('cuadro_pared',   0, 3, -4.9, 0, 1.0, makeCuadro());
+      // Cuadro pegado a pared norte de spawn (z=-5), mirando al sur (rotY=0 = mira a +z)
+      addInteriorProp('cuadro_pared',   2.5, 2.5, -4.85, 0, 1.0, makeCuadro());
       addInteriorProp('mancha_sangre',  3, 0, -1, 0, 1.2, makeSangre());
 
       // --- Sala Mystery: barriles + cajas + estantería + tubería + manchas ---
@@ -3827,9 +3828,11 @@ window.addEventListener('popstate', () => {
       addInteriorProp('mancha_sangre',   -5, 0, 22, 0, 1.2, makeSangre());
       addInteriorProp('mancha_sangre',    4, 0, 28, 0.5, 1.5, makeSangre());
 
-      // --- Sala A: armario + cuadro ---
-      addInteriorProp('armario',      -12, 0, 42, Math.PI/2, 2.3, makeArmario(), {x:0.6, y:2.2, z:1.2});
-      addInteriorProp('cuadro_pared', -8, 3, 41.1, 0, 1.0, makeCuadro());
+      // --- Sala A: armario contra pared oeste + cuadro en pared este ---
+      // Sala A bounds: x[-13..-3], z[41..51]. Centro (-8, 46)
+      addInteriorProp('armario',      -12.5, 0, 46, Math.PI/2, 2.3, makeArmario(), {x:0.6, y:2.2, z:1.2});
+      // Cuadro pegado a pared este (x=-3), mirando al oeste (centro): rotY = -PI/2
+      addInteriorProp('cuadro_pared', -3.15, 2.5, 46, -Math.PI/2, 1.0, makeCuadro());
 
       // --- Sala B: mesa + 2 sillas + barriles + tubería ---
       addInteriorProp('mesa_madera',   13, 0, 46, 0, 1.7, makeMesa(), {x:1.6, y:0.95, z:0.9});
@@ -6269,30 +6272,74 @@ window.addEventListener('popstate', () => {
   // en /models/{modelName}.glb. Si existe, reemplaza al placeholder respetando
   // posición, rotación y escala. Si no existe, el placeholder se queda visible.
   function preloadGardenModels() {
-    if (!window._gardenProps || !window._gardenProps.length) return;
-    // Usamos el sistema genérico loadGenericGLB que ya funciona con puerta/lámpara/etc.
+    if (!window._gardenProps || !window._gardenProps.length) {
+      console.log('[GARDEN] sin props registrados');
+      return;
+    }
     const uniqueNames = [...new Set(window._gardenProps.map(p => p.modelName))];
+    console.log('[GARDEN] cargando', uniqueNames.length, 'modelos:', uniqueNames.join(', '));
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) {
+      console.error('[GARDEN] GLTFLoader no disponible');
+      return;
+    }
+    const loader = new THREE.GLTFLoader();
     uniqueNames.forEach(name => {
-      loadGenericGLB(name, null, (cached) => {
-        // Aplicar a todos los placeholders con este nombre
-        window._gardenProps.forEach(p => {
-          if (p.modelName === name && !p._applied) {
-            // Quitar placeholder
-            if (p.placeholder && p.placeholder.parent) {
-              p.placeholder.parent.remove(p.placeholder);
-              p.placeholder.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+      const url = 'models/' + name + '.glb';
+      loader.load(url,
+        (gltf) => {
+          const model = gltf.scene;
+          // Forzar visible TODOS los meshes (algunos GLB tienen visible:false)
+          model.traverse(o => {
+            o.visible = true;
+            o.frustumCulled = false; // por si tienen bbox raros
+            if (o.isMesh && o.material) {
+              // Materiales con doble cara para que se vean siempre
+              if (Array.isArray(o.material)) {
+                o.material.forEach(m => { m.side = TH.DoubleSide; m.transparent = false; m.opacity = 1; });
+              } else {
+                o.material.side = TH.DoubleSide;
+                o.material.transparent = false;
+                o.material.opacity = 1;
+              }
             }
-            // Clonar y posicionar
-            const inst = cached.clone(true);
-            inst.position.set(p.x, p.y, p.z);
-            inst.rotation.y = p.rotY || 0;
-            if (p.scale && p.scale !== 1) inst.scale.setScalar(p.scale);
-            scene.add(inst);
-            p._applied = true;
-            p.instance = inst;
-          }
-        });
-      });
+          });
+          // Calcular bbox para normalizar
+          const box = new TH.Box3().setFromObject(model);
+          const size = new TH.Vector3(); box.getSize(size);
+          const center = new TH.Vector3(); box.getCenter(center);
+          // Centrar en X/Z y poner base en Y=0
+          model.position.set(-center.x, -box.min.y, -center.z);
+          // Cache: el grupo ya viene normalizado
+          const wrap = new TH.Group();
+          wrap.add(model);
+          _GENERIC_GLB_CACHE[name] = wrap;
+          console.log('[GARDEN OK]', name, 'tamaño:', size.x.toFixed(2), 'x', size.y.toFixed(2), 'x', size.z.toFixed(2));
+          // Aplicar a todos los placeholders pendientes con este nombre
+          window._gardenProps.forEach(p => {
+            if (p.modelName === name && !p._applied) {
+              // Quitar placeholder
+              if (p.placeholder && p.placeholder.parent) {
+                p.placeholder.parent.remove(p.placeholder);
+                p.placeholder.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+              }
+              // Clonar el modelo SIN el wrap (más simple, escala directa)
+              const inst = model.clone(true);
+              inst.position.set(p.x, p.y, p.z);
+              inst.rotation.y = p.rotY || 0;
+              if (p.scale && p.scale !== 1) inst.scale.setScalar(p.scale);
+              scene.add(inst);
+              p._applied = true;
+              p.instance = inst;
+            }
+          });
+        },
+        (progress) => {
+          // log de progreso para detectar archivos enormes
+        },
+        (err) => {
+          console.error('[GARDEN MISS]', name, '— url:', url, '— error:', err && err.message ? err.message : err);
+        }
+      );
     });
   }
 
@@ -6527,29 +6574,56 @@ window.addEventListener('popstate', () => {
         if (mysteryBox.mesh && mysteryBox.mesh.material && mysteryBox.mesh.material.emissiveIntensity !== undefined) {
           mysteryBox.mesh.material.emissiveIntensity = 1.4;
         }
-        // Pool con pesos: armas normales = peso 8, armas especiales = peso 1 (~1/8 chance)
-        const weightedPool = [
-          // Normales (peso alto)
-          {w:'smg',w8:8},{w:'shotgun',w8:8},{w:'rifle',w8:8},{w:'sniper',w8:8},
-          {w:'lmg',w8:8},{w:'magnum',w8:8},{w:'minigun',w8:8},{w:'flamer',w8:8},
-          {w:'deagle',w8:8},{w:'ak47',w8:8},{w:'burst',w8:8},{w:'autoshot',w8:8},
-          {w:'crossbow',w8:8},{w:'rpg',w8:8},{w:'katana',w8:8},{w:'chainsaw',w8:8},
-          {w:'bat',w8:8},{w:'machete',w8:8},{w:'knife',w8:8},
-          // Especiales (peso bajo ~1 cada 8 tiradas)
-          {w:'perkynuke',w8:1},{w:'perkygun',w8:1},{w:'railgun',w8:1},{w:'tesla',w8:1},{w:'plasma',w8:1},
+        // ===== POOL DE LA MYSTERY BOX =====
+        // Pool reducido (sin armas duplicadas en el pool de pistols/melee triviales)
+        // y con pesos más equilibrados:
+        //   - Comunes: armas de combate normales (peso 6-8)
+        //   - Raras: melee y armas exóticas (peso 3)
+        //   - Especiales: las más OP (peso 1, ~1/15 = ~7% chance)
+        // Filtro: NO repetir el arma actual ni una que el jugador ya tenga al máximo de balas
+        const fullPool = [
+          // Comunes (combate sólido)
+          {w:'smg',w8:8},{w:'shotgun',w8:8},{w:'rifle',w8:7},{w:'sniper',w8:6},
+          {w:'lmg',w8:6},{w:'magnum',w8:7},{w:'flamer',w8:5},{w:'deagle',w8:7},
+          {w:'ak47',w8:7},{w:'burst',w8:6},{w:'autoshot',w8:6},{w:'minigun',w8:5},
+          {w:'crossbow',w8:5},{w:'rpg',w8:4},
+          // Raras (melee y exóticas)
+          {w:'katana',w8:3},{w:'chainsaw',w8:3},{w:'machete',w8:3},
+          // Especiales (las OP, raras)
+          {w:'perkynuke',w8:1},{w:'perkygun',w8:1},{w:'railgun',w8:1},
+          {w:'tesla',w8:1},{w:'plasma',w8:1},
         ];
+        // Quitar el arma actual del pool para evitar repetición frustrante
+        const weightedPool = fullPool.filter(p => p.w !== currentWeapon);
         const totalW = weightedPool.reduce((a,b)=>a+b.w8,0);
         let rr = Math.random()*totalW;
         let pick = weightedPool[0].w;
         for (const wp of weightedPool) { rr -= wp.w8; if (rr <= 0) { pick = wp.w; break; } }
         setTimeout(() => {
-          if (!player.inventory.includes(pick)) player.inventory.push(pick);
+          const alreadyOwned = player.inventory.includes(pick);
+          if (!alreadyOwned) {
+            player.inventory.push(pick);
+            initAmmoFor(pick);
+          } else {
+            // Ya la tenías → recargar la munición a tope (mag llena + reserva máxima)
+            initAmmoFor(pick);
+            const wdata = WEAPONS[pick];
+            if (wdata && player.ammo[pick] && wdata.type !== 'melee') {
+              player.ammo[pick].mag = wdata.mag;
+              player.ammo[pick].reserve = wdata.reserve;
+            }
+          }
           currentWeapon = pick;
-          initAmmoFor(pick);
           buildWeaponMesh();
           mysteryBox.busy = false;
           if (mysteryBox.mesh && mysteryBox.mesh.material && mysteryBox.mesh.material.emissiveIntensity !== undefined) {
             mysteryBox.mesh.material.emissiveIntensity = 0.4;
+          }
+          // Mensaje en pantalla para informar
+          if (alreadyOwned && WEAPONS[pick].type !== 'melee') {
+            showPickup('MUNICION DE ' + WEAPONS[pick].name);
+          } else {
+            showPickup('NUEVA: ' + WEAPONS[pick].name);
           }
           updateHUD();
         }, 2200);
@@ -6861,9 +6935,14 @@ window.addEventListener('popstate', () => {
     _hudDirty = true;
   }
   function _flushHUD() {
+    // La barra de vida SIEMPRE se actualiza (no respeta el dirty flag) para
+    // garantizar que refleja el daño en tiempo real.
+    if (healthBar) {
+      const pct = Math.max(0, Math.min(100, (player.health / player.maxHealth) * 100));
+      healthBar.style.width = pct + '%';
+    }
     if (!_hudDirty) return;
     _hudDirty = false;
-    healthBar.style.width = (player.health/player.maxHealth*100) + '%';
     pointsEl.textContent   = player.points;
     waveEl.textContent     = wave || 1;
     const w = WEAPONS[currentWeapon];
