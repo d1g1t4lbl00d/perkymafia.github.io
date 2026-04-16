@@ -3134,6 +3134,13 @@ window.addEventListener('popstate', () => {
               const scale = targetSize / maxDim;
               wrap.scale.setScalar(scale);
             }
+            // Recalcular bbox DESPUÉS de escalar y forzar base en y=0
+            wrap.updateMatrixWorld(true);
+            const box2 = new TH.Box3().setFromObject(wrap);
+            if (box2.min.y > 0.05 || box2.min.y < -0.05) {
+              // Ajustar para que la base toque y=0
+              model.position.y -= box2.min.y / (wrap.scale.y || 1);
+            }
             _GENERIC_GLB_CACHE[name] = wrap;
             console.log('[GLB OK]', name);
             _GENERIC_GLB_PENDING[name].forEach(cb => cb(wrap));
@@ -3484,7 +3491,6 @@ window.addEventListener('popstate', () => {
     // Trampa eléctrica al lado oeste (la fuente ocupa el centro)
     addBuyableTrap(-12, 76, 'electric');
     // Trampas adicionales
-    addBuyableTrap(-14, 70, 'fire');
     addBuyableTrap( 14, 70, 'tesla');
     // Perks del patio (4 en muros, mirando al centro)
     addDrinkMachine(-19.5, 70, Math.PI/2, 'cafelito');
@@ -4095,7 +4101,6 @@ window.addEventListener('popstate', () => {
       // --- SALA MYSTERY: poster en pared, TV vieja, libros, bidón, más manchas ---
       addInteriorProp('bidon_metal', -11, 0, 17, 0, 1.1, makeBidon(), {x:0.7, y:0.9, z:0.7});
       addInteriorProp('bidon_metal',  11, 0, 30, 0, 1.1, makeBidon(), {x:0.7, y:0.9, z:0.7});
-      addInteriorProp('tv_vieja',  -10, 0.5, 20, 0.1, 0.7, makeTvVieja());  // en sala mystery, sobre barril
       addInteriorProp('libros_apilados', -7, 0, 19, 0, 0.5, makeLibros());
       addInteriorProp('libros_apilados',  0, 0, 16, 0.5, 0.5, makeLibros());
       // Posters en paredes
@@ -4123,7 +4128,6 @@ window.addEventListener('popstate', () => {
       // --- SALA PAP: bidones químicos, TV, más cajas ---
       addInteriorProp('bidon_metal', -13, 0, 93, 0, 1.1, makeBidon(), {x:0.7, y:0.9, z:0.7});
       addInteriorProp('bidon_metal', -13, 0, 97, 0, 1.1, makeBidon(), {x:0.7, y:0.9, z:0.7});
-      addInteriorProp('tv_vieja', -19.5, 1.2, 94, Math.PI/2, 0.7, makeTvVieja());
       addInteriorProp('caja_madera', -15, 0, 98, 0.2, 1.3, makeCrate(), {x:1.2, y:1.2, z:1.2});
 
       // --- SALA CHUCHUWA (perk final): botellas, radio, taburete, poster ---
@@ -5258,9 +5262,10 @@ window.addEventListener('popstate', () => {
     }
   }
   let _activeBloodCount = 0;
-  function spawnBloodParticles(x, y, z, count) {
+  function spawnBloodParticles(x, y, z, count, color) {
     _ensureBloodPool();
     count = count || 8;
+    const useColor = color || 0xcc0018;
     let spawned = 0;
     for (let i = 0; i < _bloodParticles.length && spawned < count; i++) {
       const p = _bloodParticles[i];
@@ -5268,6 +5273,7 @@ window.addEventListener('popstate', () => {
       p.mesh.position.set(x, y, z);
       p.mesh.visible = true;
       p.mesh.material.opacity = 1;
+      p.mesh.material.color.setHex(useColor);
       p.vel.set(
         (Math.random()-0.5) * 4,
         Math.random() * 2.5 + 0.5,
@@ -6802,28 +6808,49 @@ window.addEventListener('popstate', () => {
 
   function updateTraps(dt) {
     const now = performance.now() / 1000;
+    // Daño escala con la oleada (+8% por ronda)
+    const waveMult = 1 + (wave || 1) * 0.08;
+    // Radio de atracción = 2x el radio de daño
+    const ATTRACT_MULT = 2.0;
+    const ATTRACT_SPEED = 1.8; // m/s hacia la trampa
+
     for (const tr of buyableTraps) {
       const armed = (now < tr.armedUntil);
-      // Animación
+
+      // Animación del modelo
       if (tr.active) {
         if (tr.id === 'sawblade' && armed) tr.active.rotation.y += dt * 18;
         if (tr.id === 'electric' || tr.id === 'tesla') {
           tr.active.scale.setScalar(1 + (armed ? Math.sin(now*15)*0.15 : 0));
         }
-        if (tr.id === 'fire') {
-          tr.active.scale.y = armed ? (1 + Math.sin(now*22)*0.4) : 1;
-        }
       }
+
       if (armed) {
+        // ===== ATRACCIÓN: zombis cercanos caminan hacia la trampa =====
+        const attractR = tr.radius * ATTRACT_MULT;
+        for (const z of zombies) {
+          if (!z.alive) continue;
+          const dx = tr.pos.x - z.pos.x;
+          const dz = tr.pos.z - z.pos.z;
+          const dist = Math.hypot(dx, dz);
+          if (dist < attractR && dist > 0.3) {
+            // Empujar suavemente hacia el centro de la trampa
+            const pull = Math.min(ATTRACT_SPEED * dt, dist * 0.5);
+            z.pos.x += (dx / dist) * pull;
+            z.pos.z += (dz / dist) * pull;
+          }
+        }
+
+        // ===== DAÑO periódico =====
         tr.damageT -= dt;
         if (tr.damageT <= 0) {
           tr.damageT = 0.25;
-          // Daño a zombies dentro del radio
+          const tickDmg = tr.dmg * 0.25 * waveMult;
           for (const z of zombies) {
             if (!z.alive) continue;
             const d = z.pos.distanceTo(tr.pos);
             if (d < tr.radius) {
-              z.health -= tr.dmg * 0.25; // dmg por tick
+              z.health -= tickDmg;
               z.flashTime = 0.1;
               if (z.health <= 0) {
                 addPoints(60);
@@ -6832,6 +6859,29 @@ window.addEventListener('popstate', () => {
             }
           }
         }
+
+        // ===== EFECTOS VISUALES por tipo de trampa =====
+        // Solo cada ~6 frames para no saturar partículas
+        tr._vfxT = (tr._vfxT || 0) + dt;
+        if (tr._vfxT > 0.15) {
+          tr._vfxT = 0;
+          const px = tr.pos.x + (Math.random()-0.5) * tr.radius;
+          const pz = tr.pos.z + (Math.random()-0.5) * tr.radius;
+          if (tr.id === 'electric') {
+            // Chispas azules/cyan saltando
+            spawnBloodParticles(px, 0.3, pz, 2, 0x44ddff);
+          } else if (tr.id === 'sawblade') {
+            // Chispas rojas metálicas en el suelo
+            spawnBloodParticles(px, 0.2, pz, 2, 0xff4422);
+          } else if (tr.id === 'spikes') {
+            // Chispas amarillas/naranjas
+            spawnBloodParticles(px, 0.15, pz, 2, 0xffaa22);
+          } else if (tr.id === 'tesla') {
+            // Rayos morados hacia arriba
+            spawnBloodParticles(px, 1.5, pz, 3, 0xaa55ff);
+          }
+        }
+
         tr.light.intensity = 2.4 + Math.sin(now*20)*0.6;
       } else {
         tr.light.intensity = (now < tr.readyAt) ? 0.15 : 0.5;
