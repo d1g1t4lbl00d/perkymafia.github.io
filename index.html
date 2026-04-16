@@ -2268,6 +2268,10 @@ footer{
       <input id="gameUsername" type="text" maxlength="14" placeholder="TU NOMBRE" autocomplete="off">
     </div>
     <button class="game-btn" id="gameStartBtn" type="button">▶ EMPEZAR</button>
+    <div id="gameLoadingBar" style="display:none;width:80%;margin:12px auto 0;height:18px;background:#111;border:1px solid var(--pink);border-radius:4px;overflow:hidden">
+      <div id="gameLoadingFill" style="width:0%;height:100%;background:var(--pink);transition:width 0.2s"></div>
+    </div>
+    <p id="gameLoadingText" style="display:none;color:var(--pink);font-size:0.85em;margin-top:6px">CARGANDO MODELOS...</p>
     <button class="game-btn game-btn-alt" id="gameQuitBtn" type="button">SALIR</button>
   </div>
 
@@ -2494,6 +2498,33 @@ window.addEventListener('popstate', () => {
   // ===== Estado =====
   let scene, camera, renderer, raycaster, clock;
   let initialized=false, running=false, paused=false;
+
+  // ===== SISTEMA DE CARGA DE ASSETS =====
+  let _assetsTotal = 0, _assetsLoaded = 0;
+  let _loadingDone = false;
+  let _onLoadingComplete = null; // callback cuando todo cargue
+  function _trackAssetStart() { _assetsTotal++; }
+  function _trackAssetEnd() {
+    _assetsLoaded++;
+    // Actualizar barra
+    const fill = document.getElementById('gameLoadingFill');
+    const text = document.getElementById('gameLoadingText');
+    if (fill && _assetsTotal > 0) {
+      const pct = Math.min(100, Math.round((_assetsLoaded / _assetsTotal) * 100));
+      fill.style.width = pct + '%';
+    }
+    if (text) text.textContent = 'CARGANDO... ' + _assetsLoaded + '/' + _assetsTotal;
+    // Check completion
+    if (_assetsLoaded >= _assetsTotal && !_loadingDone) {
+      _loadingDone = true;
+      if (_onLoadingComplete) _onLoadingComplete();
+    }
+  }
+
+  // Hitbox material y geometrías compartidas (1 instancia para todos los zombis)
+  let _hitboxMat = null;
+  let _hitboxBodyGeo = null;
+  let _hitboxHeadGeo = null;
   let lastShotTime=0, isAds=false, adsLerp=0;
   let lastMeleeTime=0;
 
@@ -3085,13 +3116,13 @@ window.addEventListener('popstate', () => {
     // Encolar mientras llega
     if (!_GENERIC_GLB_PENDING[name]) {
       _GENERIC_GLB_PENDING[name] = [];
+      _trackAssetStart();
       // Iniciar carga
       if (typeof THREE !== 'undefined' && THREE.GLTFLoader) {
         const loader = new THREE.GLTFLoader();
         loader.load('models/' + name + '.glb',
           (gltf) => {
             const model = gltf.scene;
-            // Normalizar: centrar X/Z, base Y=0, escalar al targetSize si se especifica
             const box = new TH.Box3().setFromObject(model);
             const size = new TH.Vector3(); box.getSize(size);
             const center = new TH.Vector3(); box.getCenter(center);
@@ -3105,12 +3136,15 @@ window.addEventListener('popstate', () => {
             }
             _GENERIC_GLB_CACHE[name] = wrap;
             console.log('[GLB OK]', name);
-            // Procesar pendientes
             _GENERIC_GLB_PENDING[name].forEach(cb => cb(wrap));
             _GENERIC_GLB_PENDING[name] = null;
+            _trackAssetEnd();
           },
           undefined,
-          (err) => { console.warn('[GLB MISS]', name, '— se queda procedural'); }
+          (err) => {
+            console.warn('[GLB MISS]', name, '— se queda procedural');
+            _trackAssetEnd();
+          }
         );
       }
     }
@@ -5028,20 +5062,19 @@ window.addEventListener('popstate', () => {
     if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
     const loader = new THREE.GLTFLoader();
     Object.entries(DRINK_MODEL_FILES).forEach(([drinkId, file]) => {
+      _trackAssetStart();
       loader.load(
         'models/' + encodeURIComponent(file),
         (gltf) => {
           DRINK_MODEL_CACHE[drinkId] = normalizeDrinkModel(gltf.scene, drinkId);
           console.log('[DRINK OK]', drinkId, file);
-          // Aplicar a las máquinas ya colocadas en el mapa
           for (const m of drinkMachines) {
-            if (m.drinkId === drinkId && !m._modelApplied) {
-              applyDrinkModel(m);
-            }
+            if (m.drinkId === drinkId && !m._modelApplied) applyDrinkModel(m);
           }
+          _trackAssetEnd();
         },
         undefined,
-        (err) => console.error('[DRINK FAIL]', file, err)
+        (err) => { console.error('[DRINK FAIL]', file, err); _trackAssetEnd(); }
       );
     });
   }
@@ -5110,19 +5143,18 @@ window.addEventListener('popstate', () => {
     }
     const loader = new THREE.GLTFLoader();
     Object.entries(WEAPON_MODEL_FILES).forEach(([weaponId, file]) => {
+      _trackAssetStart();
       loader.load(
         'models/' + encodeURIComponent(file),
         (gltf) => {
           const normalized = normalizeWeaponModel(gltf.scene, weaponId);
           WEAPON_MODEL_CACHE[weaponId] = normalized;
           console.log('[GLTF OK]', weaponId, file);
-          // Si el arma actual es esta, reconstruir el viewmodel para que aparezca ya
-          if (currentWeapon === weaponId && weaponMesh) {
-            buildWeaponMesh();
-          }
+          if (currentWeapon === weaponId && weaponMesh) buildWeaponMesh();
+          _trackAssetEnd();
         },
         undefined,
-        (err) => console.error('[GLTF FAIL]', file, err)
+        (err) => { console.error('[GLTF FAIL]', file, err); _trackAssetEnd(); }
       );
     });
   }
@@ -5699,16 +5731,16 @@ window.addEventListener('popstate', () => {
     if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
     const loader = new THREE.GLTFLoader();
     ZOMBIE_MODEL_FILES.forEach(file => {
+      _trackAssetStart();
       loader.load(
         'models/' + file,
         (gltf) => {
-          // Conservamos los materiales originales del GLB (texturas, normal maps).
-          // No tocamos nada para que el zombi se vea como vino del modelado.
           ZOMBIE_MODEL_CACHE.push({ scene: gltf.scene, animations: gltf.animations || [] });
           console.log('[ZOMBIE OK]', file, 'anims:', (gltf.animations || []).map(a => a.name));
+          _trackAssetEnd();
         },
         undefined,
-        (err) => console.error('[ZOMBIE FAIL]', file, err)
+        (err) => { console.error('[ZOMBIE FAIL]', file, err); _trackAssetEnd(); }
       );
     });
   }
@@ -5757,11 +5789,12 @@ window.addEventListener('popstate', () => {
     const grp = new TH.Group();
 
     // === Hitboxes invisibles para raycast (body + head) ===
-    // Mantienen la misma lógica de disparos sin depender del modelo GLB
-    const hitboxMat = new TH.MeshBasicMaterial({ visible: false });
-    const body = new TH.Mesh(new TH.BoxGeometry(0.6, 1.0, 0.4), hitboxMat);
+    if (!_hitboxMat) _hitboxMat = new TH.MeshBasicMaterial({ visible: false });
+    if (!_hitboxBodyGeo) _hitboxBodyGeo = new TH.BoxGeometry(0.6, 1.0, 0.4);
+    if (!_hitboxHeadGeo) _hitboxHeadGeo = new TH.BoxGeometry(0.42, 0.42, 0.42);
+    const body = new TH.Mesh(_hitboxBodyGeo, _hitboxMat);
     body.position.y = 1.0; grp.add(body);
-    const head = new TH.Mesh(new TH.BoxGeometry(0.42, 0.42, 0.42), hitboxMat);
+    const head = new TH.Mesh(_hitboxHeadGeo, _hitboxMat);
     head.position.y = 1.78; grp.add(head);
 
     // === Modelo visual 3D (si hay GLB cargado) ===
@@ -5857,7 +5890,8 @@ window.addEventListener('popstate', () => {
         z.group.position.y = 0;
         if (z.deathTime > 1.2) {
           scene.remove(z.group);
-          z.group.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); });
+          // No disponer geometrías/materiales compartidos (hitbox, GLB clonados).
+          // Solo dejar ir la referencia; el GC se encarga del resto.
           zombies.splice(i, 1);
         }
         continue;
@@ -6045,7 +6079,31 @@ window.addEventListener('popstate', () => {
     return _powerupMatCache[color];
   }
 
+  // Pool de luces reutilizables para powerups (evita crear/destruir PointLights)
+  const _MAX_POWERUP_DROPS = 5;
+  const _powerupLightPool = [];
+  function _getPowerupLight() {
+    // Buscar una libre
+    for (const l of _powerupLightPool) {
+      if (!l._inUse) { l._inUse = true; l.intensity = 0.8; return l; }
+    }
+    // Crear nueva si el pool no está lleno
+    if (_powerupLightPool.length < _MAX_POWERUP_DROPS) {
+      const l = new TH.PointLight(0xffffff, 0.8, 4, 2);
+      l._inUse = true;
+      scene.add(l);
+      _powerupLightPool.push(l);
+      return l;
+    }
+    return null; // no hay luz libre
+  }
+  function _releasePowerupLight(l) {
+    if (l) { l._inUse = false; l.intensity = 0; }
+  }
+
   function dropPowerup(pos) {
+    // Cap: máximo N powerups en pantalla a la vez
+    if (powerupDrops.length >= _MAX_POWERUP_DROPS) return;
     const total = POWERUP_TYPES.reduce((a,b)=>a+b.weight, 0);
     let r = Math.random()*total;
     let pick = POWERUP_TYPES[0];
@@ -6054,9 +6112,8 @@ window.addEventListener('popstate', () => {
     m.position.copy(pos);
     m.position.y = 0.7;
     scene.add(m);
-    const light = new TH.PointLight(pick.color, 0.8, 4, 2);
-    light.position.copy(m.position);
-    scene.add(light);
+    const light = _getPowerupLight();
+    if (light) { light.color.setHex(pick.color); light.position.copy(m.position); }
     powerupDrops.push({ mesh:m, pos:m.position, type:pick, t:0, light });
   }
 
@@ -6067,17 +6124,17 @@ window.addEventListener('popstate', () => {
       d.t += dt;
       d.mesh.rotation.y += dt*3;
       d.mesh.position.y = 0.7 + Math.sin(d.t*3)*0.12;
-      d.light.position.copy(d.mesh.position);
+      if (d.light && d.light._inUse) d.light.position.copy(d.mesh.position);
       if (d.mesh.position.distanceTo(pp) < 1.5) {
         applyPowerup(d.type);
-        scene.remove(d.mesh); // geo y mat compartidos, NO disponer
-        scene.remove(d.light);
+        scene.remove(d.mesh);
+        _releasePowerupLight(d.light);
         powerupDrops.splice(i, 1);
         continue;
       }
       if (d.t > 22) {
         scene.remove(d.mesh);
-        scene.remove(d.light);
+        _releasePowerupLight(d.light);
         powerupDrops.splice(i, 1);
       }
     }
@@ -6100,7 +6157,17 @@ window.addEventListener('popstate', () => {
       updateHUD();
     }
     else if (p.id === 'nuke') {
-      zombies.forEach(z => { if (z.alive) { z.health = -1; killZombie(z, false); } });
+      // Matar zombies gradualmente (5 por frame) para no congelar
+      let _nukeQueue = zombies.filter(z => z.alive);
+      let _nukeIdx = 0;
+      function _nukeStep() {
+        for (let i = 0; i < 5 && _nukeIdx < _nukeQueue.length; i++, _nukeIdx++) {
+          const z = _nukeQueue[_nukeIdx];
+          if (z.alive) { z.health = -1; killZombie(z, false); }
+        }
+        if (_nukeIdx < _nukeQueue.length) requestAnimationFrame(_nukeStep);
+      }
+      _nukeStep();
       dmgVignette.style.boxShadow = 'inset 0 0 250px 80px rgba(255,255,0,0.8)';
       dmgVignette.style.opacity = '1';
       setTimeout(() => {
@@ -6612,6 +6679,7 @@ window.addEventListener('popstate', () => {
     if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
     const loader = new THREE.GLTFLoader();
     Object.entries(TRAP_MODEL_FILES).forEach(([trapId, file]) => {
+      _trackAssetStart();
       loader.load(
         'models/' + encodeURIComponent(file),
         (gltf) => {
@@ -6635,13 +6703,13 @@ window.addEventListener('popstate', () => {
           });
           TRAP_MODEL_CACHE[trapId] = wrap;
           console.log('[TRAP OK]', trapId, file);
-          // Aplicar a trampas ya creadas
           for (const tr of buyableTraps) {
             if (tr.id === trapId && !tr._modelApplied) applyTrapModel(tr);
           }
+          _trackAssetEnd();
         },
         undefined,
-        (err) => console.error('[TRAP FAIL]', file, err)
+        (err) => { console.error('[TRAP FAIL]', file, err); _trackAssetEnd(); }
       );
     });
   }
@@ -7433,24 +7501,57 @@ window.addEventListener('popstate', () => {
     player.username = name.toUpperCase().slice(0, 14);
     try { localStorage.setItem('perky_username', player.username); } catch(e){}
 
-    overlay.classList.add('active');
-    startScreen.classList.remove('active');
-    overScreen.classList.remove('active');
+    // Mostrar barra de carga
+    const loadBar = document.getElementById('gameLoadingBar');
+    const loadText = document.getElementById('gameLoadingText');
+    if (loadBar) loadBar.style.display = 'block';
+    if (loadText) loadText.style.display = 'block';
+    startBtn.disabled = true;
+    startBtn.textContent = 'CARGANDO...';
+
+    // Iniciar escena y cargas
     if (!initialized) init();
     else resetState();
-    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    requestAnimationFrame(() => {
-      renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
-      camera.aspect = canvas.clientWidth / canvas.clientHeight;
-      camera.updateProjectionMatrix();
-    });
-    running = true;
-    paused = false;
-    clock.start();
-    canvas.requestPointerLock();
-    startWave();
-    updateHUD();
-    loop();
+
+    // Función que arranca el juego cuando todo está cargado
+    function _actuallyStart() {
+      if (loadBar) loadBar.style.display = 'none';
+      if (loadText) loadText.style.display = 'none';
+      startBtn.disabled = false;
+      startBtn.textContent = '▶ EMPEZAR';
+
+      overlay.classList.add('active');
+      startScreen.classList.remove('active');
+      overScreen.classList.remove('active');
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      requestAnimationFrame(() => {
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
+        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.updateProjectionMatrix();
+      });
+      running = true;
+      paused = false;
+      clock.start();
+      canvas.requestPointerLock();
+      startWave();
+      updateHUD();
+      loop();
+    }
+
+    // Si ya cargó todo (reinicio) → arrancar de inmediato
+    if (_loadingDone) {
+      _actuallyStart();
+    } else {
+      // Esperar a que se carguen todos los assets
+      _onLoadingComplete = _actuallyStart;
+      // Safety: si en 15s no ha cargado todo, arrancar igual
+      setTimeout(() => {
+        if (!running) {
+          console.warn('[LOAD] timeout — arrancando con lo que hay');
+          _actuallyStart();
+        }
+      }, 15000);
+    }
   }
 
   function gameOver() {
