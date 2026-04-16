@@ -2983,10 +2983,11 @@ window.addEventListener('popstate', () => {
     preloadDrinkModels();
     preloadTrapModels();
     preloadZombieModels();
-    preloadGardenModels();
     scatterMexicanProps();
     setupInput();
     initAudio();
+    // Iniciar el widget de la radio de SoundCloud (se carga en segundo plano)
+    setTimeout(initRadioWidget, 800);
     // === OPTIMIZACIÓN: caché de wall meshes para raycasting ===
     wallMeshesCache = [];
     walls.forEach(w => { if (w.mesh) wallMeshesCache.push(w.mesh); });
@@ -3123,6 +3124,59 @@ window.addEventListener('popstate', () => {
       const inst = cached.clone(true);
       inst.userData.glbInstance = true;
       grp.add(inst);
+    });
+  }
+
+  // ===== REPRODUCTOR DE RADIO (widget oculto de SoundCloud del perfil Perky Labs) =====
+  let _radioWidget = null;
+  let _radioTracks = 0;
+  let _radioReady = false;
+  let _radioPlaying = false;
+  function initRadioWidget() {
+    if (_radioWidget || typeof SC === 'undefined') return;
+    const iframe = document.getElementById('gameRadioWidget');
+    if (!iframe) return;
+    _radioWidget = SC.Widget(iframe);
+    _radioWidget.bind(SC.Widget.Events.READY, () => {
+      _radioReady = true;
+      _radioWidget.getSounds((sounds) => {
+        _radioTracks = (sounds && sounds.length) ? sounds.length : 0;
+      });
+    });
+    _radioWidget.bind(SC.Widget.Events.FINISH, () => {
+      // Al terminar un track salta al siguiente aleatorio
+      playRadioRandomTrack();
+    });
+  }
+  function playRadioRandomTrack() {
+    if (!_radioReady) { initRadioWidget(); return; }
+    // Si ya está sonando, pararlo (toggle)
+    if (_radioPlaying) {
+      _radioWidget.pause();
+      _radioPlaying = false;
+      if (window._radioInteractive && window._radioInteractive.led) {
+        window._radioInteractive.led.material.color.setHex(0xff2222);
+      }
+      showPickup('RADIO OFF');
+      return;
+    }
+    // Elegir track al azar
+    if (_radioTracks > 0) {
+      const idx = Math.floor(Math.random() * _radioTracks);
+      _radioWidget.skip(idx);
+    }
+    _radioWidget.play();
+    _radioPlaying = true;
+    if (window._radioInteractive && window._radioInteractive.led) {
+      window._radioInteractive.led.material.color.setHex(0x22ff22);
+    }
+    // Mostrar nombre del track en pantalla
+    _radioWidget.getCurrentSound((s) => {
+      if (s && s.title) {
+        showPickup('♪ ' + s.title.toUpperCase());
+      } else {
+        showPickup('RADIO ON');
+      }
     });
   }
 
@@ -3521,114 +3575,117 @@ window.addEventListener('popstate', () => {
       swapToGLB(psGrp, 'interruptor_electrico', 1.5);
     }
 
-    // ====== PATIO JARDÍN — placeholders + sistema de carga GLB automática ======
+    // ====== PATIO JARDÍN (nueva versión usando swapToGLB) ======
+    // Cada elemento es un grupo con placeholder procedural. Cuando el GLB carga,
+    // swapToGLB borra el procedural y mete el modelo escalado al targetSize.
     {
-      const matStone = new TH.MeshLambertMaterial({ color: 0x6a6a70 });
-      const matWood  = new TH.MeshLambertMaterial({ color: 0x4a3018 });
-      const matGreen = new TH.MeshLambertMaterial({ color: 0x1a4a1a });
-      const matDarkGr= new TH.MeshLambertMaterial({ color: 0x0a2a0a });
-      const matMetal = new TH.MeshLambertMaterial({ color: 0x2a2a2e });
-      const matWater = new TH.MeshBasicMaterial({ color: 0x4a8aa0, transparent:true, opacity:0.7 });
+      const mStone = new TH.MeshLambertMaterial({ color: 0x6a6a70 });
+      const mWood  = new TH.MeshLambertMaterial({ color: 0x4a3018 });
+      const mGreen = new TH.MeshLambertMaterial({ color: 0x1a4a1a });
+      const mDark  = new TH.MeshLambertMaterial({ color: 0x0a2a0a });
+      const mMetal = new TH.MeshLambertMaterial({ color: 0x2a2a2e });
+      const mWater = new TH.MeshBasicMaterial({ color: 0x4a8aa0, transparent:true, opacity:0.7 });
 
-      window._gardenProps = window._gardenProps || [];
-
-      function gardenProp(modelName, posX, posY, posZ, rotY, scale, placeholderMesh, collider) {
-        placeholderMesh.position.set(posX, posY, posZ);
-        placeholderMesh.rotation.y = rotY;
-        scene.add(placeholderMesh);
+      // Helper: coloca un grupo en escena y le hace swap con GLB
+      function placeProp(glbName, x, y, z, rotY, targetSize, placeholder, collider) {
+        placeholder.position.set(x, y, z);
+        placeholder.rotation.y = rotY;
+        scene.add(placeholder);
         if (collider) {
           walls.push({
-            min: new TH.Vector3(posX - collider.x/2, 0, posZ - collider.z/2),
-            max: new TH.Vector3(posX + collider.x/2, collider.y, posZ + collider.z/2),
-            mesh: placeholderMesh, isDoor: false
+            min: new TH.Vector3(x - collider.x/2, 0, z - collider.z/2),
+            max: new TH.Vector3(x + collider.x/2, collider.y, z + collider.z/2),
+            mesh: placeholder, isDoor: false
           });
         }
-        window._gardenProps.push({
-          modelName, x: posX, y: posY, z: posZ, rotY, scale, placeholder: placeholderMesh
-        });
+        swapToGLB(placeholder, glbName, targetSize);
       }
 
-      // Caminos en cruz (losas)
+      // === LOSAS (camino en cruz) ===
       const losaGeo = new TH.BoxGeometry(2, 0.05, 2);
+      function mkLosa() { const g = new TH.Group(); g.add(new TH.Mesh(losaGeo, mStone)); return g; }
       [62, 64, 66, 68, 70, 72, 80, 82, 84, 86, 88, 90].forEach(z => {
-        gardenProp('losa_camino', 0, 0.025, z, 0, 1, new TH.Mesh(losaGeo, matStone));
+        placeProp('losa_camino', 0, 0.025, z, 0, 2.0, mkLosa());
       });
       [-18, -16, -14, -12, -10, -8, -6, 6, 8, 10, 12, 14, 16, 18].forEach(x => {
-        gardenProp('losa_camino', x, 0.025, 76, 0, 1, new TH.Mesh(losaGeo, matStone));
+        placeProp('losa_camino', x, 0.025, 76, 0, 2.0, mkLosa());
       });
 
-      // Fuente central
+      // === FUENTE CENTRAL ===
       {
-        const fGrp = new TH.Group();
-        const base = new TH.Mesh(new TH.CylinderGeometry(2, 2.2, 0.6, 12), matStone);
-        base.position.y = 0.3; fGrp.add(base);
-        const water = new TH.Mesh(new TH.CylinderGeometry(1.7, 1.7, 0.05, 12), matWater);
-        water.position.y = 0.62; fGrp.add(water);
-        const colu = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.4, 1.5, 8), matStone);
-        colu.position.y = 1.4; fGrp.add(colu);
-        const top = new TH.Mesh(new TH.SphereGeometry(0.4, 10, 8), matStone);
-        top.position.y = 2.2; fGrp.add(top);
-        gardenProp('fuente', 0, 0, 76, 0, 1, fGrp, { x:4.4, y:2.5, z:4.4 });
+        const g = new TH.Group();
+        const base = new TH.Mesh(new TH.CylinderGeometry(2, 2.2, 0.6, 12), mStone);
+        base.position.y = 0.3; g.add(base);
+        const w = new TH.Mesh(new TH.CylinderGeometry(1.7, 1.7, 0.05, 12), mWater);
+        w.position.y = 0.62; g.add(w);
+        const col = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.4, 1.5, 8), mStone);
+        col.position.y = 1.4; g.add(col);
+        const top = new TH.Mesh(new TH.SphereGeometry(0.4, 10, 8), mStone);
+        top.position.y = 2.2; g.add(top);
+        placeProp('fuente', 0, 0, 76, 0, 4.0, g, {x:4.4, y:2.5, z:4.4});
       }
 
-      // Árboles esquinas
-      function makeTree() {
+      // === ÁRBOLES EN LAS 4 ESQUINAS ===
+      function mkTree() {
         const g = new TH.Group();
-        const t = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.4, 3, 6), matWood);
+        const t = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.4, 3, 6), mWood);
         t.position.y = 1.5; g.add(t);
-        const top = new TH.Mesh(new TH.SphereGeometry(1.6, 8, 6), matGreen);
+        const top = new TH.Mesh(new TH.SphereGeometry(1.6, 8, 6), mGreen);
         top.position.y = 4; g.add(top);
         return g;
       }
-      gardenProp('arbol_grande', -16, 0, 65, 0, 1, makeTree(), { x:1, y:5, z:1 });
-      gardenProp('arbol_grande',  16, 0, 65, 0, 1, makeTree(), { x:1, y:5, z:1 });
-      gardenProp('arbol_grande', -16, 0, 87, 0, 1, makeTree(), { x:1, y:5, z:1 });
-      gardenProp('arbol_grande',  16, 0, 87, 0, 1, makeTree(), { x:1, y:5, z:1 });
+      placeProp('arbol_grande', -16, 0, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande',  16, 0, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande', -16, 0, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande',  16, 0, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
 
-      // Arbustos
-      function makeBush() {
-        const m = new TH.Mesh(new TH.SphereGeometry(0.6, 8, 6), matDarkGr);
-        m.scale.set(1, 0.7, 1); return m;
+      // === ARBUSTOS ===
+      function mkBush() {
+        const m = new TH.Mesh(new TH.SphereGeometry(0.6, 8, 6), mDark);
+        m.scale.set(1, 0.7, 1);
+        const g = new TH.Group(); g.add(m); return g;
       }
       [[-8,66],[-10,81],[8,66],[10,81],[-6,86],[6,86]].forEach(p =>
-        gardenProp('arbusto', p[0], 0.4, p[1], 0, 1, makeBush())
+        placeProp('arbusto', p[0], 0.4, p[1], 0, 1.5, mkBush())
       );
 
-      // Setos (bordes de los caminos)
-      function makeHedge(w, d) {
-        return new TH.Mesh(new TH.BoxGeometry(w, 0.8, d), matDarkGr);
-      }
-      gardenProp('seto_largo', -1.6, 0.4, 67, 0, 1, makeHedge(0.4, 4), {x:0.5,y:0.9,z:4});
-      gardenProp('seto_largo',  1.6, 0.4, 67, 0, 1, makeHedge(0.4, 4), {x:0.5,y:0.9,z:4});
-      gardenProp('seto_largo', -1.6, 0.4, 85, 0, 1, makeHedge(0.4, 4), {x:0.5,y:0.9,z:4});
-      gardenProp('seto_largo',  1.6, 0.4, 85, 0, 1, makeHedge(0.4, 4), {x:0.5,y:0.9,z:4});
-      gardenProp('seto_largo', -10, 0.4, 74.4, 0, 1, makeHedge(4, 0.4), {x:4,y:0.9,z:0.5});
-      gardenProp('seto_largo',  10, 0.4, 74.4, 0, 1, makeHedge(4, 0.4), {x:4,y:0.9,z:0.5});
-      gardenProp('seto_largo', -10, 0.4, 77.6, 0, 1, makeHedge(4, 0.4), {x:4,y:0.9,z:0.5});
-      gardenProp('seto_largo',  10, 0.4, 77.6, 0, 1, makeHedge(4, 0.4), {x:4,y:0.9,z:0.5});
-
-      // Bancos alrededor de la fuente
-      function makeBench() {
+      // === SETOS ===
+      function mkHedge(w, d) {
         const g = new TH.Group();
-        const seat = new TH.Mesh(new TH.BoxGeometry(2, 0.1, 0.5), matWood);
+        g.add(new TH.Mesh(new TH.BoxGeometry(w, 0.8, d), mDark));
+        return g;
+      }
+      placeProp('seto_largo', -1.6, 0.4, 67, 0, 4.0, mkHedge(0.4, 4), {x:0.5,y:0.9,z:4});
+      placeProp('seto_largo',  1.6, 0.4, 67, 0, 4.0, mkHedge(0.4, 4), {x:0.5,y:0.9,z:4});
+      placeProp('seto_largo', -1.6, 0.4, 85, 0, 4.0, mkHedge(0.4, 4), {x:0.5,y:0.9,z:4});
+      placeProp('seto_largo',  1.6, 0.4, 85, 0, 4.0, mkHedge(0.4, 4), {x:0.5,y:0.9,z:4});
+      placeProp('seto_largo', -10, 0.4, 74.4, Math.PI/2, 4.0, mkHedge(0.4, 4), {x:4,y:0.9,z:0.5});
+      placeProp('seto_largo',  10, 0.4, 74.4, Math.PI/2, 4.0, mkHedge(0.4, 4), {x:4,y:0.9,z:0.5});
+      placeProp('seto_largo', -10, 0.4, 77.6, Math.PI/2, 4.0, mkHedge(0.4, 4), {x:4,y:0.9,z:0.5});
+      placeProp('seto_largo',  10, 0.4, 77.6, Math.PI/2, 4.0, mkHedge(0.4, 4), {x:4,y:0.9,z:0.5});
+
+      // === BANCOS ===
+      function mkBench() {
+        const g = new TH.Group();
+        const seat = new TH.Mesh(new TH.BoxGeometry(2, 0.1, 0.5), mWood);
         seat.position.y = 0.5; g.add(seat);
-        const back = new TH.Mesh(new TH.BoxGeometry(2, 0.7, 0.08), matWood);
+        const back = new TH.Mesh(new TH.BoxGeometry(2, 0.7, 0.08), mWood);
         back.position.set(0, 0.85, -0.25); g.add(back);
-        const lg1 = new TH.Mesh(new TH.BoxGeometry(0.08, 0.5, 0.5), matMetal);
+        const lg1 = new TH.Mesh(new TH.BoxGeometry(0.08, 0.5, 0.5), mMetal);
         lg1.position.set(-0.9, 0.25, 0); g.add(lg1);
-        const lg2 = new TH.Mesh(new TH.BoxGeometry(0.08, 0.5, 0.5), matMetal);
+        const lg2 = new TH.Mesh(new TH.BoxGeometry(0.08, 0.5, 0.5), mMetal);
         lg2.position.set(0.9, 0.25, 0); g.add(lg2);
         return g;
       }
-      gardenProp('banco_jardin', -5, 0, 71, 0, 1, makeBench(), {x:2,y:0.9,z:0.6});
-      gardenProp('banco_jardin',  5, 0, 71, 0, 1, makeBench(), {x:2,y:0.9,z:0.6});
-      gardenProp('banco_jardin', -5, 0, 81, Math.PI, 1, makeBench(), {x:2,y:0.9,z:0.6});
-      gardenProp('banco_jardin',  5, 0, 81, Math.PI, 1, makeBench(), {x:2,y:0.9,z:0.6});
+      placeProp('banco_jardin', -5, 0, 71, 0, 2.0, mkBench(), {x:2,y:0.9,z:0.6});
+      placeProp('banco_jardin',  5, 0, 71, 0, 2.0, mkBench(), {x:2,y:0.9,z:0.6});
+      placeProp('banco_jardin', -5, 0, 81, Math.PI, 2.0, mkBench(), {x:2,y:0.9,z:0.6});
+      placeProp('banco_jardin',  5, 0, 81, Math.PI, 2.0, mkBench(), {x:2,y:0.9,z:0.6});
 
-      // Farolas en las esquinas (con luz real)
-      function makeLamp() {
+      // === FAROLAS ===
+      function mkLamp() {
         const g = new TH.Group();
-        const post = new TH.Mesh(new TH.CylinderGeometry(0.08, 0.1, 3, 6), matMetal);
+        const post = new TH.Mesh(new TH.CylinderGeometry(0.08, 0.1, 3, 6), mMetal);
         post.position.y = 1.5; g.add(post);
         const top = new TH.Mesh(new TH.SphereGeometry(0.25, 8, 6),
           new TH.MeshBasicMaterial({ color: 0xffeecc }));
@@ -3636,48 +3693,46 @@ window.addEventListener('popstate', () => {
         return g;
       }
       [[-18,64],[18,64],[-18,88],[18,88]].forEach(p => {
-        gardenProp('farola_jardin', p[0], 0, p[1], 0, 1, makeLamp());
+        placeProp('farola_jardin', p[0], 0, p[1], 0, 3.0, mkLamp());
         const fl = new TH.PointLight(0xffeecc, 1.2, 14, 1.6);
         fl.position.set(p[0], 3.2, p[1]);
         scene.add(fl); lights.push(fl);
       });
 
-      // Macetas con flores alrededor de la fuente
-      function makeMaceta() {
+      // === MACETAS ===
+      function mkMaceta() {
         const g = new TH.Group();
-        const pot = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.25, 0.4, 8), matWood);
+        const pot = new TH.Mesh(new TH.CylinderGeometry(0.3, 0.25, 0.4, 8), mWood);
         pot.position.y = 0.2; g.add(pot);
         const fl = new TH.Mesh(new TH.SphereGeometry(0.25, 8, 6),
           new TH.MeshLambertMaterial({ color: 0xff5577 }));
         fl.position.y = 0.55; g.add(fl);
         return g;
       }
-      gardenProp('flor_maceta', -3, 0, 73, 0, 1, makeMaceta());
-      gardenProp('flor_maceta',  3, 0, 73, 0, 1, makeMaceta());
-      gardenProp('flor_maceta', -3, 0, 79, 0, 1, makeMaceta());
-      gardenProp('flor_maceta',  3, 0, 79, 0, 1, makeMaceta());
+      [[-3,73],[3,73],[-3,79],[3,79]].forEach(p =>
+        placeProp('flor_maceta', p[0], 0, p[1], 0, 0.8, mkMaceta())
+      );
 
-      // Vallas metálicas en oeste y este (cada 2m)
-      function makeFence() {
+      // === VALLAS EN OESTE Y ESTE ===
+      function mkFence() {
         const g = new TH.Group();
         const postGeo = new TH.CylinderGeometry(0.05, 0.05, 2, 4);
-        const p1 = new TH.Mesh(postGeo, matMetal); p1.position.set(-1, 1, 0); g.add(p1);
-        const p2 = new TH.Mesh(postGeo, matMetal); p2.position.set( 1, 1, 0); g.add(p2);
+        const p1 = new TH.Mesh(postGeo, mMetal); p1.position.set(-1, 1, 0); g.add(p1);
+        const p2 = new TH.Mesh(postGeo, mMetal); p2.position.set( 1, 1, 0); g.add(p2);
         const barGeo = new TH.BoxGeometry(2, 0.05, 0.05);
-        const bH = new TH.Mesh(barGeo, matMetal); bH.position.set(0, 1.95, 0); g.add(bH);
-        const bL = new TH.Mesh(barGeo, matMetal); bL.position.set(0, 0.05, 0); g.add(bL);
+        const bH = new TH.Mesh(barGeo, mMetal); bH.position.set(0, 1.95, 0); g.add(bH);
+        const bL = new TH.Mesh(barGeo, mMetal); bL.position.set(0, 0.05, 0); g.add(bL);
         for (let i = 0; i < 5; i++) {
-          const bv = new TH.Mesh(new TH.BoxGeometry(0.04, 1.9, 0.04), matMetal);
+          const bv = new TH.Mesh(new TH.BoxGeometry(0.04, 1.9, 0.04), mMetal);
           bv.position.set(-0.8 + i*0.4, 1, 0);
           g.add(bv);
         }
         return g;
       }
       for (let z = 62; z <= 90; z += 2) {
-        gardenProp('valla_metalica', -20, 0, z, Math.PI/2, 1, makeFence());
-        gardenProp('valla_metalica',  20, 0, z, Math.PI/2, 1, makeFence());
+        placeProp('valla_metalica', -20, 0, z, Math.PI/2, 2.0, mkFence());
+        placeProp('valla_metalica',  20, 0, z, Math.PI/2, 2.0, mkFence());
       }
-      // Barreras invisibles tras las vallas
       addInvisibleBarrier(-20, OH/2, 76, 0.4, OH, 30);
       addInvisibleBarrier( 20, OH/2, 76, 0.4, OH, 30);
     }
@@ -3809,12 +3864,45 @@ window.addEventListener('popstate', () => {
 
       // ===== DISTRIBUCIÓN DE PROPS POR SALAS =====
 
-      // --- Spawn: mesa + silla + cuadro en pared norte (mira al sur=centro) ---
+      // --- Spawn: mesa + silla + RADIO INTERACTIVA ---
       addInteriorProp('mesa_madera',   -2.5, 0, 2, 0.3, 1.7, makeMesa(), {x:1.6, y:0.95, z:0.9});
       addInteriorProp('silla_madera',  -2.5, 0, 3.3, Math.PI, 0.9, makeSilla(), {x:0.5, y:0.95, z:0.5});
-      // Cuadro pegado a pared norte de spawn (z=-5), mirando al sur (rotY=0 = mira a +z)
-      addInteriorProp('cuadro_pared',   2.5, 2.5, -4.85, 0, 1.0, makeCuadro());
       addInteriorProp('mancha_sangre',  3, 0, -1, 0, 1.2, makeSangre());
+
+      // === RADIO INTERACTIVA (pulsa E para cambiar canción de Perky Mafia) ===
+      {
+        const radioGrp = new TH.Group();
+        // Cuerpo procedural (se puede reemplazar con radio_interactiva.glb)
+        const body = new TH.Mesh(new TH.BoxGeometry(0.6, 0.35, 0.3), woodDark);
+        body.position.y = 0.175; radioGrp.add(body);
+        const dial = new TH.Mesh(new TH.CircleGeometry(0.08, 12),
+          new TH.MeshLambertMaterial({ color: 0xffcc22, emissive: 0x884400, emissiveIntensity: 0.5 }));
+        dial.position.set(-0.15, 0.18, 0.16); radioGrp.add(dial);
+        const antenna = new TH.Mesh(new TH.CylinderGeometry(0.01, 0.01, 0.6, 4), ironMat);
+        antenna.position.set(0.25, 0.55, -0.1); antenna.rotation.z = -0.2; radioGrp.add(antenna);
+        const led = new TH.Mesh(new TH.SphereGeometry(0.025, 6, 4),
+          new TH.MeshBasicMaterial({ color: 0xff2222 }));
+        led.position.set(0.15, 0.18, 0.16); radioGrp.add(led);
+        radioGrp.position.set(-2.5, 0.95, 1.7); // encima de la mesa
+        scene.add(radioGrp);
+        // Collider pequeño
+        walls.push({
+          min: new TH.Vector3(-2.8, 0.95, 1.55),
+          max: new TH.Vector3(-2.2, 1.3, 1.85),
+          mesh: radioGrp, isDoor: false
+        });
+        // Swap GLB opcional
+        swapToGLB(radioGrp, 'radio_interactiva', 0.6);
+        // Exponer como objeto global para el sistema de interacción
+        window._radioInteractive = {
+          group: radioGrp,
+          pos: new TH.Vector3(-2.5, 1.1, 1.7),
+          led: led,
+          playing: false,
+          audio: null,
+          currentTrack: -1,
+        };
+      }
 
       // --- Sala Mystery: barriles + cajas + estantería + tubería + manchas ---
       addInteriorProp('barril_oxidado', -9, 0, 25, 0, 1.2, makeBarrel(), {x:1.1, y:1.2, z:1.1});
@@ -3828,11 +3916,8 @@ window.addEventListener('popstate', () => {
       addInteriorProp('mancha_sangre',   -5, 0, 22, 0, 1.2, makeSangre());
       addInteriorProp('mancha_sangre',    4, 0, 28, 0.5, 1.5, makeSangre());
 
-      // --- Sala A: armario contra pared oeste + cuadro en pared este ---
-      // Sala A bounds: x[-13..-3], z[41..51]. Centro (-8, 46)
+      // --- Sala A: armario contra pared oeste ---
       addInteriorProp('armario',      -12.5, 0, 46, Math.PI/2, 2.3, makeArmario(), {x:0.6, y:2.2, z:1.2});
-      // Cuadro pegado a pared este (x=-3), mirando al oeste (centro): rotY = -PI/2
-      addInteriorProp('cuadro_pared', -3.15, 2.5, 46, -Math.PI/2, 1.0, makeCuadro());
 
       // --- Sala B: mesa + 2 sillas + barriles + tubería ---
       addInteriorProp('mesa_madera',   13, 0, 46, 0, 1.7, makeMesa(), {x:1.6, y:0.95, z:0.9});
@@ -3852,6 +3937,163 @@ window.addEventListener('popstate', () => {
       // --- Sala Chuchuwa: armario + barril ---
       addInteriorProp('armario',       19, 0, 95, -Math.PI/2, 2.3, makeArmario(), {x:0.6, y:2.2, z:1.2});
       addInteriorProp('barril_oxidado',14, 0, 92, 0, 1.2, makeBarrel(), {x:1.1, y:1.2, z:1.1});
+
+      // === MÁS PROPS PARA DAR VIDA A LAS SALAS ===
+
+      // Placeholders adicionales
+      function makeBotella() {
+        const g = new TH.Group();
+        const body = new TH.Mesh(new TH.CylinderGeometry(0.06, 0.08, 0.25, 6),
+          new TH.MeshLambertMaterial({ color: 0x2a5a1a }));
+        body.position.y = 0.125; g.add(body);
+        const neck = new TH.Mesh(new TH.CylinderGeometry(0.03, 0.04, 0.08, 4),
+          new TH.MeshLambertMaterial({ color: 0x2a5a1a }));
+        neck.position.y = 0.29; g.add(neck);
+        return g;
+      }
+      function makeVaso() {
+        const g = new TH.Group();
+        const m = new TH.Mesh(new TH.CylinderGeometry(0.05, 0.045, 0.12, 8),
+          new TH.MeshLambertMaterial({ color: 0xccccdd, transparent:true, opacity:0.5 }));
+        m.position.y = 0.06; g.add(m);
+        return g;
+      }
+      function makeCenicero() {
+        const g = new TH.Group();
+        const m = new TH.Mesh(new TH.CylinderGeometry(0.12, 0.14, 0.04, 8), ironMat);
+        m.position.y = 0.02; g.add(m);
+        return g;
+      }
+      function makeRadio() {
+        const g = new TH.Group();
+        const body = new TH.Mesh(new TH.BoxGeometry(0.4, 0.25, 0.2), woodDark);
+        body.position.y = 0.125; g.add(body);
+        const knob = new TH.Mesh(new TH.CylinderGeometry(0.03, 0.03, 0.03, 6),
+          new TH.MeshLambertMaterial({ color: 0x8a8a2a }));
+        knob.rotation.x = Math.PI/2; knob.position.set(0.14, 0.14, 0.11); g.add(knob);
+        return g;
+      }
+      function makeLibros() {
+        const g = new TH.Group();
+        const cols = [0x7a2a2a, 0x2a7a2a, 0x2a2a7a, 0x7a7a2a];
+        for (let i = 0; i < 4; i++) {
+          const b = new TH.Mesh(new TH.BoxGeometry(0.1, 0.22, 0.14),
+            new TH.MeshLambertMaterial({ color: cols[i%cols.length] }));
+          b.position.set(-0.15 + i*0.1, 0.11, 0);
+          g.add(b);
+        }
+        return g;
+      }
+      function makeCaja() {
+        const g = new TH.Group();
+        const m = new TH.Mesh(new TH.BoxGeometry(1.5, 0.8, 1), woodMat);
+        m.position.y = 0.4; g.add(m);
+        return g;
+      }
+      function makeLampPie() {
+        const g = new TH.Group();
+        const base = new TH.Mesh(new TH.CylinderGeometry(0.15, 0.2, 0.05, 8), ironMat);
+        base.position.y = 0.025; g.add(base);
+        const pole = new TH.Mesh(new TH.CylinderGeometry(0.03, 0.03, 1.4, 6), ironMat);
+        pole.position.y = 0.75; g.add(pole);
+        const shade = new TH.Mesh(new TH.ConeGeometry(0.3, 0.35, 8, 1, true),
+          new TH.MeshLambertMaterial({ color: 0x6a4a2a, side:TH.DoubleSide }));
+        shade.position.y = 1.6; shade.rotation.x = Math.PI; g.add(shade);
+        return g;
+      }
+      function makeTaburete() {
+        const g = new TH.Group();
+        const seat = new TH.Mesh(new TH.CylinderGeometry(0.25, 0.25, 0.06, 10), woodMat);
+        seat.position.y = 0.6; g.add(seat);
+        const pole = new TH.Mesh(new TH.CylinderGeometry(0.04, 0.04, 0.6, 6), ironMat);
+        pole.position.y = 0.3; g.add(pole);
+        return g;
+      }
+      function makeTvVieja() {
+        const g = new TH.Group();
+        const box = new TH.Mesh(new TH.BoxGeometry(0.7, 0.55, 0.55), woodDark);
+        box.position.y = 0.275; g.add(box);
+        const screen = new TH.Mesh(new TH.BoxGeometry(0.55, 0.4, 0.02),
+          new TH.MeshLambertMaterial({ color: 0x083020, emissive: 0x041810, emissiveIntensity:0.5 }));
+        screen.position.set(0, 0.3, 0.28); g.add(screen);
+        return g;
+      }
+      function makePoster() {
+        const g = new TH.Group();
+        const m = new TH.Mesh(new TH.PlaneGeometry(0.7, 1),
+          new TH.MeshLambertMaterial({ color: 0x6a2a4a, side:TH.DoubleSide }));
+        m.position.y = 0; g.add(m);
+        return g;
+      }
+      function makeBidon() {
+        const g = new TH.Group();
+        const m = new TH.Mesh(new TH.CylinderGeometry(0.35, 0.35, 0.9, 12), rustMat);
+        m.position.y = 0.45; g.add(m);
+        const tap = new TH.Mesh(new TH.CylinderGeometry(0.04, 0.04, 0.2, 6), ironMat);
+        tap.rotation.z = Math.PI/2; tap.position.set(0.35, 0.15, 0); g.add(tap);
+        return g;
+      }
+      function makePlatoMesa() {
+        // un "plato con comida" sobre una mesa
+        const g = new TH.Group();
+        const plate = new TH.Mesh(new TH.CylinderGeometry(0.15, 0.15, 0.02, 10),
+          new TH.MeshLambertMaterial({ color: 0xdddddd }));
+        plate.position.y = 0.01; g.add(plate);
+        const food = new TH.Mesh(new TH.SphereGeometry(0.08, 8, 6),
+          new TH.MeshLambertMaterial({ color: 0x5a2010 }));
+        food.scale.y = 0.4; food.position.y = 0.05; g.add(food);
+        return g;
+      }
+
+      // --- SPAWN: añadir radio, botellas en la mesa, poster, taburete ---
+      addInteriorProp('radio_vieja', -2.5, 0.85, 1.6, 0, 0.5, makeRadio());
+      addInteriorProp('botella', -2, 0.89, 2.2, 0, 0.3, makeBotella());
+      addInteriorProp('botella', -3, 0.89, 2.1, 0.3, 0.3, makeBotella());
+      addInteriorProp('vaso_bar', -2.7, 0.89, 1.9, 0, 0.15, makeVaso());
+      addInteriorProp('taburete_bar', -1.3, 0, 2, 0, 0.6, makeTaburete(), {x:0.5, y:0.7, z:0.5});
+      addInteriorProp('lampara_pie', 3.5, 0, 3, 0, 1.7, makeLampPie(), {x:0.4, y:1.7, z:0.4});
+
+      // --- SALA MYSTERY: poster en pared, TV vieja, libros, bidón, más manchas ---
+      addInteriorProp('bidon_metal', -11, 0, 17, 0, 1.1, makeBidon(), {x:0.7, y:0.9, z:0.7});
+      addInteriorProp('bidon_metal',  11, 0, 30, 0, 1.1, makeBidon(), {x:0.7, y:0.9, z:0.7});
+      addInteriorProp('tv_vieja',  0, 1.4, 30.7, 0, 0.7, makeTvVieja());  // encima de la estantería
+      addInteriorProp('libros_apilados', -7, 0, 19, 0, 0.5, makeLibros());
+      addInteriorProp('libros_apilados',  0, 0, 16, 0.5, 0.5, makeLibros());
+      // Posters en paredes
+      addInteriorProp('poster_pared', -11.9, 3, 20, Math.PI/2, 1.0, makePoster());
+      addInteriorProp('poster_pared',  11.9, 3, 25, -Math.PI/2, 1.0, makePoster());
+      addInteriorProp('mancha_sangre', 0, 0, 24, 0, 1.2, makeSangre());
+
+      // --- SALA A: lámpara de pie + libros + poster ---
+      addInteriorProp('lampara_pie', -4, 0, 50, 0, 1.7, makeLampPie(), {x:0.4, y:1.7, z:0.4});
+      addInteriorProp('libros_apilados', -8, 0, 44, 0, 0.5, makeLibros());
+      addInteriorProp('poster_pared', -8, 3, 41.15, 0, 1.0, makePoster());
+      addInteriorProp('mancha_sangre', -10, 0, 48, 0.5, 1.5, makeSangre());
+
+      // --- SALA B: plato + vasos + botellas en mesa, taburete, radio ---
+      addInteriorProp('plato_mesa', 13, 0.93, 45.7, 0, 0.3, makePlatoMesa());
+      addInteriorProp('botella', 13, 0.93, 46.3, 0.4, 0.3, makeBotella());
+      addInteriorProp('vaso_bar', 13.5, 0.93, 46, 0, 0.15, makeVaso());
+      addInteriorProp('taburete_bar', 14, 0, 47.3, 0, 0.6, makeTaburete(), {x:0.5, y:0.7, z:0.5});
+      addInteriorProp('radio_vieja', 22, 0.9, 51, 0, 0.5, makeRadio());
+      addInteriorProp('libros_apilados', 4, 0, 51, 0.3, 0.5, makeLibros());
+      addInteriorProp('poster_pared', 22.9, 3, 48, -Math.PI/2, 1.0, makePoster());
+      addInteriorProp('mancha_sangre', 8, 0, 48, 0, 1.3, makeSangre());
+      addInteriorProp('mancha_sangre', 16, 0, 52, 0.7, 1.5, makeSangre());
+
+      // --- SALA PAP: bidones químicos, TV, más cajas ---
+      addInteriorProp('bidon_metal', -13, 0, 93, 0, 1.1, makeBidon(), {x:0.7, y:0.9, z:0.7});
+      addInteriorProp('bidon_metal', -13, 0, 97, 0, 1.1, makeBidon(), {x:0.7, y:0.9, z:0.7});
+      addInteriorProp('tv_vieja', -19.5, 1.2, 94, Math.PI/2, 0.7, makeTvVieja());
+      addInteriorProp('caja_madera', -15, 0, 98, 0.2, 1.3, makeCrate(), {x:1.2, y:1.2, z:1.2});
+
+      // --- SALA CHUCHUWA (perk final): botellas, radio, taburete, poster ---
+      addInteriorProp('botella', 14, 0.93, 94, 0, 0.3, makeBotella());
+      addInteriorProp('botella', 14.3, 0.93, 94.2, 0.4, 0.3, makeBotella());
+      addInteriorProp('taburete_bar', 17, 0, 96, 0, 0.6, makeTaburete(), {x:0.5, y:0.7, z:0.5});
+      addInteriorProp('radio_vieja', 13, 0.9, 92, 0, 0.5, makeRadio());
+      addInteriorProp('poster_pared', 12.15, 3, 95, Math.PI/2, 1.0, makePoster());
+      addInteriorProp('mancha_sangre', 18, 0, 94, 0, 1.3, makeSangre());
     }
 
     // ===== AMBIENTE + SKY =====
@@ -4962,34 +5204,108 @@ window.addEventListener('popstate', () => {
     }
   }
 
+  // ===== PARTÍCULAS DE SANGRE =====
+  // Sistema simple de partículas reutilizable. Pool fijo para no crear objetos.
+  const _bloodGeo = new TH.SphereGeometry(0.06, 4, 3);
+  const _bloodMat = new TH.MeshBasicMaterial({ color: 0xcc0018, transparent: true, opacity: 1 });
+  const _bloodParticles = [];
+  const _BLOOD_POOL_SIZE = 40;
+  for (let i = 0; i < _BLOOD_POOL_SIZE; i++) {
+    const m = new TH.Mesh(_bloodGeo, _bloodMat.clone());
+    m.visible = false;
+    scene.add(m);
+    _bloodParticles.push({ mesh: m, vel: new TH.Vector3(), life: 0, maxLife: 0 });
+  }
+  let _activeBloodCount = 0;
+  function spawnBloodParticles(x, y, z, count) {
+    count = count || 8;
+    let spawned = 0;
+    for (let i = 0; i < _bloodParticles.length && spawned < count; i++) {
+      const p = _bloodParticles[i];
+      if (p.life > 0) continue;
+      p.mesh.position.set(x, y, z);
+      p.mesh.visible = true;
+      p.mesh.material.opacity = 1;
+      p.vel.set(
+        (Math.random()-0.5) * 4,
+        Math.random() * 2.5 + 0.5,
+        (Math.random()-0.5) * 4
+      );
+      p.life = p.maxLife = 0.4 + Math.random()*0.3;
+      spawned++;
+      _activeBloodCount++;
+    }
+  }
+  function updateBloodParticles(dt) {
+    if (_activeBloodCount === 0) return; // early out
+    for (let i = 0; i < _bloodParticles.length; i++) {
+      const p = _bloodParticles[i];
+      if (p.life <= 0) continue;
+      p.life -= dt;
+      if (p.life <= 0) {
+        p.mesh.visible = false;
+        _activeBloodCount--;
+        continue;
+      }
+      p.vel.y -= 9.8 * dt;
+      p.mesh.position.x += p.vel.x * dt;
+      p.mesh.position.y += p.vel.y * dt;
+      p.mesh.position.z += p.vel.z * dt;
+      p.mesh.material.opacity = p.life / p.maxLife;
+      if (p.mesh.position.y < 0) {
+        p.mesh.position.y = 0;
+        p.vel.y *= -0.2;
+        p.vel.x *= 0.5;
+        p.vel.z *= 0.5;
+      }
+    }
+  }
+
   function quickMelee() {
     const now = performance.now();
     if (now - lastMeleeTime < 500) return;
     lastMeleeTime = now;
     meleeAnimT = 1;
     playMelee();
-    // raycast corto
+    const w = WEAPONS[currentWeapon];
+    // Rango y ángulo del golpe según arma (melee equipada = mayor rango/ángulo)
+    const isEquippedMelee = w && w.type === 'melee';
+    const range = isEquippedMelee ? 4.5 : 2.5;
+    const halfAngle = isEquippedMelee ? Math.PI/3 : Math.PI/6; // 120° vs 60°
+    const dmg = isEquippedMelee ? (w.dmg || 150) : 80;
+    // Mirador del jugador
     const dir = new TH.Vector3();
     camera.getWorldDirection(dir);
     const origin = new TH.Vector3();
     camera.getWorldPosition(origin);
-    raycaster.set(origin, dir);
-    raycaster.far = 2.5;
-    const targets = [];
-    zombies.forEach(z => { if (z.alive) { targets.push(z.body); targets.push(z.head); } });
-    const hits = raycaster.intersectObjects(targets, false);
-    if (hits.length) {
-      const h = hits[0];
-      const z = zombies.find(zz => zz.body === h.object || zz.head === h.object);
-      if (z) {
-        const dealt = 80;
-        z.health -= dealt;
-        z.flashTime = 0.15;
-        addPoints(15);
-        playHit();
-        if (z.health <= 0) killZombie(z, false);
-      }
+    // Golpe EN ÁREA: recorremos todos los zombis y aplicamos daño si están
+    // dentro del cono (distancia < range y ángulo < halfAngle)
+    let hitCount = 0;
+    for (let i = 0; i < zombies.length; i++) {
+      const z = zombies[i];
+      if (!z.alive) continue;
+      const dx = z.pos.x - origin.x;
+      const dy = (z.pos.y + 1) - origin.y;
+      const dz = z.pos.z - origin.z;
+      const dist = Math.hypot(dx, dy, dz);
+      if (dist > range) continue;
+      // Producto escalar normalizado para ángulo
+      const invD = 1 / dist;
+      const cosA = (dx*dir.x + dy*dir.y + dz*dir.z) * invD;
+      if (cosA < Math.cos(halfAngle)) continue;
+      // Daño
+      let dealt = dmg;
+      if (activePowerups.dmg) dealt *= 2;
+      if (persistentBuffs.chuchuwa) dealt *= 1.6;
+      z.health -= dealt;
+      z.flashTime = 0.15;
+      addPoints(15);
+      // Partículas de sangre en el zombi
+      spawnBloodParticles(z.pos.x, z.pos.y + 1.2, z.pos.z, 10);
+      hitCount++;
+      if (z.health <= 0) killZombie(z, false);
     }
+    if (hitCount > 0) playHit();
   }
 
   // ===== SHOOTING =====
@@ -5114,6 +5430,7 @@ window.addEventListener('popstate', () => {
       chained.add(current);
       addPoints(15);
       playHit();
+      spawnBloodParticles(current.pos.x, current.pos.y + 1.2, current.pos.z, 6);
       if (current.health <= 0) killZombie(current, false);
       // siguiente
       let next = null, bestD = 8;
@@ -5176,6 +5493,8 @@ window.addEventListener('popstate', () => {
         z.flashTime = 0.12;
         addPoints(isHead ? 20 : 10);
         playHit();
+        // Partículas de sangre en el punto de impacto
+        spawnBloodParticles(h.point.x, h.point.y, h.point.z, isHead ? 12 : 8);
         if (z.health <= 0) {
           if (persistentBuffs.bloody) {
             player.health = Math.min(player.maxHealth, player.health + 8);
@@ -5557,24 +5876,25 @@ window.addEventListener('popstate', () => {
         z.pos.z += nz * step;
 
         // === SEPARACIÓN ENTRE ZOMBIS (evita que se solapen) ===
-        // Recorrido lineal pero limitado: solo revisamos zombis hasta 1.5m de distancia.
-        // No afecta al jugador, solo a otros zombis.
-        const minDist = 0.9; // distancia mínima entre centros
-        for (let j = 0; j < zombies.length; j++) {
-          if (j === i) continue;
-          const o = zombies[j];
-          if (!o.alive) continue;
-          const ddx = z.pos.x - o.pos.x;
-          const ddz = z.pos.z - o.pos.z;
-          const sq = ddx*ddx + ddz*ddz;
-          if (sq < minDist*minDist && sq > 0.0001) {
-            const d = Math.sqrt(sq);
-            const overlap = (minDist - d);
-            // Empujamos sólo a este zombi (el otro lo hará en su propia iteración)
-            const pushX = (ddx / d) * overlap * 0.5;
-            const pushZ = (ddz / d) * overlap * 0.5;
-            z.pos.x += pushX;
-            z.pos.z += pushZ;
+        // OPTIMIZACIÓN: solo calcular si zombi está CERCA del jugador (visible).
+        // Para zombis lejos no se nota si se solapan.
+        if (dist < 25) {
+          const minDist = 0.9;
+          for (let j = 0; j < zombies.length; j++) {
+            if (j === i) continue;
+            const o = zombies[j];
+            if (!o.alive) continue;
+            const ddx = z.pos.x - o.pos.x;
+            const ddz = z.pos.z - o.pos.z;
+            const sq = ddx*ddx + ddz*ddz;
+            if (sq < minDist*minDist && sq > 0.0001) {
+              const d = Math.sqrt(sq);
+              const overlap = (minDist - d);
+              const pushX = (ddx / d) * overlap * 0.5;
+              const pushZ = (ddz / d) * overlap * 0.5;
+              z.pos.x += pushX;
+              z.pos.z += pushZ;
+            }
           }
         }
 
@@ -6584,6 +6904,11 @@ window.addEventListener('popstate', () => {
   // ===== INTERACT =====
   function tryInteract() {
     const pp = camera.position;
+    // ===== RADIO INTERACTIVA (reproduce canciones de Perky Mafia) =====
+    if (window._radioInteractive && pp.distanceTo(window._radioInteractive.pos) < 2.5) {
+      playRadioRandomTrack();
+      return;
+    }
     // ===== INTERRUPTOR DE ELECTRICIDAD (primera prioridad si estás cerca) =====
     if (powerSwitch && pp.distanceTo(powerSwitch.pos) < 3) {
       if (!powerOn) {
@@ -6762,6 +7087,12 @@ window.addEventListener('popstate', () => {
     if (_promptFrame !== 0) return;
     const pp = camera.position;
     let txt = '';
+    // Radio interactiva
+    if (window._radioInteractive && pp.distanceTo(window._radioInteractive.pos) < 2.5) {
+      txt = _radioPlaying ? '[E] PARAR RADIO' : '[E] CAMBIAR CANCION / RADIO';
+      promptEl.textContent = txt;
+      return;
+    }
     // Interruptor de electricidad
     if (powerSwitch && pp.distanceTo(powerSwitch.pos) < 3) {
       if (powerOn) txt = '★ ELECTRICIDAD ACTIVA';
@@ -6854,6 +7185,56 @@ window.addEventListener('popstate', () => {
   // Luz de explosión reutilizable (evita crear PointLight + setTimeout por cada boom)
   let _explosionLight = null;
   let _explosionLightUntil = 0;
+  // Pool de esferas de explosión visual (3 instancias reutilizables)
+  const _explosionVisuals = [];
+  function _ensureExplosionVisual() {
+    if (_explosionVisuals.length >= 3) return;
+    const geo = new TH.SphereGeometry(1, 12, 8);
+    for (let i = 0; i < 3; i++) {
+      const coreMat = new TH.MeshBasicMaterial({ color:0xffaa22, transparent:true, opacity:0 });
+      const core = new TH.Mesh(geo, coreMat);
+      core.visible = false;
+      scene.add(core);
+      const smokeMat = new TH.MeshBasicMaterial({ color:0x554433, transparent:true, opacity:0 });
+      const smoke = new TH.Mesh(geo, smokeMat);
+      smoke.visible = false;
+      scene.add(smoke);
+      _explosionVisuals.push({ core, smoke, t: 0, duration: 0.6 });
+    }
+  }
+  function _triggerExplosionVisual(pos) {
+    _ensureExplosionVisual();
+    // Usar el primero libre (t<=0) o sobrescribir el más antiguo
+    let slot = _explosionVisuals.find(e => e.t <= 0);
+    if (!slot) slot = _explosionVisuals[0];
+    slot.core.position.copy(pos);
+    slot.smoke.position.copy(pos);
+    slot.core.visible = true;
+    slot.smoke.visible = true;
+    slot.t = slot.duration;
+  }
+  function updateExplosionVisuals(dt) {
+    for (let i = 0; i < _explosionVisuals.length; i++) {
+      const e = _explosionVisuals[i];
+      if (e.t <= 0) continue;
+      e.t -= dt;
+      const k = 1 - (e.t / e.duration); // 0→1
+      if (e.t <= 0) {
+        e.core.visible = false;
+        e.smoke.visible = false;
+        continue;
+      }
+      // Core: crece rápido al inicio y desaparece
+      const coreScale = 1 + k * 4;
+      e.core.scale.setScalar(coreScale);
+      e.core.material.opacity = Math.max(0, 1 - k * 1.5);
+      // Smoke: crece más lento, se queda más tiempo
+      const smokeScale = 1.5 + k * 6;
+      e.smoke.scale.setScalar(smokeScale);
+      e.smoke.material.opacity = Math.max(0, 0.6 - k * 0.8);
+    }
+  }
+
   function explode(pos) {
     playExplosion();
     if (!_explosionLight) {
@@ -6863,6 +7244,9 @@ window.addEventListener('popstate', () => {
     _explosionLight.position.copy(pos);
     _explosionLight.intensity = 12;
     _explosionLightUntil = performance.now() + 250;
+    // Efecto visual (bola naranja + humo)
+    _triggerExplosionVisual(pos);
+    // Daño en área
     zombies.forEach(z => {
       if (!z.alive) return;
       const d = z.pos.distanceTo(pos);
@@ -6870,6 +7254,7 @@ window.addEventListener('popstate', () => {
         const dmg = 220 * (1 - d/6.5);
         z.health -= dmg;
         z.flashTime = 0.2;
+        spawnBloodParticles(z.pos.x, z.pos.y + 1.2, z.pos.z, 6);
         if (z.health <= 0) killZombie(z, false);
       }
     });
@@ -7012,17 +7397,22 @@ window.addEventListener('popstate', () => {
   }
 
   // ===== LOOP =====
+  // Optimización: algunos sistemas se actualizan cada 2 frames para ahorrar CPU.
+  let _frameCount = 0;
   function loop() {
     if (!running) return;
     requestAnimationFrame(loop);
     const dt = Math.min(clock.getDelta(), 0.05);
     if (paused) { renderer.render(scene, camera); return; }
+    _frameCount++;
 
     updatePlayer(dt);
     updateZombies(dt);
     updateSpitters(dt);
     updateGrenades(dt);
     updateTracers(dt);
+    updateBloodParticles(dt);
+    updateExplosionVisuals(dt);
     // expirar luz de explosión
     if (_explosionLight && _explosionLight.intensity > 0 && performance.now() > _explosionLightUntil) {
       _explosionLight.intensity = 0;
@@ -7032,11 +7422,17 @@ window.addEventListener('popstate', () => {
       dmgVignette.style.opacity = '0';
       _vignetteUntil = 0;
     }
-    updatePowerupDrops(dt);
-    updateActivePowerups();
-    updateWaves();
-    updateLights(dt);
-    updateTraps(dt);
+    // === updates no críticos throttleados a 30fps (cada 2 frames si 60fps) ===
+    if (_frameCount % 2 === 0) {
+      updatePowerupDrops(dt*2);
+      updateActivePowerups();
+      updateLights(dt*2);
+      updateTraps(dt*2);
+    }
+    // updates poco frecuentes (3 veces/s ≈ cada 20 frames a 60fps)
+    if (_frameCount % 20 === 0) {
+      updateWaves();
+    }
     updatePrompt();
     updateWeaponAnim(dt);
 
@@ -7235,6 +7631,13 @@ window.addEventListener('popstate', () => {
   loadLeaderboard();
 })();
 </script>
+
+  <!-- ===== RADIO INTERACTIVA DEL JUEGO (SoundCloud widget oculto) ===== -->
+  <iframe id="gameRadioWidget" width="1" height="1"
+    style="position:fixed;bottom:0;right:0;opacity:0;pointer-events:none;z-index:-1"
+    allow="autoplay"
+    src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/perky-labs&auto_play=false&hide_related=true&show_comments=false&show_user=false&show_reposts=false&show_teaser=false&visual=false&buying=false&sharing=false&download=false"></iframe>
+  <script src="https://w.soundcloud.com/player/api.js"></script>
 
 </body>
 </html>
