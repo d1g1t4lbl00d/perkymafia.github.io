@@ -6271,6 +6271,22 @@ window.addEventListener('popstate', () => {
   // Cada prop registrado en window._gardenProps con su modelName se va a buscar
   // en /models/{modelName}.glb. Si existe, reemplaza al placeholder respetando
   // posición, rotación y escala. Si no existe, el placeholder se queda visible.
+  // Tamaño objetivo (DIMENSIÓN MÁXIMA en metros) para cada modelo del jardín.
+  // Se escala el lado mayor del modelo a este valor manteniendo proporción.
+  const GARDEN_TARGET_SIZE = {
+    losa_camino: 2.0,        // losa cuadrada de ~2m de lado
+    fuente: 4.0,             // fuente con base ~4m de diámetro
+    arbol_grande: 7.0,       // árbol de ~7m (alto y ancho)
+    arbusto: 1.5,            // arbusto compacto
+    seto_largo: 4.0,         // seto largo (4m de largo)
+    banco_jardin: 2.0,       // banco de 2m
+    farola_jardin: 3.0,      // farola alta
+    flor_maceta: 0.8,        // maceta pequeña
+    valla_metalica: 2.0,     // módulo de valla 2x2m
+    lampara_colgante: 1.0,   // lámpara
+    interruptor_electrico: 1.3,
+  };
+
   function preloadGardenModels() {
     if (!window._gardenProps || !window._gardenProps.length) {
       console.log('[GARDEN] sin props registrados');
@@ -6292,14 +6308,29 @@ window.addEventListener('popstate', () => {
           model.traverse(o => {
             o.visible = true;
             o.frustumCulled = false; // por si tienen bbox raros
-            if (o.isMesh && o.material) {
-              // Materiales con doble cara para que se vean siempre
-              if (Array.isArray(o.material)) {
-                o.material.forEach(m => { m.side = TH.DoubleSide; m.transparent = false; m.opacity = 1; });
-              } else {
-                o.material.side = TH.DoubleSide;
-                o.material.transparent = false;
-                o.material.opacity = 1;
+            if (o.isMesh) {
+              o.castShadow = false;
+              o.receiveShadow = false;
+              if (o.material) {
+                const fixMat = (m) => {
+                  m.side = TH.DoubleSide;
+                  m.transparent = false;
+                  m.opacity = 1;
+                  m.depthTest = true;
+                  m.depthWrite = true;
+                  m.alphaTest = 0;
+                  m.visible = true;
+                  // Si el GLB venía con material muy oscuro, lo forzamos visible
+                  if (m.color && m.color.r < 0.05 && m.color.g < 0.05 && m.color.b < 0.05) {
+                    m.color.setHex(0x888888);
+                  }
+                  // Asegurar que emissive no sea null y se vea algo
+                  if (m.emissive && m.emissiveIntensity === 0) {
+                    m.emissiveIntensity = 0.1;
+                  }
+                };
+                if (Array.isArray(o.material)) o.material.forEach(fixMat);
+                else fixMat(o.material);
               }
             }
           });
@@ -6309,12 +6340,22 @@ window.addEventListener('popstate', () => {
           const center = new TH.Vector3(); box.getCenter(center);
           // Centrar en X/Z y poner base en Y=0
           model.position.set(-center.x, -box.min.y, -center.z);
-          // Cache: el grupo ya viene normalizado
+
+          // Reescalar al TAMAÑO OBJETIVO según el tipo de prop (LADO MAYOR)
+          const targetMax = GARDEN_TARGET_SIZE[name];
+          let autoScale = 1;
+          const maxDim = Math.max(size.x, size.y, size.z);
+          if (targetMax && maxDim > 0) {
+            autoScale = targetMax / maxDim;
+          }
+          // Cache: el grupo ya viene normalizado y con escala objetivo
           const wrap = new TH.Group();
           wrap.add(model);
+          wrap.scale.setScalar(autoScale);
           _GENERIC_GLB_CACHE[name] = wrap;
-          console.log('[GARDEN OK]', name, 'tamaño:', size.x.toFixed(2), 'x', size.y.toFixed(2), 'x', size.z.toFixed(2));
+          console.log('[GARDEN OK]', name, 'tamaño:', size.x.toFixed(2), 'x', size.y.toFixed(2), 'x', size.z.toFixed(2), '→ escala', autoScale.toFixed(3));
           // Aplicar a todos los placeholders pendientes con este nombre
+          let applied = 0;
           window._gardenProps.forEach(p => {
             if (p.modelName === name && !p._applied) {
               // Quitar placeholder
@@ -6322,16 +6363,30 @@ window.addEventListener('popstate', () => {
                 p.placeholder.parent.remove(p.placeholder);
                 p.placeholder.traverse(o => { if (o.geometry) o.geometry.dispose(); });
               }
-              // Clonar el modelo SIN el wrap (más simple, escala directa)
-              const inst = model.clone(true);
+              // Clonar el wrap (que ya tiene escala objetivo aplicada)
+              const inst = wrap.clone(true);
               inst.position.set(p.x, p.y, p.z);
               inst.rotation.y = p.rotY || 0;
-              if (p.scale && p.scale !== 1) inst.scale.setScalar(p.scale);
+              if (p.scale && p.scale !== 1) inst.scale.multiplyScalar(p.scale);
               scene.add(inst);
               p._applied = true;
               p.instance = inst;
+              applied++;
+              // DIAGNÓSTICO: para la primera instancia, loguear todo
+              if (applied === 1) {
+                inst.updateMatrixWorld(true);
+                const finalBox = new TH.Box3().setFromObject(inst);
+                const fSize = new TH.Vector3(); finalBox.getSize(fSize);
+                const fCenter = new TH.Vector3(); finalBox.getCenter(fCenter);
+                console.log('  ↳', name, 'instancia #1 en pos(' +
+                  p.x.toFixed(1) + ',' + p.y.toFixed(1) + ',' + p.z.toFixed(1) +
+                  ') tamaño FINAL ' + fSize.x.toFixed(2) + 'x' + fSize.y.toFixed(2) + 'x' + fSize.z.toFixed(2) +
+                  ' centro mundial(' + fCenter.x.toFixed(1) + ',' + fCenter.y.toFixed(1) + ',' + fCenter.z.toFixed(1) + ')' +
+                  ' meshes:' + (inst.children.length > 0 ? 'sí' : 'NO'));
+              }
             }
           });
+          console.log('  ↳ aplicadas', applied, 'instancias de', name);
         },
         (progress) => {
           // log de progreso para detectar archivos enormes
