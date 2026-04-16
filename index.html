@@ -653,111 +653,167 @@ footer{
 }
 .game-dmg-arrow.show{ opacity:1 }
 
-.game-stat{
-  background:rgba(0,0,0,0.6);
-  border:2px solid var(--green);
-  padding:0.5rem 0.7rem;
-  font-size:0.55rem;
-  color:var(--green);
-  text-shadow:0 0 4px var(--green);
-  display:flex;flex-direction:column;gap:0.25rem;
-  min-width:130px;
-}
-.game-stat .lbl{color:var(--yellow);font-size:0.42rem;text-shadow:0 0 4px var(--yellow)}
-.game-top-left{position:absolute;top:1rem;left:1rem;display:flex;flex-direction:column;gap:0.5rem}
-.game-top-right{position:absolute;top:1rem;right:1rem;display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end}
-.game-bot-right{position:absolute;bottom:1rem;right:1rem;display:flex;flex-direction:column;gap:0.5rem;align-items:flex-end}
+.game-stat{display:none} /* legacy — replaced by DOOM HUD */
+.game-top-left{position:absolute;top:1rem;left:1rem}
+.game-top-right{position:absolute;top:1rem;right:1rem}
 
-/* ===== Health UI moderna ===== */
-.game-healthbox{
-  background:rgba(0,0,0,0.78);
-  border:3px solid var(--green);
-  padding:0.55rem 0.75rem 0.6rem;
-  min-width:250px;
-  position:relative;
-  box-shadow:0 0 14px rgba(57,255,20,0.25), 4px 4px 0 var(--pink);
+/* ===== DOOM-STYLE HUD ===== */
+.hud-bottom{
+  position:absolute;bottom:0;left:0;right:0;
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0.6rem 1rem;gap:0.8rem;
+  background:linear-gradient(transparent,rgba(0,0,0,0.85));
+  pointer-events:none;
+}
+.hud-weapon{
+  min-width:140px;
+  text-align:left;
+}
+.hud-weapon-name{
+  font-size:0.55rem;color:var(--green);
+  text-shadow:0 0 6px var(--green);
+  margin-bottom:0.3rem;
+}
+.hud-ammo{
+  font-size:1.1rem;color:var(--white);
+  text-shadow:0 0 8px var(--green),2px 2px 0 #000;
   font-family:'Press Start 2P',monospace;
 }
-.game-healthbox::before{
-  content:'/* vital.sys */';position:absolute;top:-0.65rem;left:0.6rem;
-  font-size:0.38rem;color:var(--bg);background:var(--green);padding:0.12rem 0.4rem;
+.hud-grenades{
+  font-size:0.5rem;color:var(--yellow);
+  margin-top:0.3rem;
 }
-.game-healthbox.hit{ animation:hboxShake 0.28s; }
-.game-healthbox.critical{
-  border-color:var(--red);
-  box-shadow:0 0 18px rgba(255,0,0,0.6), 4px 4px 0 var(--pink);
+
+/* Health — centro, estilo DOOM */
+.hud-health-wrap{
+  flex:0 0 220px;
+  text-align:center;position:relative;
+  background:rgba(0,0,0,0.7);
+  border:2px solid var(--green);
+  padding:0.35rem 0.6rem 0.4rem;
+  box-shadow:0 0 12px rgba(57,255,20,0.3);
+}
+.hud-health-wrap.critical{
+  border-color:#ff2222;
+  box-shadow:0 0 20px rgba(255,0,0,0.7);
   animation:hboxPulse 0.6s ease-in-out infinite;
 }
-@keyframes hboxShake{
-  0%,100%{transform:translate(0,0)}
-  15%{transform:translate(-4px,2px)}
-  30%{transform:translate(4px,-2px)}
-  45%{transform:translate(-3px,-3px)}
-  60%{transform:translate(3px,2px)}
-  80%{transform:translate(-1px,1px)}
-}
 @keyframes hboxPulse{
-  0%,100%{box-shadow:0 0 18px rgba(255,0,0,0.6), 4px 4px 0 var(--pink)}
-  50%{box-shadow:0 0 30px rgba(255,0,0,0.95), 4px 4px 0 var(--pink)}
+  0%,100%{box-shadow:0 0 20px rgba(255,0,0,0.7)}
+  50%{box-shadow:0 0 35px rgba(255,0,0,1)}
 }
-.hbox-row{
-  display:flex;align-items:center;justify-content:space-between;
-  font-size:0.5rem;color:var(--green);text-shadow:0 0 5px var(--green);
-  margin-bottom:0.4rem;
+.hud-health-wrap.hit{animation:hboxShake 0.28s}
+@keyframes hboxShake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-5px)}
+  40%{transform:translateX(5px)}
+  60%{transform:translateX(-3px)}
+  80%{transform:translateX(2px)}
 }
-.hbox-row .hb-num{
-  color:var(--white);font-size:0.7rem;
-  text-shadow:0 0 6px var(--green),2px 2px 0 var(--bg);
+.hud-health-label{
+  font-size:0.35rem;color:var(--green);letter-spacing:0.15em;
+  margin-bottom:0.2rem;
 }
-.game-healthbox.critical .hb-num{color:var(--red);text-shadow:0 0 8px var(--red),2px 2px 0 var(--bg)}
-.hbox-bar{
-  height:20px;background:#1a0505;
-  border:2px solid var(--bg);
+.hud-health-bar{
+  height:16px;background:#1a0505;
+  border:1px solid #333;position:relative;overflow:hidden;
+}
+.hud-health-fill{
+  position:absolute;top:0;left:0;height:100%;
+  background:linear-gradient(90deg,#0a4b05,var(--green) 40%,var(--yellow) 85%);
+  box-shadow:0 0 10px var(--green);
+  transition:width 0.2s;
+}
+.hud-health-wrap.critical .hud-health-fill{
+  background:linear-gradient(90deg,#5a0000,#ff2222 60%,#ffaaaa);
+  box-shadow:0 0 14px #ff0000;
+}
+.hud-health-ghost{
+  position:absolute;top:0;left:0;height:100%;
+  background:rgba(255,60,60,0.5);
+  transition:width 0.5s ease-out 0.15s;
+}
+.hud-health-num{
+  font-size:1.2rem;color:var(--white);
+  text-shadow:0 0 6px var(--green),2px 2px 0 #000;
+  margin-top:0.2rem;
+}
+.hud-health-wrap.critical .hud-health-num{
+  color:#ff4444;text-shadow:0 0 10px #ff0000,2px 2px 0 #000;
+}
+/* Blood drip effect when health low */
+.hud-blood-drip{
+  position:absolute;top:100%;left:0;right:0;height:0;
+  background:linear-gradient(180deg,rgba(180,0,0,0.7),transparent);
+  transition:height 0.3s;pointer-events:none;
+}
+.hud-health-wrap.critical .hud-blood-drip{
+  height:30px;
+}
+
+/* Sprint bar */
+.hud-right-panel{
+  min-width:130px;text-align:right;
+}
+.hud-sprint-wrap{margin-bottom:0.4rem}
+.hud-sprint-label{
+  font-size:0.32rem;color:var(--cyan);
+  letter-spacing:0.1em;margin-bottom:0.15rem;
+}
+.hud-sprint-bar{
+  height:6px;background:#111;border:1px solid var(--cyan);
   position:relative;overflow:hidden;
 }
-.hbox-fill{
-  position:absolute;top:0;left:0;height:100%;
-  background:linear-gradient(90deg,#0a4b05,var(--green) 40%,var(--yellow) 80%,#ffffff);
-  box-shadow:0 0 14px var(--green);
-  transition:width 0.22s cubic-bezier(0.4,0,0.2,1);
+.hud-sprint-fill{
+  position:absolute;top:0;left:0;height:100%;width:100%;
+  background:var(--cyan);
+  box-shadow:0 0 4px var(--cyan);
+  transition:width 0.15s;
 }
-.game-healthbox.critical .hbox-fill{
-  background:linear-gradient(90deg,#5a0000,var(--red) 60%,#ffaaaa);
-  box-shadow:0 0 18px var(--red);
+
+/* Perks compradas */
+.hud-perks{
+  display:flex;gap:0.3rem;justify-content:flex-end;flex-wrap:wrap;
 }
-.hbox-ghost{
-  position:absolute;top:0;left:0;height:100%;
-  background:rgba(255,80,80,0.55);
-  transition:width 0.55s ease-out 0.18s;
+.hud-perk-icon{
+  width:24px;height:24px;
+  border-radius:4px;
+  border:1px solid var(--pink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.5rem;
+  background:rgba(255,42,109,0.2);
+  box-shadow:0 0 6px rgba(255,42,109,0.4);
+  text-shadow:0 0 4px var(--pink);
 }
-.hbox-notches{
-  position:absolute;top:0;left:0;right:0;bottom:0;
-  display:flex;pointer-events:none;
+
+/* Top corners */
+.hud-wave{
+  background:rgba(0,0,0,0.7);
+  border:2px solid var(--red);
+  padding:0.4rem 0.7rem;
+  font-size:0.7rem;color:var(--red);
+  text-shadow:0 0 8px var(--red);
+  box-shadow:0 0 10px rgba(255,0,0,0.3);
 }
-.hbox-notches span{
-  flex:1;border-right:1px solid rgba(0,0,0,0.45);
-}
-.hbox-notches span:last-child{border-right:none}
-.hbox-scan{
-  position:absolute;top:0;left:0;right:0;bottom:0;
-  background:repeating-linear-gradient(0deg,rgba(0,0,0,0.18) 0px,rgba(0,0,0,0.18) 1px,transparent 1px,transparent 3px);
-  pointer-events:none;
+.hud-wave-lbl{font-size:0.35rem;color:var(--yellow)}
+.hud-points{
+  background:rgba(0,0,0,0.7);
+  border:2px solid var(--yellow);
+  padding:0.4rem 0.7rem;
+  font-size:0.7rem;color:var(--yellow);
+  text-shadow:0 0 6px var(--yellow);
+  box-shadow:0 0 8px rgba(255,230,0,0.2);
 }
 
 /* Indicador de daño direccional */
 .dmg-indicator{
   position:absolute;left:50%;top:50%;
-  width:0;height:0;
-  pointer-events:none;
-  opacity:0;
+  width:0;height:0;pointer-events:none;opacity:0;
 }
-.dmg-indicator.show{
-  animation:dmgInd 0.7s ease-out forwards;
-}
+.dmg-indicator.show{animation:dmgInd 0.7s ease-out forwards}
 .dmg-indicator::before{
   content:'';position:absolute;
-  left:-40px;top:-140px;
-  width:80px;height:100px;
+  left:-40px;top:-140px;width:80px;height:100px;
   background:linear-gradient(180deg,rgba(255,0,0,0.85),transparent);
   clip-path:polygon(50% 0,100% 100%,0 100%);
 }
@@ -770,14 +826,11 @@ footer{
 .game-prompt{
   position:absolute;left:50%;bottom:22%;
   transform:translateX(-50%);
-  background:rgba(0,0,0,0.75);
+  background:rgba(0,0,0,0.8);
   border:2px solid var(--yellow);
-  padding:0.5rem 0.8rem;
-  font-size:0.55rem;
-  color:var(--yellow);
-  text-shadow:0 0 6px var(--yellow);
-  white-space:nowrap;
-  min-height:1.3rem;
+  padding:0.5rem 0.8rem;font-size:0.55rem;
+  color:var(--yellow);text-shadow:0 0 6px var(--yellow);
+  white-space:nowrap;min-height:1.3rem;
 }
 .game-prompt:empty{display:none}
 
@@ -785,24 +838,9 @@ footer{
   position:absolute;top:25%;left:50%;
   transform:translateX(-50%);
   font-family:'Press Start 2P',monospace;
-  font-size:1.6rem;
-  color:var(--red);
+  font-size:1.6rem;color:var(--red);
   text-shadow:3px 3px 0 var(--bg),0 0 18px var(--red),0 0 40px rgba(255,0,0,0.6);
-  letter-spacing:0.1em;
-  opacity:0;transition:opacity 0.4s;
-  pointer-events:none;
-}
-
-.game-controls{
-  position:absolute;bottom:1rem;left:1rem;
-  font-family:'VT323',monospace;
-  font-size:0.95rem;
-  color:var(--green);
-  text-shadow:0 0 4px var(--green);
-  background:rgba(0,0,0,0.5);
-  padding:0.3rem 0.6rem;
-  border-left:2px solid var(--green);
-  max-width:55%;
+  letter-spacing:0.1em;opacity:0;transition:opacity 0.4s;pointer-events:none;
 }
 
 /* Start + over screens */
@@ -2217,38 +2255,52 @@ footer{
     <div class="game-crosshair"><span></span></div>
     <div class="sniper-scope" id="sniperScope"></div>
     <div class="game-dmg-vignette" id="gameDmgVignette"></div>
-
-    <div class="game-top-left">
-      <div class="game-healthbox" id="gameHealthbox">
-        <div class="hbox-row"><span>VIDA</span><span class="hb-num"><span id="gameHealthNum">100</span>/100</span></div>
-        <div class="hbox-bar">
-          <div class="hbox-ghost" id="gameHealthGhost"></div>
-          <div class="hbox-fill" id="gameHealthBar"></div>
-          <div class="hbox-notches"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-          <div class="hbox-scan"></div>
-        </div>
-      </div>
-      <div class="game-stat"><span class="lbl">ZONA</span><span id="gameZone">LOBBY</span></div>
-    </div>
     <div class="dmg-indicator" id="gameDmgIndicator"></div>
-    <div class="game-top-right">
-      <div class="game-stat"><span class="lbl">PUNTOS</span><span id="gamePoints">500</span></div>
-      <div class="game-stat"><span class="lbl">OLEADA</span><span id="gameWave">1</span></div>
+
+    <!-- DOOM-style bottom bar -->
+    <div class="hud-bottom">
+      <!-- Arma + Munición (izquierda) -->
+      <div class="hud-weapon">
+        <div class="hud-weapon-name" id="gameWeapon">PISTOLA</div>
+        <div class="hud-ammo" id="gameAmmoDisplay">12 / 48</div>
+        <div class="hud-grenades">💣 <span id="gameGrenades">3</span></div>
+      </div>
+
+      <!-- Vida (centro) — estilo DOOM con barra gruesa y efecto sangre -->
+      <div class="hud-health-wrap" id="gameHealthbox">
+        <div class="hud-health-label">VIDA</div>
+        <div class="hud-health-bar">
+          <div class="hud-health-ghost" id="gameHealthGhost"></div>
+          <div class="hud-health-fill" id="gameHealthBar"></div>
+        </div>
+        <div class="hud-health-num" id="gameHealthNum">100</div>
+        <div class="hud-blood-drip" id="hudBloodDrip"></div>
+      </div>
+
+      <!-- Perks + Sprint (derecha) -->
+      <div class="hud-right-panel">
+        <div class="hud-sprint-wrap">
+          <div class="hud-sprint-label">SPRINT</div>
+          <div class="hud-sprint-bar"><div class="hud-sprint-fill" id="gameSprintBar"></div></div>
+        </div>
+        <div class="hud-perks" id="gamePerksDisplay"></div>
+      </div>
     </div>
-    <div class="game-bot-right">
-      <div class="game-stat"><span class="lbl">ARMA</span><span id="gameWeapon">PISTOLA</span></div>
-      <div class="game-stat"><span class="lbl">GRANADAS</span><span id="gameGrenades">3</span></div>
+
+    <!-- Top corners -->
+    <div class="game-top-left">
+      <div class="hud-wave"><span class="hud-wave-lbl">OLEADA</span> <span id="gameWave">1</span></div>
+    </div>
+    <div class="game-top-right">
+      <div class="hud-points"><span id="gamePoints">500</span> PTS</div>
     </div>
 
     <div class="game-prompt" id="gamePrompt"></div>
     <div class="game-wave-banner" id="gameWaveBanner">OLEADA 1</div>
-
     <div class="game-powerups" id="gamePowerups"></div>
     <div class="game-pickup-feed" id="gamePickupFeed"></div>
 
-    <div class="game-controls">
-      WASD movimiento · MOUSE camara · CLICK disparar · CLICK DER apuntar · SPACE saltar · E interactuar · R recargar · G granada · SHIFT correr · ESC pausa
-    </div>
+    <div class="game-hitflash" id="gameHitFlash"></div>
   </div>
 
   <div class="game-start-screen active" id="gameStartScreen">
@@ -3679,10 +3731,10 @@ window.addEventListener('popstate', () => {
         top.position.y = 4; g.add(top);
         return g;
       }
-      placeProp('arbol_grande', -16, 0, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
-      placeProp('arbol_grande',  16, 0, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
-      placeProp('arbol_grande', -16, 0, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
-      placeProp('arbol_grande',  16, 0, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande', -16, -1.5, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande',  16, -1.5, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande', -16, -1.5, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande',  16, -1.5, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
 
       // === ARBUSTOS ===
       function mkBush() {
@@ -3914,38 +3966,20 @@ window.addEventListener('popstate', () => {
       addInteriorProp('silla_madera',  -2.5, 0, 3.3, Math.PI, 0.9, makeSilla(), {x:0.5, y:0.95, z:0.5});
       addInteriorProp('mancha_sangre',  3, 0, -1, 0, 1.2, makeSangre());
 
-      // === RADIO INTERACTIVA (pulsa E para cambiar canción de Perky Mafia) ===
+      // === RADIO INTERACTIVA (solo modelo GLB 'radio.glb') ===
       {
         const radioGrp = new TH.Group();
-        // Cuerpo procedural (se puede reemplazar con radio_interactiva.glb)
-        const body = new TH.Mesh(new TH.BoxGeometry(0.6, 0.35, 0.3), woodDark);
-        body.position.y = 0.175; radioGrp.add(body);
-        const dial = new TH.Mesh(new TH.CircleGeometry(0.08, 12),
-          new TH.MeshLambertMaterial({ color: 0xffcc22, emissive: 0x884400, emissiveIntensity: 0.5 }));
-        dial.position.set(-0.15, 0.18, 0.16); radioGrp.add(dial);
-        const antenna = new TH.Mesh(new TH.CylinderGeometry(0.01, 0.01, 0.6, 4), ironMat);
-        antenna.position.set(0.25, 0.55, -0.1); antenna.rotation.z = -0.2; radioGrp.add(antenna);
-        const led = new TH.Mesh(new TH.SphereGeometry(0.025, 6, 4),
-          new TH.MeshBasicMaterial({ color: 0xff2222 }));
-        led.position.set(0.15, 0.18, 0.16); radioGrp.add(led);
-        radioGrp.position.set(-2.5, 0.88, 1.7); // base en superficie de la mesa
+        radioGrp.position.set(-2.5, 0.88, 1.7);
         scene.add(radioGrp);
-        // Collider pequeño
         walls.push({
           min: new TH.Vector3(-2.8, 0.88, 1.55),
           max: new TH.Vector3(-2.2, 1.25, 1.85),
           mesh: radioGrp, isDoor: false
         });
-        // Swap GLB — el modelo se llama 'radio.glb'
         swapToGLB(radioGrp, 'radio', 0.4);
-        // Exponer como objeto global para el sistema de interacción
         window._radioInteractive = {
           group: radioGrp,
           pos: new TH.Vector3(-2.5, 1.0, 1.7),
-          led: led,
-          playing: false,
-          audio: null,
-          currentTrack: -1,
         };
       }
 
@@ -5627,6 +5661,77 @@ window.addEventListener('popstate', () => {
     }
   }
 
+  // ===== GAMEPAD (mando bluetooth/USB) =====
+  let _gpConnected = false;
+  const _gpState = { shoot:false, ads:false, sprint:false, prevButtons:{} };
+  function _gpPressed(gp, idx) {
+    return gp.buttons[idx] && gp.buttons[idx].pressed;
+  }
+  function _gpJustPressed(gp, idx) {
+    return _gpPressed(gp, idx) && !_gpState.prevButtons[idx];
+  }
+  function updateGamepad(dt) {
+    const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+    let gp = null;
+    for (let i = 0; i < gamepads.length; i++) {
+      if (gamepads[i]) { gp = gamepads[i]; break; }
+    }
+    if (!gp) { _gpConnected = false; return; }
+    if (!_gpConnected) { _gpConnected = true; showPickup('MANDO CONECTADO'); }
+
+    // === Sticks ===
+    const deadzone = 0.15;
+    // Left stick → movimiento
+    const lx = Math.abs(gp.axes[0]) > deadzone ? gp.axes[0] : 0;
+    const ly = Math.abs(gp.axes[1]) > deadzone ? gp.axes[1] : 0;
+    keys['KeyW'] = ly < -0.3;
+    keys['KeyS'] = ly > 0.3;
+    keys['KeyA'] = lx < -0.3;
+    keys['KeyD'] = lx > 0.3;
+    // Right stick → cámara
+    const rx = Math.abs(gp.axes[2]) > deadzone ? gp.axes[2] : 0;
+    const ry = Math.abs(gp.axes[3]) > deadzone ? gp.axes[3] : 0;
+    const camSens = 2.5;
+    player.yaw -= rx * camSens * dt;
+    player.pitch -= ry * camSens * dt;
+    const lim = Math.PI/2 - 0.02;
+    if (player.pitch > lim) player.pitch = lim;
+    if (player.pitch < -lim) player.pitch = -lim;
+
+    // === Botones ===
+    // RT (7) = disparar
+    const shooting = _gpPressed(gp, 7);
+    if (shooting) { if (WEAPONS[currentWeapon].isAuto) tryShoot(); }
+    if (_gpJustPressed(gp, 7) && !WEAPONS[currentWeapon].isAuto) tryShoot();
+    // LT (6) = ADS
+    isAds = _gpPressed(gp, 6);
+    // A (0) = saltar
+    if (_gpJustPressed(gp, 0)) tryJump();
+    // B (1) = melee
+    if (_gpJustPressed(gp, 1)) quickMelee();
+    // X (2) = recargar
+    if (_gpJustPressed(gp, 2)) tryReload();
+    // Y (3) = interactuar
+    if (_gpJustPressed(gp, 3)) tryInteract();
+    // LB (4) = granada
+    if (_gpJustPressed(gp, 4)) throwGrenade();
+    // RB (5) = cambiar arma (siguiente)
+    if (_gpJustPressed(gp, 5)) {
+      const inv = player.inventory;
+      const idx = inv.indexOf(currentWeapon);
+      currentWeapon = inv[(idx + 1) % inv.length];
+      buildWeaponMesh();
+      updateHUD();
+    }
+    // L3 (10) = sprint toggle
+    keys['ShiftLeft'] = _gpPressed(gp, 10);
+
+    // Guardar estado previo
+    const prev = {};
+    for (let i = 0; i < gp.buttons.length; i++) prev[i] = _gpPressed(gp, i);
+    _gpState.prevButtons = prev;
+  }
+
   function updateWeaponAnim(dt) {
     if (!weaponMesh || !weaponBasePos) return;
     weaponKickT = Math.max(0, weaponKickT - dt*7);
@@ -6365,7 +6470,17 @@ window.addEventListener('popstate', () => {
     if (keys['KeyD']) mv.add(rgt);
     if (keys['KeyA']) mv.sub(rgt);
     if (mv.lengthSq() > 0) mv.normalize();
-    const sprinting = keys['ShiftLeft'] || keys['ShiftRight'] || persistentBuffs.redbull;
+    // Stamina system
+    if (!player.stamina && player.stamina !== 0) player.stamina = 100;
+    const wantSprint = keys['ShiftLeft'] || keys['ShiftRight'];
+    const moving = mv.lengthSq() > 0;
+    const canSprint = player.stamina > 0 && moving;
+    const sprinting = (wantSprint && canSprint) || persistentBuffs.redbull;
+    if (wantSprint && canSprint && !persistentBuffs.redbull) {
+      player.stamina = Math.max(0, player.stamina - 30 * dt); // ~3.3s de sprint completo
+    } else {
+      player.stamina = Math.min(100, player.stamina + 20 * dt); // ~5s de recarga completa
+    }
     let sp = player.speed * (sprinting ? player.sprintMult : 1) * (isAds ? 0.55 : 1);
     if (activePowerups.speed) sp *= 1.45;
     if (persistentBuffs.cafelito) sp *= 1.35;
@@ -7366,25 +7481,72 @@ window.addEventListener('popstate', () => {
     _hudDirty = true;
   }
   function _flushHUD() {
-    // La barra de vida SIEMPRE se actualiza (no respeta el dirty flag) para
-    // garantizar que refleja el daño en tiempo real.
-    if (healthBar) {
-      const pct = Math.max(0, Math.min(100, (player.health / player.maxHealth) * 100));
-      healthBar.style.width = pct + '%';
+    // === VIDA (siempre cada frame) ===
+    const pct = Math.max(0, Math.min(100, (player.health / player.maxHealth) * 100));
+    if (healthBar) healthBar.style.width = pct + '%';
+    const hNum = _dom('gameHealthNum');
+    if (hNum) hNum.textContent = Math.ceil(player.health);
+    // Ghost bar (baja más lento que la vida real)
+    const ghost = _dom('gameHealthGhost');
+    if (ghost) {
+      const gPct = parseFloat(ghost.style.width) || 100;
+      const target = pct;
+      if (gPct > target) ghost.style.width = Math.max(target, gPct - 0.5) + '%';
+      else ghost.style.width = target + '%';
     }
+    // Critical state (< 30% vida)
+    const hWrap = _dom('gameHealthbox');
+    if (hWrap) {
+      if (pct < 30) hWrap.classList.add('critical');
+      else hWrap.classList.remove('critical');
+    }
+
+    // === SPRINT BAR ===
+    const sprintBar = _dom('gameSprintBar');
+    if (sprintBar) {
+      if (!player.stamina && player.stamina !== 0) player.stamina = 100;
+      sprintBar.style.width = player.stamina + '%';
+    }
+
+    // === AMMO DISPLAY (nuevo formato) ===
+    const ammoEl = _dom('gameAmmoDisplay');
+    const w = WEAPONS[currentWeapon];
+    if (ammoEl && w) {
+      if (w.type === 'melee') {
+        ammoEl.textContent = '∞';
+      } else {
+        initAmmoFor(currentWeapon);
+        const a = player.ammo[currentWeapon];
+        ammoEl.textContent = player.reloading ? '...' : (a.mag + ' / ' + a.reserve);
+      }
+    }
+
     if (!_hudDirty) return;
     _hudDirty = false;
-    pointsEl.textContent   = player.points;
-    waveEl.textContent     = wave || 1;
-    const w = WEAPONS[currentWeapon];
-    let label = w.name;
-    if (w.type !== 'melee') {
-      initAmmoFor(currentWeapon);
-      const a = player.ammo[currentWeapon];
-      label += '  ' + (player.reloading ? '... RECARGANDO ...' : (a.mag + ' / ' + a.reserve));
+
+    // === WEAPON NAME ===
+    if (weaponEl && w) weaponEl.textContent = w.name;
+    // === POINTS, WAVE, GRENADES ===
+    if (pointsEl) pointsEl.textContent = player.points;
+    if (waveEl) waveEl.textContent = wave || 1;
+    if (grenadesEl) grenadesEl.textContent = player.grenades;
+
+    // === PERKS COMPRADAS ===
+    const perksEl = _dom('gamePerksDisplay');
+    if (perksEl) {
+      const PERK_ICONS = {
+        redbull:'⚡', katxorro:'🔥', chupito:'🦘', mojito:'🛡',
+        cafelito:'☕', cubata:'🍸', absenta:'💚', bloody:'🩸',
+        chartreuse:'💀', quintos:'🍺', chuchuwa:'💥'
+      };
+      let html = '';
+      for (const id in persistentBuffs) {
+        if (persistentBuffs[id] && PERK_ICONS[id]) {
+          html += '<div class="hud-perk-icon" title="'+id+'">'+PERK_ICONS[id]+'</div>';
+        }
+      }
+      perksEl.innerHTML = html;
     }
-    weaponEl.textContent   = label;
-    grenadesEl.textContent = player.grenades;
   }
 
   // ===== LOOP =====
@@ -7396,6 +7558,7 @@ window.addEventListener('popstate', () => {
     if (paused) { renderer.render(scene, camera); return; }
     _frameCount++;
 
+    updateGamepad(dt);
     updatePlayer(dt);
     updateZombies(dt);
     updateSpitters(dt);
