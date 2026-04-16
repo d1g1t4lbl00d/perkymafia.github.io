@@ -2617,6 +2617,135 @@ window.addEventListener('popstate', () => {
   // ej: persistentBuffs.juice = true;
   const persistentBuffs = {};
 
+  // ===== HABILIDADES ACTIVAS DE BEBIDAS =====
+  // Cada bebida comprada desbloquea un poder activo. Pulsa Q para usar el primero disponible.
+  const DRINK_ABILITIES = {
+    redbull:   { name:'DASH',         cd:12, fn:_abilDash },
+    katxorro:  { name:'FURIA',        cd:20, fn:_abilFuria },
+    chupito:   { name:'SALTO SISMICO',cd:18, fn:_abilSismo },
+    mojito:    { name:'ESCUDO',       cd:25, fn:_abilEscudo },
+    cafelito:  { name:'SLOWMO',       cd:30, fn:_abilSlowmo },
+    cubata:    { name:'ONDA',         cd:20, fn:_abilOnda },
+    absenta:   { name:'REGENERAR',    cd:22, fn:_abilRegen },
+    bloody:    { name:'VAMPIRO',      cd:28, fn:_abilVampiro },
+    chartreuse:{ name:'EJECUCION',    cd:15, fn:_abilEjecucion },
+    quintos:   { name:'BORRACHERA',   cd:25, fn:_abilBorrachera },
+    chuchuwa:  { name:'EXPLOSION',    cd:30, fn:_abilExplosion },
+  };
+  const _abilityCooldowns = {}; // drinkId → timestamp when ready
+  let _lastAbilityUsed = 0;
+
+  function useAbility() {
+    const now = performance.now() / 1000;
+    if (now - _lastAbilityUsed < 0.5) return; // prevent spam
+    for (const id in DRINK_ABILITIES) {
+      if (!persistentBuffs[id]) continue;
+      const cd = _abilityCooldowns[id] || 0;
+      if (now >= cd) {
+        const ab = DRINK_ABILITIES[id];
+        ab.fn();
+        _abilityCooldowns[id] = now + ab.cd;
+        _lastAbilityUsed = now;
+        showPickup('⚡ ' + ab.name);
+        return;
+      }
+    }
+    showPickup('HABILIDADES EN COOLDOWN');
+  }
+
+  // === Implementaciones de habilidades ===
+  function _abilDash() {
+    // Teleport 6m hacia donde miras
+    const dir = new TH.Vector3();
+    camera.getWorldDirection(dir);
+    camera.position.x += dir.x * 6;
+    camera.position.z += dir.z * 6;
+  }
+  function _abilFuria() {
+    // x3 daño durante 5s
+    activePowerups.dmg = true;
+    setTimeout(() => { activePowerups.dmg = false; }, 5000);
+  }
+  function _abilSismo() {
+    // Salto + daño en área al caer
+    player.velY = 12;
+    player.onGround = false;
+    setTimeout(() => {
+      const pp = camera.position;
+      for (const z of zombies) {
+        if (!z.alive) continue;
+        const d = Math.hypot(z.pos.x - pp.x, z.pos.z - pp.z);
+        if (d < 6) {
+          z.health -= 200 * (1 - d/6);
+          z.flashTime = 0.2;
+          spawnBloodParticles(z.pos.x, z.pos.y + 1, z.pos.z, 6);
+          if (z.health <= 0) { addPoints(80); killZombie(z, false); }
+        }
+      }
+    }, 600);
+  }
+  function _abilEscudo() {
+    // Invencible 3s
+    const origDmg = damagePlayer;
+    window._shieldActive = true;
+    setTimeout(() => { window._shieldActive = false; }, 3000);
+  }
+  function _abilSlowmo() {
+    // Zombis al 30% velocidad 4s
+    zombies.forEach(z => { if (z.alive) z._origSpeed = z.speed; z.speed *= 0.3; });
+    setTimeout(() => {
+      zombies.forEach(z => { if (z._origSpeed) { z.speed = z._origSpeed; z._origSpeed = null; } });
+    }, 4000);
+  }
+  function _abilOnda() {
+    // Empujar todos los zombis lejos
+    const pp = camera.position;
+    for (const z of zombies) {
+      if (!z.alive) continue;
+      const dx = z.pos.x - pp.x, dz = z.pos.z - pp.z;
+      const d = Math.hypot(dx, dz);
+      if (d < 10 && d > 0.1) {
+        z.pos.x += (dx/d) * 5;
+        z.pos.z += (dz/d) * 5;
+      }
+    }
+  }
+  function _abilRegen() {
+    // Curar 60% de vida máxima
+    player.health = Math.min(player.maxHealth, player.health + player.maxHealth * 0.6);
+    updateHUD();
+  }
+  function _abilVampiro() {
+    // Curar 50% de vida
+    player.health = Math.min(player.maxHealth, player.health + player.maxHealth * 0.5);
+    updateHUD();
+  }
+  function _abilEjecucion() {
+    // Matar al zombi más cercano instantáneamente
+    const pp = camera.position;
+    let best = null, bestD = 999;
+    for (const z of zombies) {
+      if (!z.alive) continue;
+      const d = z.pos.distanceTo(pp);
+      if (d < bestD) { bestD = d; best = z; }
+    }
+    if (best) {
+      best.health = -1;
+      spawnBloodParticles(best.pos.x, best.pos.y + 1.2, best.pos.z, 15);
+      addPoints(100);
+      killZombie(best, true);
+    }
+  }
+  function _abilBorrachera() {
+    // Zombis confundidos 5s (caminan en círculos)
+    zombies.forEach(z => { if (z.alive) z._confused = performance.now() + 5000; });
+  }
+  function _abilExplosion() {
+    // Mini-nuke alrededor del jugador (radio 7m)
+    const pp = camera.position;
+    explode(new TH.Vector3(pp.x, 0, pp.z));
+  }
+
   // ===== ARMAS =====
   // mag = munición en el cargador | reserve = munición de reserva | reload = ms de recarga
   const WEAPONS = {
@@ -5206,6 +5335,7 @@ window.addEventListener('popstate', () => {
       if (e.code === 'KeyG') throwGrenade();
       if (e.code === 'KeyR') tryReload();
       if (e.code === 'KeyF') quickMelee();
+      if (e.code === 'KeyQ') useAbility();
       if (e.code === 'Space') { tryJump(); e.preventDefault(); }
       // cambiar arma
       if (/^Digit[1-9]$/.test(e.code)) {
@@ -5715,6 +5845,8 @@ window.addEventListener('popstate', () => {
     if (_gpJustPressed(gp, 3)) tryInteract();
     // LB (4) = granada
     if (_gpJustPressed(gp, 4)) throwGrenade();
+    // D-pad up (12) = habilidad activa (Q)
+    if (_gpJustPressed(gp, 12)) useAbility();
     // RB (5) = cambiar arma (siguiente)
     if (_gpJustPressed(gp, 5)) {
       const inv = player.inventory;
@@ -5810,7 +5942,13 @@ window.addEventListener('popstate', () => {
     tank:    { skin:0x3a3a1a, cloth:0x1a1a0a, hpMult:3.5,  spdMult:0.65, scale:1.35, atkDmg:22, points:150,loot:0.35 },
     runner:  { skin:0x6a2a2a, cloth:0x2a1a1a, hpMult:0.9,  spdMult:1.5,  scale:1,    atkDmg:14, points:90, loot:0.2  },
     spitter: { skin:0x2a5a5a, cloth:0x0a2a2a, hpMult:0.8,  spdMult:0.9,  scale:1,    atkDmg:18, points:110,loot:0.3, ranged:true },
+    // === JEFES (cada 5 rondas) ===
+    boss_turista: { skin:0xffccaa, cloth:0xff4444, hpMult:20, spdMult:0.7, scale:2.2, atkDmg:40, points:1000, loot:1.0 },
+    boss_guiri:   { skin:0xeeccbb, cloth:0x2244ff, hpMult:15, spdMult:0.9, scale:1.9, atkDmg:30, points:1200, loot:1.0, ranged:true },
+    boss_antidis: { skin:0x333333, cloth:0x111122, hpMult:25, spdMult:1.1, scale:2.0, atkDmg:50, points:1500, loot:1.0 },
   };
+  const BOSS_ROTATION = ['boss_turista', 'boss_guiri', 'boss_antidis'];
+  let _bossToSpawn = null;
 
   function pickZombieType() {
     const roll = Math.random();
@@ -5831,11 +5969,14 @@ window.addEventListener('popstate', () => {
   // Blanco = sin teñir (textura tal cual). Tonos sutiles para distinguir tipos sin
   // matar las texturas originales del modelo.
   const ZOMBIE_TINTS = {
-    normal:  0xffffff, // blanco = textura original sin tintar
-    fast:    0xffaaaa, // ligeramente rojizo
-    tank:    0xaaaacc, // ligeramente azulado oscuro
-    spitter: 0x88ffcc, // verdoso turquesa
-    runner:  0xffccaa, // ligeramente naranja
+    normal:  0xffffff,
+    fast:    0xffaaaa,
+    tank:    0xaaaacc,
+    spitter: 0x88ffcc,
+    runner:  0xffccaa,
+    boss_turista: 0xff6666,
+    boss_guiri:   0x6666ff,
+    boss_antidis: 0x444444,
   };
 
   function preloadZombieModels() {
@@ -5887,14 +6028,14 @@ window.addEventListener('popstate', () => {
     return clone;
   }
 
-  function spawnZombie() {
+  function spawnZombie(forceType) {
     // elegir un spawner activo aleatorio (de salas desbloqueadas)
     const activeSpawners = spawners.filter(s => s.active);
     if (!activeSpawners.length) return;
     const sp = activeSpawners[Math.floor(Math.random()*activeSpawners.length)];
     sp.pulseT = 0;
 
-    const typeName = pickZombieType();
+    const typeName = forceType || pickZombieType();
     const type = ZOMBIE_TYPES[typeName];
 
     const grp = new TH.Group();
@@ -5916,15 +6057,19 @@ window.addEventListener('popstate', () => {
       // Clonar respetando skinning
       const cloned = cloneSkinned(src.scene);
       // Mantener las texturas originales del GLB. Para diferenciar tipos de zombi,
-      // clonamos los materiales y aplicamos un TINTE de color según el tipo.
-      // Material clonado por instancia para que el tinte no afecte a otros zombis.
+      // Materiales cacheados por tipo (evita clonar material por cada zombi)
       const tintColor = ZOMBIE_TINTS[typeName] || ZOMBIE_TINTS.normal;
+      if (!window._zombieMatCache) window._zombieMatCache = {};
       cloned.traverse(o => {
         if (o.isMesh && o.material) {
           const matSrc = Array.isArray(o.material) ? o.material[0] : o.material;
-          const matClone = matSrc.clone();
-          if (matClone.color) matClone.color.setHex(tintColor);
-          o.material = matClone;
+          const cacheKey = typeName + '_' + (matSrc.uuid || 'default');
+          if (!window._zombieMatCache[cacheKey]) {
+            const matClone = matSrc.clone();
+            if (matClone.color) matClone.color.setHex(tintColor);
+            window._zombieMatCache[cacheKey] = matClone;
+          }
+          o.material = window._zombieMatCache[cacheKey];
         }
       });
       // Normalizar escala base (~1.8m de alto)
@@ -6014,7 +6159,16 @@ window.addEventListener('popstate', () => {
         if (z.pos.distanceTo(pp) < 20) playGrowl();
       }
 
-      const dx = pp.x - z.pos.x, dz = pp.z - z.pos.z;
+      let dx = pp.x - z.pos.x, dz = pp.z - z.pos.z;
+      // Confusión: zombi camina en dirección aleatoria
+      if (z._confused && performance.now() < z._confused) {
+        if (!z._confAngle) z._confAngle = Math.random() * Math.PI * 2;
+        z._confAngle += 0.02;
+        dx = Math.cos(z._confAngle) * 3;
+        dz = Math.sin(z._confAngle) * 3;
+      } else {
+        z._confused = 0;
+      }
       const dist = Math.hypot(dx, dz);
       const nx = dist > 0.001 ? dx/dist : 0;
       const nz = dist > 0.001 ? dz/dist : 0;
@@ -6029,7 +6183,7 @@ window.addEventListener('popstate', () => {
       }
 
       // Ocultar zombis lejanos (más allá del fog) para ahorrar render + skinning
-      if (dist > 38) {
+      if (dist > 30) {
         if (z.group.visible) z.group.visible = false;
       } else if (!z.group.visible) {
         z.group.visible = true;
@@ -6043,7 +6197,7 @@ window.addEventListener('popstate', () => {
         // === SEPARACIÓN ENTRE ZOMBIS (evita que se solapen) ===
         // OPTIMIZACIÓN: solo calcular si zombi está CERCA del jugador (visible).
         // Para zombis lejos no se nota si se solapan.
-        if (dist < 25) {
+        if (dist < 15) {
           const minDist = 0.9;
           for (let j = 0; j < zombies.length; j++) {
             if (j === i) continue;
@@ -6091,7 +6245,7 @@ window.addEventListener('popstate', () => {
       // === MIXER: actualizar SIEMPRE cada frame (incluso atacando o lejos) ===
       // Si solo lo actualizamos cuando se mueve, hay tirones al pararse a atacar.
       // El factor de velocidad lo escalamos suavemente, no por dist.
-      if (z.mixer && dist < 35) {
+      if (z.mixer && dist < 20) {
         const animSpeed = (dist > 1.35)
           ? Math.max(0.6, z.speed * 1.4)   // moviéndose: ritmo según velocidad
           : 0.7;                            // parado/atacando: ritmo lento pero no congelado
@@ -6402,6 +6556,7 @@ window.addEventListener('popstate', () => {
 
   // ===== PLAYER =====
   function damagePlayer(amount, sourcePos) {
+    if (window._shieldActive) return; // escudo activo — inmune
     player.health -= amount;
     player.lastDmg = performance.now();
     const now = performance.now();
@@ -7371,9 +7526,19 @@ window.addEventListener('popstate', () => {
   function startWave() {
     wave++;
     zombiesToSpawn = 8 + Math.floor(wave * 3.2);
-    maxAliveAtOnce = Math.min(6 + Math.floor(wave*1.4), 20);
+    maxAliveAtOnce = Math.min(6 + Math.floor(wave*1.4), 16);
     waveBreakUntil = 0;
-    banner.textContent = 'OLEADA ' + wave;
+    // Boss cada 5 rondas
+    if (wave % 5 === 0) {
+      const bossIdx = Math.floor((wave / 5 - 1) % BOSS_ROTATION.length);
+      _bossToSpawn = BOSS_ROTATION[bossIdx];
+      banner.textContent = '☠ JEFE: OLEADA ' + wave + ' ☠';
+      banner.style.color = '#ff2222';
+    } else {
+      _bossToSpawn = null;
+      banner.textContent = 'OLEADA ' + wave;
+      banner.style.color = '';
+    }
     banner.style.opacity = '1';
     setTimeout(() => { banner.style.opacity = '0'; }, 2400);
     updateHUD();
@@ -7381,6 +7546,11 @@ window.addEventListener('popstate', () => {
 
   function updateWaves() {
     const now = performance.now();
+    // Spawnar jefe al inicio de la ronda
+    if (_bossToSpawn && zombiesAlive < maxAliveAtOnce) {
+      spawnZombie(_bossToSpawn);
+      _bossToSpawn = null;
+    }
     if (zombiesToSpawn > 0 && zombiesAlive < maxAliveAtOnce && now > nextSpawnTime) {
       spawnZombie();
       zombiesToSpawn--;
