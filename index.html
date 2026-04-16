@@ -5198,19 +5198,24 @@ window.addEventListener('popstate', () => {
   }
 
   // ===== PARTÍCULAS DE SANGRE =====
-  // Sistema simple de partículas reutilizable. Pool fijo para no crear objetos.
   const _bloodGeo = new TH.SphereGeometry(0.06, 4, 3);
   const _bloodMat = new TH.MeshBasicMaterial({ color: 0xcc0018, transparent: true, opacity: 1 });
   const _bloodParticles = [];
   const _BLOOD_POOL_SIZE = 40;
-  for (let i = 0; i < _BLOOD_POOL_SIZE; i++) {
-    const m = new TH.Mesh(_bloodGeo, _bloodMat.clone());
-    m.visible = false;
-    scene.add(m);
-    _bloodParticles.push({ mesh: m, vel: new TH.Vector3(), life: 0, maxLife: 0 });
+  let _bloodPoolReady = false;
+  function _ensureBloodPool() {
+    if (_bloodPoolReady) return;
+    _bloodPoolReady = true;
+    for (let i = 0; i < _BLOOD_POOL_SIZE; i++) {
+      const m = new TH.Mesh(_bloodGeo, _bloodMat.clone());
+      m.visible = false;
+      scene.add(m);
+      _bloodParticles.push({ mesh: m, vel: new TH.Vector3(), life: 0, maxLife: 0 });
+    }
   }
   let _activeBloodCount = 0;
   function spawnBloodParticles(x, y, z, count) {
+    _ensureBloodPool();
     count = count || 8;
     let spawned = 0;
     for (let i = 0; i < _bloodParticles.length && spawned < count; i++) {
