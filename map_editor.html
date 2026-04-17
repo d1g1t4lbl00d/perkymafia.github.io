@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Raval Simulator — Editor 3D de Mapa</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111;color:#eee;font-family:'Segoe UI',system-ui,sans-serif;display:flex;height:100vh;overflow:hidden}
+#viewport{flex:1;position:relative}
+canvas{display:block;width:100%;height:100%}
+#panel{width:320px;background:#1a1a1e;overflow-y:auto;border-left:2px solid #ff2a6d;display:flex;flex-direction:column;font-size:12px}
+.ps{padding:10px 14px;border-bottom:1px solid #2a2a30}
+h1{font-size:14px;color:#ff2a6d;text-align:center;padding:10px 0}
+h2{font-size:11px;color:#39ff14;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.tb{padding:6px 2px;background:#222;color:#999;border:1px solid #333;font-size:9px;cursor:pointer;text-align:center;border-radius:3px;line-height:1.2}
+.tb:hover{background:#333;color:#fff}.tb.on{background:#ff2a6d;color:#fff;border-color:#ff2a6d}
+.tb .i{font-size:16px;display:block;margin-bottom:1px}
+.opts{display:none}.opts.show{display:block}
+label{font-size:10px;color:#999;display:flex;align-items:center;gap:6px;margin:4px 0}
+label .l{flex:0 0 70px;text-align:right}
+select,input[type=number],input[type=text]{flex:1;padding:3px 6px;background:#111;color:#fff;border:1px solid #444;font-family:inherit;font-size:11px;border-radius:2px}
+.btn{padding:7px 10px;border:none;font-family:inherit;font-size:11px;cursor:pointer;border-radius:3px;width:100%;margin-top:4px;font-weight:600}
+.bg{background:#39ff14;color:#000}.bp{background:#ff2a6d;color:#fff}.by{background:#444;color:#ccc}
+textarea{width:100%;height:180px;background:#0a0a0a;color:#39ff14;border:1px solid #333;font-family:'Courier New',monospace;font-size:9px;padding:6px;resize:vertical;border-radius:2px}
+#hud{position:absolute;bottom:10px;left:10px;background:rgba(0,0,0,0.8);padding:8px 12px;border-radius:4px;font-size:11px;color:#39ff14;font-family:'Courier New',monospace}
+#st{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);padding:6px 16px;border-radius:4px;font-size:11px;color:#ffe600;pointer-events:none}
+.row{display:flex;gap:4px}
+.chk{display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;font-size:10px;color:#aaa}
+.chk input{accent-color:#ff2a6d}
+#ol{max-height:140px;overflow-y:auto;background:#111;border:1px solid #333;border-radius:2px;margin-top:4px}
+.oi{padding:3px 8px;font-size:9px;color:#aaa;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a}
+.oi:hover{background:#222;color:#fff}.oi .d{color:#f44;cursor:pointer;font-weight:bold}
+</style>
+</head>
+<body>
+<div id="viewport"><canvas id="c"></canvas><div id="hud">X:0 Z:0</div><div id="st">Click en la cuadrícula para colocar</div></div>
+<div id="panel">
+<h1>🗺️ EDITOR 3D</h1>
+<div class="ps"><h2>Herramientas</h2><div class="tools">
+<div class="tb on" data-t="wall"><span class="i">▬</span>Muro</div>
+<div class="tb" data-t="floor"><span class="i">⬜</span>Suelo</div>
+<div class="tb" data-t="door"><span class="i">🚪</span>Puerta</div>
+<div class="tb" data-t="spawner"><span class="i">💀</span>Spawn</div>
+<div class="tb" data-t="drink"><span class="i">🥤</span>Bebida</div>
+<div class="tb" data-t="trap"><span class="i">⚡</span>Trampa</div>
+<div class="tb" data-t="mystery"><span class="i">❓</span>M.Box</div>
+<div class="tb" data-t="pap"><span class="i">⬆</span>PAP</div>
+<div class="tb" data-t="light"><span class="i">💡</span>Luz</div>
+<div class="tb" data-t="select"><span class="i">🔍</span>Sel</div>
+</div></div>
+<div class="ps opts show" id="o_wall"><h2>Muro</h2>
+<label><span class="l">Altura</span><input type="number" id="wH" value="6" min="1" max="20" step="0.5"></label>
+<label><span class="l">Grosor</span><input type="number" id="wT" value="0.5" min="0.1" max="3" step="0.1"></label>
+<label><span class="l">Material</span><select id="wM"><option value="wBrick">Ladrillo</option><option value="fConcrete">Hormigón</option><option value="fMetal">Metal</option></select></label>
+<p style="font-size:9px;color:#666;margin-top:4px">Click inicio → Click fin</p></div>
+<div class="ps opts" id="o_floor"><h2>Suelo</h2>
+<label><span class="l">Material</span><select id="fM"><option value="fConcrete">Hormigón</option><option value="fBrick">Empedrado</option><option value="fGrass">Hierba</option></select></label></div>
+<div class="ps opts" id="o_door"><h2>Puerta</h2>
+<label><span class="l">Coste</span><input type="number" id="dC" value="1000" step="250"></label>
+<label><span class="l">Sala ID</span><input type="number" id="dR" value="1" min="0" max="20"></label>
+<label><span class="l">Label</span><input type="text" id="dL" value="PUERTA"></label></div>
+<div class="ps opts" id="o_drink"><h2>Bebida</h2><select id="dk">
+<option>redbull</option><option>katxorro</option><option>chupito</option><option>mojito</option>
+<option>cafelito</option><option>cubata</option><option>absenta</option><option>bloody</option>
+<option>chartreuse</option><option>quintos</option><option>chuchuwa</option></select></div>
+<div class="ps opts" id="o_trap"><h2>Trampa</h2><select id="tr">
+<option>electric</option><option>sawblade</option><option>spikes</option><option>tesla</option></select></div>
+<div class="ps opts" id="o_spawner"><h2>Spawner</h2>
+<label><span class="l">Room ID</span><input type="number" id="sR" value="0" min="0" max="20"></label></div>
+<div class="ps"><h2>Vista</h2>
+<label class="chk"><input type="checkbox" id="sRef" checked> Mapa referencia</label>
+<label class="chk"><input type="checkbox" id="sGrid" checked> Cuadrícula</label>
+<label><span class="l">Snap</span><input type="number" id="gS" value="1" min="0.5" max="5" step="0.5"></label></div>
+<div class="ps"><h2>Objetos (<span id="oc">0</span>)</h2><div id="ol"></div>
+<div class="row" style="margin-top:6px"><button class="btn by" onclick="undo()" style="flex:1">↩ Deshacer</button><button class="btn bp" onclick="clrAll()" style="flex:1">🗑 Borrar</button></div></div>
+<div class="ps"><h2>Exportar</h2><button class="btn bg" onclick="exp()">⬇ GENERAR CÓDIGO</button>
+<textarea id="co" readonly></textarea><button class="btn by" onclick="navigator.clipboard.writeText(document.getElementById('co').value)">📋 Copiar</button></div>
+<div class="ps"><div class="row"><button class="btn by" onclick="sav()" style="flex:1">💾 Guardar</button><button class="btn by" onclick="ld()" style="flex:1">📂 Cargar</button></div></div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const T=THREE,cv=document.getElementById('c'),sc=new T.Scene();
+sc.background=new T.Color(0x16161e);
+const cam=new T.PerspectiveCamera(60,1,0.5,500);
+cam.position.set(0,55,65);
+const ren=new T.WebGLRenderer({canvas:cv,antialias:true});
+ren.setPixelRatio(Math.min(devicePixelRatio,2));
+const ctl=new T.OrbitControls(cam,cv);
+ctl.target.set(0,0,45);ctl.maxPolarAngle=Math.PI*0.48;ctl.update();
+sc.add(new T.AmbientLight(0xffffff,0.5));
+const sun=new T.DirectionalLight(0xfff8e0,0.7);sun.position.set(30,80,40);sc.add(sun);
+// Grid
+const gg=new T.Group();sc.add(gg);
+{const g=new T.GridHelper(200,200,0x222233,0x1a1a25);g.position.y=0.01;gg.add(g);
+const g2=new T.GridHelper(200,20,0x333355,0x333355);g2.position.y=0.02;gg.add(g2);}
+// Ground for raycasting
+const gp=new T.Mesh(new T.PlaneGeometry(400,400).rotateX(-Math.PI/2),new T.MeshBasicMaterial({visible:false}));
+sc.add(gp);
+// Materials
+const M={
+wBrick:new T.MeshStandardMaterial({color:0x8b4513,roughness:0.9}),
+fConcrete:new T.MeshStandardMaterial({color:0x888888,roughness:0.8}),
+fMetal:new T.MeshStandardMaterial({color:0x666677,roughness:0.4,metalness:0.6}),
+fBrick:new T.MeshStandardMaterial({color:0x887766,roughness:0.8}),
+fGrass:new T.MeshStandardMaterial({color:0x2a5a1a,roughness:0.95}),
+ref:new T.MeshStandardMaterial({color:0x556688,transparent:true,opacity:0.25}),
+refF:new T.MeshStandardMaterial({color:0x445566,transparent:true,opacity:0.15}),
+door:new T.MeshStandardMaterial({color:0xffe600,emissive:0x886600,emissiveIntensity:0.4}),
+spawner:new T.MeshStandardMaterial({color:0xff2222,emissive:0xff0000,emissiveIntensity:0.5}),
+drink:new T.MeshStandardMaterial({color:0x39ff14,emissive:0x115500,emissiveIntensity:0.4}),
+trap:new T.MeshStandardMaterial({color:0xff6600,emissive:0x884400,emissiveIntensity:0.4}),
+mystery:new T.MeshStandardMaterial({color:0xaa55ff,emissive:0x5522aa,emissiveIntensity:0.5}),
+pap:new T.MeshStandardMaterial({color:0xff2a6d,emissive:0x881133,emissiveIntensity:0.5}),
+light:new T.MeshStandardMaterial({color:0xffeecc,emissive:0xffcc88,emissiveIntensity:0.8}),
+pre:new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.35,wireframe:true}),
+};
+// ===== REFERENCE MAP =====
+const rg=new T.Group();sc.add(rg);
+function bRef(){
+const H=6,OH=8;
+function rW(x,z,sx,sz,h){h=h||H;const m=new T.Mesh(new T.BoxGeometry(sx,h,sz),M.ref);m.position.set(x,h/2,z);rg.add(m);}
+function rF(x,z,w,d){const m=new T.Mesh(new T.PlaneGeometry(w,d),M.refF);m.rotation.x=-Math.PI/2;m.position.set(x,0.01,z);rg.add(m);}
+function mk(x,z,c){const m=new T.Mesh(new T.CylinderGeometry(0.5,0.5,4,8),new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.5,transparent:true,opacity:0.6}));m.position.set(x,2,z);rg.add(m);}
+// SPAWN
+rF(0,0,10,10);rW(-5,0,0.5,10);rW(5,0,0.5,10);rW(0,-5,10,0.5);
+// PASILLO1
+rF(0,10,4,10);rW(-2,10,0.5,10);rW(2,10,0.5,10);
+// MYSTERY
+rF(0,23,24,16);rW(-12,23,0.5,16);rW(12,23,0.5,16);rW(0,15,24,0.5);rW(0,31,24,0.5);
+// PASILLO2+VEST
+rF(0,34,4,6);rF(0,39,20,4);rW(-2,34,0.5,6);rW(2,34,0.5,6);
+rW(-10,39,0.5,4);rW(10,39,0.5,4);rW(0,37,20,0.5);rW(0,41,20,0.5);
+// SALA A
+rF(-8,46,10,10);rW(-13,46,0.5,10);rW(-3,46,0.5,10);rW(-8,41,10,0.5);rW(-8,51,10,0.5);
+// SALA B
+rF(13,48,20,14);rW(3,48,0.5,14);rW(23,48,0.5,14);rW(13,41,20,0.5);rW(13,55,20,0.5);
+// PREPATIO
+rF(13,58,4,6);rW(11,58,0.5,6);rW(15,58,0.5,6);
+// PATIO
+rF(0,76,40,30);rW(0,61,40,0.5,OH);rW(-20,76,0.5,30,OH);rW(20,76,0.5,30,OH);rW(0,91,40,0.5,OH);
+// PAP
+rF(-16,95,8,8);rW(-20,95,0.5,8);rW(-12,95,0.5,8);rW(-16,99,8,0.5);
+// CHUCHUWA
+rF(16,95,8,8);rW(12,95,0.5,8);rW(20,95,0.5,8);rW(16,99,8,0.5);
+// Markers
+mk(0,0,0x00ffff);mk(6,23,0xaa55ff);mk(-16,95,0xff2a6d);mk(16,95,0x39ff14);mk(13,95,0xffe600);
+}
+bRef();
+// ===== EDITOR =====
+const ob=[],eg=new T.Group();sc.add(eg);
+let tool='wall',ds=null,pm=null,gs=1;
+const rc=new T.Raycaster(),ms=new T.Vector2();
+function sn(v){return Math.round(v/gs)*gs;}
+function gWP(e){const r=cv.getBoundingClientRect();ms.x=((e.clientX-r.left)/r.width)*2-1;ms.y=-((e.clientY-r.top)/r.height)*2+1;rc.setFromCamera(ms,cam);const h=rc.intersectObject(gp);return h.length?{x:sn(h[0].point.x),z:sn(h[0].point.z)}:null;}
+function cPre(){if(pm){sc.remove(pm);pm=null;}}
+function mkW(x1,z1,x2,z2,h,t,mi){const dx=x2-x1,dz=z2-z1,l=Math.hypot(dx,dz);if(l<0.1)return null;const m=new T.Mesh(new T.BoxGeometry(l,h,t),(M[mi]||M.wBrick).clone());m.position.set((x1+x2)/2,h/2,(z1+z2)/2);m.rotation.y=Math.atan2(dx,dz);return m;}
+function mkF(x1,z1,x2,z2,mi){const w=Math.abs(x2-x1),d=Math.abs(z2-z1);if(w<0.1||d<0.1)return null;const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);const m=new T.Mesh(g,(M[mi]||M.fConcrete).clone());m.position.set((x1+x2)/2,0.05,(z1+z2)/2);return m;}
+function mkP(ty,x,z){let g,mt,h=1;
+if(ty==='door'){g=new T.BoxGeometry(3,3,0.3);mt=M.door;h=1.5;}
+else if(ty==='spawner'){g=new T.CylinderGeometry(0.5,0.8,2,8);mt=M.spawner;h=1;}
+else if(ty==='drink'){g=new T.BoxGeometry(1.2,2.2,0.7);mt=M.drink;h=1.1;}
+else if(ty==='trap'){g=new T.CylinderGeometry(1.5,1.5,0.3,12);mt=M.trap;h=0.15;}
+else if(ty==='mystery'){g=new T.BoxGeometry(1.4,0.9,1);mt=M.mystery;h=0.45;}
+else if(ty==='pap'){g=new T.BoxGeometry(1.5,2.5,1);mt=M.pap;h=1.25;}
+else if(ty==='light'){g=new T.SphereGeometry(0.3,8,6);mt=M.light;h=4.5;}
+else{g=new T.BoxGeometry(1,1,1);mt=M.ref;h=0.5;}
+const m=new T.Mesh(g,mt.clone());m.position.set(x,h,z);return m;}
+
+// Tool select
+document.querySelectorAll('.tb').forEach(b=>{b.addEventListener('click',()=>{
+document.querySelector('.tb.on').classList.remove('on');b.classList.add('on');
+tool=b.dataset.t;ds=null;cPre();
+document.querySelectorAll('.opts').forEach(o=>o.classList.remove('show'));
+const op=document.getElementById('o_'+tool);if(op)op.classList.add('show');
+const msgs={wall:'MURO: Click inicio → fin',floor:'SUELO: Click esquina → esquina',door:'Click colocar',spawner:'Click colocar',drink:'Click colocar',trap:'Click colocar',mystery:'Click colocar',pap:'Click colocar',light:'Click colocar',select:'Click der = borrar'};
+document.getElementById('st').textContent=msgs[tool]||'';
+});});
+
+// Click
+cv.addEventListener('click',e=>{if(e.button!==0)return;const p=gWP(e);if(!p)return;
+if(tool==='wall'||tool==='floor'){
+if(!ds){ds=p;document.getElementById('st').textContent=`(${p.x},${p.z}) → Click punto 2`;}
+else{
+if(tool==='wall'){const h=+document.getElementById('wH').value,t=+document.getElementById('wT').value,mi=document.getElementById('wM').value;
+const m=mkW(ds.x,ds.z,p.x,p.z,h,t,mi);if(m){eg.add(m);ob.push({type:'wall',mesh:m,data:{x1:ds.x,z1:ds.z,x2:p.x,z2:p.z,h,t,mat:mi}});}}
+else{const mi=document.getElementById('fM').value;
+const m=mkF(ds.x,ds.z,p.x,p.z,mi);if(m){eg.add(m);ob.push({type:'floor',mesh:m,data:{x1:Math.min(ds.x,p.x),z1:Math.min(ds.z,p.z),x2:Math.max(ds.x,p.x),z2:Math.max(ds.z,p.z),mat:mi}});}}
+ds=null;cPre();uOL();}
+}else if(tool!=='select'){
+const pr={};
+if(tool==='door'){pr.cost=+document.getElementById('dC').value;pr.roomId=+document.getElementById('dR').value;pr.label=document.getElementById('dL').value;}
+else if(tool==='drink')pr.drinkId=document.getElementById('dk').value;
+else if(tool==='trap')pr.trapId=document.getElementById('tr').value;
+else if(tool==='spawner')pr.roomId=+document.getElementById('sR').value;
+const m=mkP(tool,p.x,p.z);if(m){eg.add(m);ob.push({type:tool,mesh:m,data:{x:p.x,z:p.z,...pr}});uOL();}
+}});
+
+// Right click delete
+cv.addEventListener('contextmenu',e=>{e.preventDefault();const p=gWP(e);if(!p)return;
+let bi=-1,bd=4;for(let i=0;i<ob.length;i++){const o=ob[i];let cx,cz;
+if(o.data.x1!==undefined){cx=(o.data.x1+o.data.x2)/2;cz=(o.data.z1+o.data.z2)/2;}else{cx=o.data.x;cz=o.data.z;}
+const d=Math.hypot(p.x-cx,p.z-cz);if(d<bd){bd=d;bi=i;}}
+if(bi>=0){eg.remove(ob[bi].mesh);ob[bi].mesh.geometry.dispose();ob.splice(bi,1);uOL();}});
+
+// Preview
+cv.addEventListener('mousemove',e=>{const p=gWP(e);if(!p)return;
+document.getElementById('hud').textContent=`X: ${p.x} | Z: ${p.z} | Objetos: ${ob.length}`;
+if(ds&&(tool==='wall'||tool==='floor')){cPre();
+if(tool==='wall'){pm=mkW(ds.x,ds.z,p.x,p.z,+document.getElementById('wH').value,+document.getElementById('wT').value);if(pm){pm.material=M.pre;sc.add(pm);}}
+else{pm=mkF(ds.x,ds.z,p.x,p.z);if(pm){pm.material=M.pre;sc.add(pm);}}}});
+
+document.addEventListener('keydown',e=>{if(e.code==='Escape'){ds=null;cPre();}if(e.code==='KeyZ'&&e.ctrlKey)undo();});
+
+function uOL(){document.getElementById('oc').textContent=ob.length;
+const l=document.getElementById('ol');l.innerHTML='';
+ob.forEach((o,i)=>{const d=document.createElement('div');d.className='oi';
+let desc=o.type.toUpperCase();
+if(o.data.x!==undefined)desc+=` (${o.data.x},${o.data.z})`;
+else desc+=` (${o.data.x1},${o.data.z1})→(${o.data.x2},${o.data.z2})`;
+d.innerHTML=`<span>${desc}</span><span class="d" data-i="${i}">✕</span>`;l.appendChild(d);});
+l.querySelectorAll('.d').forEach(d=>{d.addEventListener('click',()=>{const i=+d.dataset.i;eg.remove(ob[i].mesh);ob.splice(i,1);uOL();});});}
+
+function undo(){if(ob.length){eg.remove(ob[ob.length-1].mesh);ob.pop();uOL();}}
+function clrAll(){if(!confirm('¿Borrar?'))return;while(ob.length){eg.remove(ob[0].mesh);ob.shift();}uOL();}
+
+document.getElementById('sRef').addEventListener('change',e=>{rg.visible=e.target.checked;});
+document.getElementById('sGrid').addEventListener('change',e=>{gg.visible=e.target.checked;});
+document.getElementById('gS').addEventListener('change',e=>{gs=+e.target.value||1;});
+
+function exp(){let c='    // ======= GENERADO POR EDITOR 3D =======\n\n';
+const fl=ob.filter(o=>o.type==='floor'),wl=ob.filter(o=>o.type==='wall');
+if(fl.length){c+='    // --- SUELOS ---\n';fl.forEach(o=>{const d=o.data;c+=`    addFloorPlane(${((d.x1+d.x2)/2).toFixed(1)}, ${((d.z1+d.z2)/2).toFixed(1)}, ${Math.abs(d.x2-d.x1).toFixed(1)}, ${Math.abs(d.z2-d.z1).toFixed(1)}, ${d.mat});\n`;});c+='\n';}
+if(wl.length){c+='    // --- MUROS ---\n';wl.forEach(o=>{const d=o.data;const cx=((d.x1+d.x2)/2).toFixed(1),cz=((d.z1+d.z2)/2).toFixed(1),l=Math.hypot(d.x2-d.x1,d.z2-d.z1).toFixed(1);const h=Math.abs(d.x2-d.x1)>Math.abs(d.z2-d.z1);c+=`    addWall(${cx}, ${(d.h/2).toFixed(1)}, ${cz}, ${h?l:d.t}, ${d.h}, ${h?d.t:l}, ${d.mat});\n`;});c+='\n';}
+['door','spawner','drink','trap','mystery','pap','light'].forEach(ty=>{const it=ob.filter(o=>o.type===ty);if(!it.length)return;c+=`    // --- ${ty.toUpperCase()} ---\n`;
+it.forEach(o=>{const d=o.data;
+if(ty==='door')c+=`    addDoor(${d.x}, ${d.z}, 0, ${d.cost}, ${d.roomId}, '${d.label}');\n`;
+else if(ty==='spawner')c+=`    addSpawner(${d.x}, 1.2, ${d.z}, 0, ${d.roomId});\n`;
+else if(ty==='drink')c+=`    addDrinkMachine(${d.x}, ${d.z}, 0, '${d.drinkId}');\n`;
+else if(ty==='trap')c+=`    addBuyableTrap(${d.x}, ${d.z}, '${d.trapId}');\n`;
+else if(ty==='mystery')c+=`    // Mystery box en (${d.x}, ${d.z})\n`;
+else if(ty==='pap')c+=`    // PAP en (${d.x}, ${d.z})\n`;
+else if(ty==='light')c+=`    makeHangingLamp(${d.x}, ${d.z}, 0xffaa44);\n`;
+});c+='\n';});
+document.getElementById('co').value=c;}
+
+function sav(){localStorage.setItem('raval_map3d',JSON.stringify(ob.map(o=>({type:o.type,data:o.data}))));alert('Guardado');}
+function ld(){const r=localStorage.getItem('raval_map3d');if(!r){alert('No hay mapa');return;}
+while(ob.length){eg.remove(ob[0].mesh);ob.shift();}
+JSON.parse(r).forEach(o=>{let m;
+if(o.type==='wall')m=mkW(o.data.x1,o.data.z1,o.data.x2,o.data.z2,o.data.h,o.data.t,o.data.mat);
+else if(o.type==='floor')m=mkF(o.data.x1,o.data.z1,o.data.x2,o.data.z2,o.data.mat);
+else m=mkP(o.type,o.data.x,o.data.z);
+if(m){eg.add(m);ob.push({type:o.type,mesh:m,data:o.data});}});uOL();alert('Cargado: '+ob.length);}
+
+function resize(){const v=document.getElementById('viewport');ren.setSize(v.clientWidth,v.clientHeight);cam.aspect=v.clientWidth/v.clientHeight;cam.updateProjectionMatrix();}
+window.addEventListener('resize',resize);resize();
+(function anim(){requestAnimationFrame(anim);ctl.update();ren.render(sc,cam);})();
+</script>
+</body>
+</html>
