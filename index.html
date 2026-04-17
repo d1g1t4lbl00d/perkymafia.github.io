@@ -843,6 +843,56 @@ footer{
   letter-spacing:0.1em;opacity:0;transition:opacity 0.4s;pointer-events:none;
 }
 
+/* ===== MENÚ DE PAUSA ===== */
+.game-pause-menu{
+  position:absolute;inset:0;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.88);
+  z-index:50;pointer-events:auto;
+  font-family:'Press Start 2P',monospace;
+  color:var(--white);
+  backdrop-filter:blur(4px);
+}
+.game-pause-menu.active{display:flex}
+.game-pause-menu h2{
+  font-size:1.4rem;color:var(--pink);
+  text-shadow:0 0 12px var(--pink);
+  margin-bottom:1.5rem;
+}
+.pause-settings{
+  display:flex;flex-direction:column;gap:1rem;
+  width:min(380px, 85vw);margin-bottom:1.5rem;
+}
+.pause-setting{
+  display:flex;align-items:center;gap:0.6rem;
+  font-size:0.45rem;color:var(--green);
+}
+.pause-setting label{
+  flex:0 0 140px;text-align:right;
+  text-shadow:0 0 4px var(--green);
+}
+.pause-setting input[type=range]{
+  flex:1;height:6px;
+  -webkit-appearance:none;appearance:none;
+  background:#222;border:1px solid var(--green);
+  border-radius:3px;outline:none;
+  cursor:pointer;
+}
+.pause-setting input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--pink);
+  box-shadow:0 0 6px var(--pink);
+  cursor:pointer;
+}
+.pause-setting span{
+  flex:0 0 28px;text-align:center;
+  color:var(--yellow);font-size:0.5rem;
+}
+.pause-buttons{
+  display:flex;gap:1rem;
+}
+
 /* Start + over screens */
 .game-start-screen,.game-over-screen{
   position:absolute;inset:0;
@@ -2303,6 +2353,42 @@ footer{
     <div class="game-hitflash" id="gameHitFlash"></div>
   </div>
 
+  <!-- ===== MENÚ DE PAUSA ===== -->
+  <div class="game-pause-menu" id="gamePauseMenu">
+    <h2>PAUSA</h2>
+    <div class="pause-settings">
+      <div class="pause-setting">
+        <label>SENSIBILIDAD RATÓN</label>
+        <input type="range" id="settMouseSens" min="1" max="20" value="10">
+        <span id="settMouseSensVal">10</span>
+      </div>
+      <div class="pause-setting">
+        <label>SENSIBILIDAD MANDO</label>
+        <input type="range" id="settPadSens" min="1" max="20" value="10">
+        <span id="settPadSensVal">10</span>
+      </div>
+      <div class="pause-setting">
+        <label>SENS. APUNTAR MANDO</label>
+        <input type="range" id="settPadAds" min="1" max="20" value="6">
+        <span id="settPadAdsVal">6</span>
+      </div>
+      <div class="pause-setting">
+        <label>VOLUMEN</label>
+        <input type="range" id="settVolume" min="0" max="10" value="7">
+        <span id="settVolumeVal">7</span>
+      </div>
+      <div class="pause-setting">
+        <label>FOV</label>
+        <input type="range" id="settFov" min="50" max="110" value="75">
+        <span id="settFovVal">75</span>
+      </div>
+    </div>
+    <div class="pause-buttons">
+      <button class="game-btn" id="pauseResumeBtn" type="button">▶ CONTINUAR</button>
+      <button class="game-btn game-btn-alt" id="pauseQuitBtn" type="button">SALIR AL MENÚ</button>
+    </div>
+  </div>
+
   <div class="game-start-screen active" id="gameStartScreen">
     <h2>El Raval Simulator</h2>
     <p class="game-sub">sobrevive a la noche del barrio ☠</p>
@@ -2550,6 +2636,23 @@ window.addEventListener('popstate', () => {
   // ===== Estado =====
   let scene, camera, renderer, raycaster, clock;
   let initialized=false, running=false, paused=false;
+
+  // ===== AJUSTES DE USUARIO =====
+  const settings = {
+    mouseSens: 10,    // 1-20, default 10
+    padSens: 10,      // 1-20, default 10
+    padAdsSens: 6,    // 1-20, default 6
+    volume: 7,        // 0-10
+    fov: 75,          // 50-110
+  };
+  // Cargar ajustes guardados
+  try {
+    const saved = localStorage.getItem('perky_settings');
+    if (saved) Object.assign(settings, JSON.parse(saved));
+  } catch(e) {}
+  function _saveSettings() {
+    try { localStorage.setItem('perky_settings', JSON.stringify(settings)); } catch(e) {}
+  }
 
   // ===== SISTEMA DE CARGA DE ASSETS =====
   let _assetsTotal = 0, _assetsLoaded = 0;
@@ -3860,10 +3963,10 @@ window.addEventListener('popstate', () => {
         top.position.y = 4; g.add(top);
         return g;
       }
-      placeProp('arbol_grande', -16, -1.5, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
-      placeProp('arbol_grande',  16, -1.5, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
-      placeProp('arbol_grande', -16, -1.5, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
-      placeProp('arbol_grande',  16, -1.5, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande', -16, -0.8, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande',  16, -0.8, 65, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande', -16, -0.8, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
+      placeProp('arbol_grande',  16, -0.8, 87, 0, 7.0, mkTree(), {x:1, y:5, z:1});
 
       // === ARBUSTOS ===
       function mkBush() {
@@ -5382,7 +5485,8 @@ window.addEventListener('popstate', () => {
 
     document.addEventListener('mousemove', e => {
       if (document.pointerLockElement !== canvas) return;
-      const sens = isAds ? 0.0014 : 0.0022;
+      const baseSens = settings.mouseSens / 10 * 0.0022;
+      const sens = isAds ? baseSens * 0.6 : baseSens;
       player.yaw   -= e.movementX * sens;
       player.pitch -= e.movementY * sens;
       const lim = Math.PI/2 - 0.02;
@@ -5392,7 +5496,13 @@ window.addEventListener('popstate', () => {
 
     document.addEventListener('pointerlockchange', () => {
       if (!running) return;
-      paused = (document.pointerLockElement !== canvas);
+      const locked = (document.pointerLockElement === canvas);
+      paused = !locked;
+      const pm = document.getElementById('gamePauseMenu');
+      if (pm) {
+        if (paused) pm.classList.add('active');
+        else pm.classList.remove('active');
+      }
     });
   }
 
@@ -5821,7 +5931,7 @@ window.addEventListener('popstate', () => {
     // Right stick → cámara
     const rx = Math.abs(gp.axes[2]) > deadzone ? gp.axes[2] : 0;
     const ry = Math.abs(gp.axes[3]) > deadzone ? gp.axes[3] : 0;
-    const camSens = 2.5;
+    const camSens = (isAds ? settings.padAdsSens : settings.padSens) / 10 * 2.5;
     player.yaw -= rx * camSens * dt;
     player.pitch -= ry * camSens * dt;
     const lim = Math.PI/2 - 0.02;
@@ -7906,7 +8016,11 @@ window.addEventListener('popstate', () => {
       overlay.classList.add('active');
       startScreen.classList.remove('active');
       overScreen.classList.remove('active');
+      const pm = document.getElementById('gamePauseMenu');
+      if (pm) pm.classList.remove('active');
       if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      // Aplicar FOV de ajustes
+      if (camera) { camera.fov = settings.fov; camera.updateProjectionMatrix(); }
       requestAnimationFrame(() => {
         renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
@@ -7943,6 +8057,8 @@ window.addEventListener('popstate', () => {
     overWaveEl.textContent = wave;
     overPointsEl.textContent = player.points;
     overScreen.classList.add('active');
+    const pm = document.getElementById('gamePauseMenu');
+    if (pm) pm.classList.remove('active');
     submitScore(player.username, player.points, wave);
   }
 
@@ -7952,6 +8068,8 @@ window.addEventListener('popstate', () => {
     overlay.classList.remove('active');
     startScreen.classList.add('active');
     overScreen.classList.remove('active');
+    const pm = document.getElementById('gamePauseMenu');
+    if (pm) pm.classList.remove('active');
   }
 
   // botones
@@ -7972,6 +8090,61 @@ window.addEventListener('popstate', () => {
   retryBtn.addEventListener('click', startGame);
   quitBtn.addEventListener('click', quitGame);
   quitBtn2.addEventListener('click', quitGame);
+
+  // ===== MENÚ DE PAUSA — SLIDERS Y BOTONES =====
+  function _initPauseMenu() {
+    const sliders = [
+      { id:'settMouseSens', key:'mouseSens', valId:'settMouseSensVal' },
+      { id:'settPadSens',   key:'padSens',   valId:'settPadSensVal' },
+      { id:'settPadAds',    key:'padAdsSens', valId:'settPadAdsVal' },
+      { id:'settVolume',    key:'volume',    valId:'settVolumeVal' },
+      { id:'settFov',       key:'fov',       valId:'settFovVal' },
+    ];
+    sliders.forEach(s => {
+      const el = document.getElementById(s.id);
+      const valEl = document.getElementById(s.valId);
+      if (!el) return;
+      // Inicializar con valor guardado
+      el.value = settings[s.key];
+      if (valEl) valEl.textContent = settings[s.key];
+      el.addEventListener('input', () => {
+        settings[s.key] = parseInt(el.value);
+        if (valEl) valEl.textContent = el.value;
+        // Aplicar volumen en tiempo real
+        if (s.key === 'volume' && audioCtx) {
+          const gain = audioCtx.createGain ? settings.volume / 10 : 1;
+          // Audio context no tiene un master gain sencillo, pero ajustamos
+          // el volumen de la radio si existe
+          if (_radioAudio) _radioAudio.volume = settings.volume / 10;
+        }
+        // Aplicar FOV en tiempo real
+        if (s.key === 'fov' && camera) {
+          camera.fov = settings.fov;
+          camera.updateProjectionMatrix();
+        }
+        _saveSettings();
+      });
+    });
+    // Botón CONTINUAR
+    const resumeBtn = document.getElementById('pauseResumeBtn');
+    if (resumeBtn) {
+      resumeBtn.addEventListener('click', () => {
+        const pm = document.getElementById('gamePauseMenu');
+        if (pm) pm.classList.remove('active');
+        canvas.requestPointerLock();
+      });
+    }
+    // Botón SALIR AL MENÚ
+    const pqBtn = document.getElementById('pauseQuitBtn');
+    if (pqBtn) {
+      pqBtn.addEventListener('click', () => {
+        const pm = document.getElementById('gamePauseMenu');
+        if (pm) pm.classList.remove('active');
+        quitGame();
+      });
+    }
+  }
+  _initPauseMenu();
 
   window.addEventListener('resize', () => {
     if (!renderer || !overlay.classList.contains('active')) return;
