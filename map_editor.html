@@ -210,7 +210,7 @@ ceil:new T.MeshStandardMaterial({color:0x333333,roughness:0.9}),
 const rg=new T.Group();sc.add(rg);
 function bRef(){
 const H=6;
-function rW(x,z,sx,sz,h){h=h||H;rg.add(Object.assign(new T.Mesh(new T.BoxGeometry(sx,h,sz),M.ref),{position:new T.Vector3(x,h/2,z)}));}
+function rW(x,z,sx,sz,h){h=h||H;var m=new T.Mesh(new T.BoxGeometry(sx,h,sz),M.ref);m.position.set(x,h/2,z);rg.add(m);}
 function rF(x,z,w,d){const m=new T.Mesh(new T.PlaneGeometry(w,d),M.refF);m.rotation.x=-Math.PI/2;m.position.set(x,0.01,z);rg.add(m);}
 rF(0,0,10,10);rW(-5,0,0.5,10);rW(5,0,0.5,10);rW(0,-5,10,0.5);
 rF(0,10,4,10);rW(-2,10,0.5,10);rW(2,10,0.5,10);
