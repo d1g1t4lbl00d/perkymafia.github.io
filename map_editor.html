@@ -1,56 +1,55 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><title>Raval — Editor 3D Pro v3</title>
+<meta charset="UTF-8"><title>Raval — Editor 3D Pro</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#111;color:#eee;font-family:'Segoe UI',system-ui,sans-serif;display:flex;height:100vh;overflow:hidden}
-#vp{flex:1;position:relative}canvas{display:block;width:100%;height:100%}
-#pn{width:330px;background:#1a1a1e;overflow-y:auto;border-left:2px solid #ff2a6d;font-size:11px;z-index:10}
-.s{padding:8px 12px;border-bottom:1px solid #2a2a30}
+#vp{flex:1;position:relative}
+canvas{display:block;width:100%;height:100%}
+#pn{width:310px;background:#1a1a1e;overflow-y:auto;border-left:2px solid #ff2a6d;display:flex;flex-direction:column;font-size:12px;z-index:10}
+.s{padding:10px 12px;border-bottom:1px solid #2a2a30}
 h1{font-size:13px;color:#ff2a6d;text-align:center;padding:8px 0}
-h2{font-size:10px;color:#39ff14;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
-.tg{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
-.tb{padding:4px 2px;background:#222;color:#999;border:1px solid #333;font-size:7px;cursor:pointer;text-align:center;border-radius:3px;line-height:1.1}
+h2{font-size:10px;color:#39ff14;margin-bottom:5px;text-transform:uppercase;letter-spacing:1px}
+.tg{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+.tb{padding:5px 2px;background:#222;color:#999;border:1px solid #333;font-size:8px;cursor:pointer;text-align:center;border-radius:3px;line-height:1.2}
 .tb:hover{background:#333;color:#fff}.tb.on{background:#ff2a6d;color:#fff;border-color:#ff2a6d}
-.tb .i{font-size:13px;display:block}
+.tb .i{font-size:14px;display:block}
 .op{display:none}.op.sh{display:block}
-label{font-size:9px;color:#999;display:flex;align-items:center;gap:5px;margin:2px 0}
-label .l{flex:0 0 55px;text-align:right}
-select,input[type=number],input[type=text]{flex:1;padding:2px 4px;background:#111;color:#fff;border:1px solid #444;font-size:10px;border-radius:2px}
-.b{padding:5px;border:none;font-size:9px;cursor:pointer;border-radius:3px;width:100%;margin-top:2px;font-weight:600}
-.bg{background:#39ff14;color:#000}.bp{background:#ff2a6d;color:#fff}.by{background:#444;color:#ccc}.bt{background:#4488ff;color:#fff}
-textarea{width:100%;height:120px;background:#0a0a0a;color:#39ff14;border:1px solid #333;font-family:monospace;font-size:8px;padding:4px;resize:vertical}
-#hud{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,0.85);padding:5px 10px;border-radius:4px;font-size:10px;color:#39ff14;font-family:monospace;z-index:5}
-#st{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);padding:4px 12px;border-radius:4px;font-size:10px;color:#ffe600;pointer-events:none;z-index:5}
-#cross{position:absolute;top:50%;left:50%;width:3px;height:3px;background:#0f0;border-radius:50%;transform:translate(-50%,-50%);display:none;z-index:5}
-#tbanner{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,100,255,0.85);padding:6px 16px;border-radius:4px;font-size:12px;color:#fff;font-weight:bold;display:none;z-index:5}
-#tprompt{position:absolute;bottom:25%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);padding:6px 14px;border-radius:4px;font-size:11px;color:#ffe600;display:none;z-index:5}
-.rw{display:flex;gap:3px}.chk{display:flex;align-items:center;gap:5px;margin:2px 0;font-size:9px;color:#aaa}.chk input{accent-color:#ff2a6d}
-#ol{max-height:90px;overflow-y:auto;background:#111;border:1px solid #333;border-radius:2px;margin-top:3px}
-.oi{padding:2px 6px;font-size:7px;color:#aaa;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a}
+label{font-size:10px;color:#999;display:flex;align-items:center;gap:6px;margin:3px 0}
+label .l{flex:0 0 65px;text-align:right}
+select,input[type=number],input[type=text]{flex:1;padding:2px 5px;background:#111;color:#fff;border:1px solid #444;font-size:10px;border-radius:2px}
+.b{padding:6px 8px;border:none;font-size:10px;cursor:pointer;border-radius:3px;width:100%;margin-top:3px;font-weight:600}
+.bg{background:#39ff14;color:#000}.bp{background:#ff2a6d;color:#fff}.by{background:#444;color:#ccc}
+.bt{background:#4488ff;color:#fff}
+textarea{width:100%;height:150px;background:#0a0a0a;color:#39ff14;border:1px solid #333;font-family:monospace;font-size:8px;padding:4px;resize:vertical}
+#hud{position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,0.85);padding:6px 10px;border-radius:4px;font-size:11px;color:#39ff14;font-family:monospace}
+#st{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);padding:5px 14px;border-radius:4px;font-size:11px;color:#ffe600;pointer-events:none}
+#testHud{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:4px;height:4px;background:#0f0;border-radius:50%;display:none;z-index:5}
+#testBanner{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,100,255,0.85);padding:8px 20px;border-radius:4px;font-size:13px;color:#fff;font-weight:bold;display:none;z-index:5}
+.rw{display:flex;gap:3px}
+.chk{display:flex;align-items:center;gap:5px;margin:3px 0;font-size:10px;color:#aaa}
+.chk input{accent-color:#ff2a6d}
+#ol{max-height:120px;overflow-y:auto;background:#111;border:1px solid #333;border-radius:2px;margin-top:3px}
+.oi{padding:2px 6px;font-size:8px;color:#aaa;cursor:pointer;display:flex;justify-content:space-between;border-bottom:1px solid #1a1a1a}
 .oi:hover{background:#222;color:#fff}.oi .d{color:#f44;cursor:pointer;font-weight:bold}
-.pg{display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-top:3px}
-.pb{padding:3px;background:#2a2a30;color:#aaa;border:1px solid #333;font-size:7px;cursor:pointer;border-radius:2px;text-align:center}
-.pb:hover{background:#333;color:#fff;border-color:#39ff14}
-#selPanel{display:none;background:#2a1a1a;border:1px solid #ff2a6d;padding:8px;border-radius:4px;margin-top:4px}
-#selPanel h3{font-size:10px;color:#ff2a6d;margin-bottom:4px}
+.rot-ctrl{display:flex;align-items:center;gap:4px;margin:4px 0}
+.rot-ctrl input[type=range]{flex:1;accent-color:#ff2a6d}
+.rot-ctrl span{font-size:9px;color:#ffe600;width:32px;text-align:center}
 </style>
 </head>
 <body>
 <div id="vp"><canvas id="c"></canvas>
-<div id="hud">X:0 Z:0</div><div id="st">Click = colocar · Click der = borrar · R = rotar</div>
-<div id="cross"></div>
-<div id="tbanner">MODO PRUEBA — ESC volver — WASD+raton — E interactuar</div>
-<div id="tprompt"></div></div>
+<div id="hud">X:0 Z:0 | R:0°</div>
+<div id="st">Selecciona herramienta</div>
+<div id="testHud"></div>
+<div id="testBanner">🎮 MODO PRUEBA — ESC para volver al editor — WASD para moverse</div>
+</div>
 <div id="pn">
-<h1>EDITOR 3D PRO</h1>
+<h1>🗺️ EDITOR 3D PRO</h1>
 <div class="s"><h2>Herramientas</h2><div class="tg">
 <div class="tb on" data-t="wall"><span class="i">▬</span>Muro</div>
-<div class="tb" data-t="wallDoor"><span class="i">⊓</span>+Hueco</div>
-<div class="tb" data-t="wallWin"><span class="i">⊡</span>+Vent</div>
 <div class="tb" data-t="floor"><span class="i">⬜</span>Suelo</div>
-<div class="tb" data-t="ceil"><span class="i">⬛</span>Techo</div>
 <div class="tb" data-t="door"><span class="i">🚪</span>Puerta</div>
 <div class="tb" data-t="spawner"><span class="i">💀</span>Spawn</div>
 <div class="tb" data-t="drink"><span class="i">🥤</span>Bebida</div>
@@ -58,71 +57,41 @@ textarea{width:100%;height:120px;background:#0a0a0a;color:#39ff14;border:1px sol
 <div class="tb" data-t="mystery"><span class="i">❓</span>MBox</div>
 <div class="tb" data-t="pap"><span class="i">⬆</span>PAP</div>
 <div class="tb" data-t="light"><span class="i">💡</span>Luz</div>
-<div class="tb" data-t="power"><span class="i">🔌</span>Elec</div>
-<div class="tb" data-t="select"><span class="i">✋</span>Editar</div>
+<div class="tb" data-t="select"><span class="i">✋</span>Sel</div>
 </div></div>
-<div class="s"><h2>Rotacion <span id="rv">0</span>°</h2>
-<input type="range" id="rS" min="0" max="360" step="15" value="0" style="width:100%;accent-color:#ff2a6d">
-<div class="rw"><button class="b by" onclick="sR(0)">0°</button><button class="b by" onclick="sR(90)">90°</button><button class="b by" onclick="sR(180)">180°</button><button class="b by" onclick="sR(270)">270°</button></div></div>
-
-<div class="s op sh" id="o_wall"><h2>Muro solido</h2>
-<label><span class="l">Largo</span><input type="number" id="wL" value="10" min="1" max="60"></label>
-<label><span class="l">Alto</span><input type="number" id="wH" value="6" min="1" max="20" step="0.5"></label>
-<label><span class="l">Grosor</span><input type="number" id="wT" value="0.5" min="0.1" max="2" step="0.1"></label>
-<label><span class="l">Material</span><select id="wM"><option value="wBrick">Ladrillo</option><option value="fConcrete">Hormigon</option><option value="fMetal">Metal</option></select></label></div>
-<div class="s op" id="o_wallDoor"><h2>Muro con hueco puerta</h2>
-<label><span class="l">Largo</span><input type="number" id="wdL" value="10" min="4" max="60"></label>
-<label><span class="l">Alto</span><input type="number" id="wdH" value="6" min="3" max="20" step="0.5"></label>
-<label><span class="l">Hueco</span><input type="number" id="wdG" value="4" min="2" max="10" step="0.5"></label>
-<label><span class="l">Mat</span><select id="wdM"><option value="wBrick">Ladrillo</option><option value="fConcrete">Hormigon</option></select></label></div>
-<div class="s op" id="o_wallWin"><h2>Muro con ventana</h2>
-<label><span class="l">Largo</span><input type="number" id="wwL" value="10" min="4" max="60"></label>
-<label><span class="l">Alto</span><input type="number" id="wwH" value="6" min="3" max="20" step="0.5"></label>
-<label><span class="l">Ventana</span><input type="number" id="wwG" value="3" min="1" max="8" step="0.5"></label>
-<label><span class="l">Mat</span><select id="wwM"><option value="wBrick">Ladrillo</option><option value="fConcrete">Hormigon</option></select></label></div>
-<div class="s op" id="o_floor"><h2>Suelo / Techo</h2>
-<label><span class="l">Ancho</span><input type="number" id="fW" value="10" min="1" max="60"></label>
-<label><span class="l">Largo</span><input type="number" id="fD" value="10" min="1" max="60"></label>
-<label><span class="l">Mat</span><select id="fM"><option value="fConcrete">Hormigon</option><option value="fBrick">Empedrado</option><option value="fGrass">Hierba</option></select></label></div>
-<div class="s op" id="o_door"><h2>Puerta comprable</h2>
+<div class="s"><h2>Rotación objeto</h2>
+<div class="rot-ctrl"><span>0°</span><input type="range" id="rotSlider" min="0" max="360" step="15" value="0"><span id="rotVal">0°</span></div>
+<div class="rw"><button class="b by" onclick="setRot(0)">0°</button><button class="b by" onclick="setRot(90)">90°</button><button class="b by" onclick="setRot(180)">180°</button><button class="b by" onclick="setRot(270)">270°</button></div>
+</div>
+<div class="s op sh" id="o_wall"><h2>Muro</h2>
+<label><span class="l">Altura</span><input type="number" id="wH" value="6" min="1" max="20" step="0.5"></label>
+<label><span class="l">Largo</span><input type="number" id="wL" value="10" min="1" max="50" step="1"></label>
+<label><span class="l">Grosor</span><input type="number" id="wT" value="0.5" min="0.1" max="3" step="0.1"></label>
+<label><span class="l">Material</span><select id="wM"><option value="wBrick">Ladrillo</option><option value="fConcrete">Hormigón</option><option value="fMetal">Metal</option></select></label>
+<p style="font-size:8px;color:#666;margin-top:3px">1 click coloca. Usa rotación para orientar.</p></div>
+<div class="s op" id="o_floor"><h2>Suelo</h2>
+<label><span class="l">Ancho</span><input type="number" id="fW" value="10" min="1" max="50" step="1"></label>
+<label><span class="l">Largo</span><input type="number" id="fD" value="10" min="1" max="50" step="1"></label>
+<label><span class="l">Material</span><select id="fM"><option value="fConcrete">Hormigón</option><option value="fBrick">Empedrado</option><option value="fGrass">Hierba</option></select></label></div>
+<div class="s op" id="o_door"><h2>Puerta</h2>
 <label><span class="l">Coste</span><input type="number" id="dC" value="1000" step="250"></label>
-<label><span class="l">Sala</span><input type="number" id="dR" value="1" min="0"></label>
+<label><span class="l">Sala ID</span><input type="number" id="dR" value="1" min="0" max="20"></label>
 <label><span class="l">Label</span><input type="text" id="dL" value="PUERTA"></label></div>
 <div class="s op" id="o_drink"><h2>Bebida</h2><select id="dk"><option>redbull</option><option>katxorro</option><option>chupito</option><option>mojito</option><option>cafelito</option><option>cubata</option><option>absenta</option><option>bloody</option><option>chartreuse</option><option>quintos</option><option>chuchuwa</option></select></div>
 <div class="s op" id="o_trap"><h2>Trampa</h2><select id="tr"><option>electric</option><option>sawblade</option><option>spikes</option><option>tesla</option></select></div>
-<div class="s op" id="o_spawner"><h2>Spawner</h2><label><span class="l">Room</span><input type="number" id="sR2" value="0" min="0"></label></div>
-
-<div class="s" id="selPanel"><h3>Editar objeto seleccionado</h3>
-<div id="selFields"></div>
-<div class="rw" style="margin-top:4px">
-<button class="b bg" onclick="applySelEdit()" style="flex:1">Aplicar</button>
-<button class="b bp" onclick="delSel()" style="flex:1">Eliminar</button>
-</div></div>
-
-<div class="s"><h2>Presets mapa actual</h2><div class="pg">
-<button class="pb" onclick="preset('spawn')">Spawn</button>
-<button class="pb" onclick="preset('pas1')">Pasillo 1</button>
-<button class="pb" onclick="preset('myst')">Mystery</button>
-<button class="pb" onclick="preset('bif')">Bifurcacion</button>
-<button class="pb" onclick="preset('salA')">Sala A</button>
-<button class="pb" onclick="preset('salB')">Sala B</button>
-<button class="pb" onclick="preset('patio')">Patio</button>
-<button class="pb" onclick="preset('papR')">Sala PAP</button>
-<button class="pb" onclick="preset('chuc')">Chuchuwa</button>
-<button class="pb" onclick="preset('ALL')">TODO</button>
-</div></div>
-
-<div class="s"><h2>Probar</h2>
-<button class="b bt" onclick="enterTest()">MODO PRUEBA FPS</button></div>
+<div class="s op" id="o_spawner"><h2>Spawner</h2><label><span class="l">Room ID</span><input type="number" id="sR" value="0" min="0" max="20"></label></div>
 <div class="s"><h2>Vista</h2>
-<label class="chk"><input type="checkbox" id="sRef" checked> Referencia</label>
-<label class="chk"><input type="checkbox" id="sGr" checked> Grid</label>
-<label><span class="l">Snap</span><input type="number" id="gSnap" value="1" min="0.5" max="5" step="0.5"></label></div>
+<label class="chk"><input type="checkbox" id="sRef" checked> Mapa referencia</label>
+<label class="chk"><input type="checkbox" id="sGr" checked> Cuadrícula</label>
+<label><span class="l">Snap</span><input type="number" id="gS" value="1" min="0.5" max="5" step="0.5"></label></div>
+<div class="s"><h2>🎮 Probar mapa</h2>
+<button class="b bt" onclick="enterTest()">▶ MODO PRUEBA (FPS)</button>
+<p style="font-size:8px;color:#666;margin-top:3px">Camina por tu mapa en primera persona. ESC para volver.</p></div>
 <div class="s"><h2>Objetos (<span id="oc">0</span>)</h2><div id="ol"></div>
-<div class="rw" style="margin-top:3px"><button class="b by" onclick="undo()" style="flex:1">Deshacer</button><button class="b bp" onclick="clrAll()" style="flex:1">Borrar</button></div></div>
-<div class="s"><h2>Exportar</h2><button class="b bg" onclick="doExport()">GENERAR CODIGO</button>
-<textarea id="co" readonly></textarea><button class="b by" onclick="navigator.clipboard.writeText(document.getElementById('co').value)">Copiar</button></div>
-<div class="s"><div class="rw"><button class="b by" onclick="sav()" style="flex:1">Guardar</button><button class="b by" onclick="doLoad()" style="flex:1">Cargar</button></div></div>
+<div class="rw" style="margin-top:4px"><button class="b by" onclick="undo()" style="flex:1">↩ Deshacer</button><button class="b bp" onclick="clrAll()" style="flex:1">🗑 Borrar</button></div></div>
+<div class="s"><h2>Exportar</h2><button class="b bg" onclick="exp()">⬇ GENERAR CÓDIGO</button>
+<textarea id="co" readonly></textarea><button class="b by" onclick="navigator.clipboard.writeText(document.getElementById('co').value)">📋 Copiar</button></div>
+<div class="s"><div class="rw"><button class="b by" onclick="sav()" style="flex:1">💾 Guardar</button><button class="b by" onclick="ld()" style="flex:1">📂 Cargar</button></div></div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -134,19 +103,24 @@ const ren=new T.WebGLRenderer({canvas:cv,antialias:true});ren.setPixelRatio(Math
 const ctl=new T.OrbitControls(cam,cv);ctl.target.set(0,0,45);ctl.maxPolarAngle=Math.PI*0.48;ctl.update();
 sc.add(new T.AmbientLight(0xffffff,0.5));
 const sun=new T.DirectionalLight(0xfff8e0,0.7);sun.position.set(30,80,40);sc.add(sun);
+
+// Grid
 const gg=new T.Group();sc.add(gg);
 {const g=new T.GridHelper(200,200,0x222233,0x1a1a25);g.position.y=0.01;gg.add(g);
 const g2=new T.GridHelper(200,20,0x333355,0x333355);g2.position.y=0.02;gg.add(g2);}
+
+// Ground raycast
 const gp=new T.Mesh(new T.PlaneGeometry(400,400).rotateX(-Math.PI/2),new T.MeshBasicMaterial({visible:false}));sc.add(gp);
 
+// Materials
 const M={
 wBrick:new T.MeshStandardMaterial({color:0x8b4513,roughness:0.9}),
 fConcrete:new T.MeshStandardMaterial({color:0x888888,roughness:0.8}),
 fMetal:new T.MeshStandardMaterial({color:0x666677,roughness:0.4,metalness:0.6}),
 fBrick:new T.MeshStandardMaterial({color:0x887766,roughness:0.8}),
 fGrass:new T.MeshStandardMaterial({color:0x2a5a1a,roughness:0.95}),
-ref:new T.MeshStandardMaterial({color:0x556688,transparent:true,opacity:0.2}),
-refF:new T.MeshStandardMaterial({color:0x445566,transparent:true,opacity:0.12}),
+ref:new T.MeshStandardMaterial({color:0x556688,transparent:true,opacity:0.25}),
+refF:new T.MeshStandardMaterial({color:0x445566,transparent:true,opacity:0.15}),
 door:new T.MeshStandardMaterial({color:0xffe600,emissive:0x886600,emissiveIntensity:0.4}),
 spawner:new T.MeshStandardMaterial({color:0xff2222,emissive:0xff0000,emissiveIntensity:0.5}),
 drink:new T.MeshStandardMaterial({color:0x39ff14,emissive:0x115500,emissiveIntensity:0.4}),
@@ -154,18 +128,16 @@ trap:new T.MeshStandardMaterial({color:0xff6600,emissive:0x884400,emissiveIntens
 mystery:new T.MeshStandardMaterial({color:0xaa55ff,emissive:0x5522aa,emissiveIntensity:0.5}),
 pap:new T.MeshStandardMaterial({color:0xff2a6d,emissive:0x881133,emissiveIntensity:0.5}),
 light:new T.MeshStandardMaterial({color:0xffeecc,emissive:0xffcc88,emissiveIntensity:0.8}),
-power:new T.MeshStandardMaterial({color:0xff2222,emissive:0xff0000,emissiveIntensity:0.3}),
-pre:new T.MeshBasicMaterial({color:0x44ff44,transparent:true,opacity:0.35,wireframe:true}),
-sel:new T.MeshBasicMaterial({color:0xffff00,transparent:true,opacity:0.3,wireframe:true}),
-ceil:new T.MeshStandardMaterial({color:0x333333,roughness:0.9}),
+pre:new T.MeshBasicMaterial({color:0x44ff44,transparent:true,opacity:0.4,wireframe:true}),
 };
 
-// Reference
+// Reference map
 const rg=new T.Group();sc.add(rg);
 function bRef(){
-const H=6;
-function rW(x,z,sx,sz,h){h=h||H;rg.add(Object.assign(new T.Mesh(new T.BoxGeometry(sx,h,sz),M.ref),{position:new T.Vector3(x,h/2,z)}));}
+const H=6,OH=8;
+function rW(x,z,sx,sz,h){h=h||H;const m=new T.Mesh(new T.BoxGeometry(sx,h,sz),M.ref);m.position.set(x,h/2,z);rg.add(m);}
 function rF(x,z,w,d){const m=new T.Mesh(new T.PlaneGeometry(w,d),M.refF);m.rotation.x=-Math.PI/2;m.position.set(x,0.01,z);rg.add(m);}
+function mk(x,z,c,lb){const m=new T.Mesh(new T.CylinderGeometry(0.5,0.5,4,8),new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.5,transparent:true,opacity:0.6}));m.position.set(x,2,z);rg.add(m);}
 rF(0,0,10,10);rW(-5,0,0.5,10);rW(5,0,0.5,10);rW(0,-5,10,0.5);
 rF(0,10,4,10);rW(-2,10,0.5,10);rW(2,10,0.5,10);
 rF(0,23,24,16);rW(-12,23,0.5,16);rW(12,23,0.5,16);rW(0,15,24,0.5);rW(0,31,24,0.5);
@@ -173,342 +145,254 @@ rF(0,34,4,6);rF(0,39,20,4);rW(-2,34,0.5,6);rW(2,34,0.5,6);rW(-10,39,0.5,4);rW(10
 rF(-8,46,10,10);rW(-13,46,0.5,10);rW(-3,46,0.5,10);rW(-8,41,10,0.5);rW(-8,51,10,0.5);
 rF(13,48,20,14);rW(3,48,0.5,14);rW(23,48,0.5,14);rW(13,41,20,0.5);rW(13,55,20,0.5);
 rF(13,58,4,6);rW(11,58,0.5,6);rW(15,58,0.5,6);
-rF(0,76,40,30);rW(0,61,40,0.5,8);rW(-20,76,0.5,30,8);rW(20,76,0.5,30,8);rW(0,91,40,0.5,8);
+rF(0,76,40,30);rW(0,61,40,0.5,OH);rW(-20,76,0.5,30,OH);rW(20,76,0.5,30,OH);rW(0,91,40,0.5,OH);
 rF(-16,95,8,8);rW(-20,95,0.5,8);rW(-12,95,0.5,8);rW(-16,99,8,0.5);
 rF(16,95,8,8);rW(12,95,0.5,8);rW(20,95,0.5,8);rW(16,99,8,0.5);
+mk(0,0,0x00ffff);mk(6,23,0xaa55ff);mk(-16,95,0xff2a6d);mk(16,95,0x39ff14);
 }
 bRef();
 
-// State
+// Editor state
 const ob=[],eg=new T.Group();sc.add(eg);
-let tool='wall',rot=0,gs=1,testMode=false,selIdx=-1,previewMesh=null;
+let tool='wall',rot=0,gs=1,testMode=false;
 const rc=new T.Raycaster(),ms=new T.Vector2();
+let previewMesh=null;
+
 function sn(v){return Math.round(v/gs)*gs;}
-function rad(){return rot*Math.PI/180;}
 function gWP(e){const r=cv.getBoundingClientRect();ms.x=((e.clientX-r.left)/r.width)*2-1;ms.y=-((e.clientY-r.top)/r.height)*2+1;rc.setFromCamera(ms,cam);const h=rc.intersectObject(gp);return h.length?{x:sn(h[0].point.x),z:sn(h[0].point.z)}:null;}
 function cPre(){if(previewMesh){sc.remove(previewMesh);previewMesh=null;}}
+function rad(){return rot*Math.PI/180;}
 
 // Rotation
-const rSlider=document.getElementById('rS');
-rSlider.addEventListener('input',()=>{rot=+rSlider.value;document.getElementById('rv').textContent=rot;updPre();});
-function sR(v){rot=v;rSlider.value=v;document.getElementById('rv').textContent=v;updPre();}
+const rotSlider=document.getElementById('rotSlider');
+rotSlider.addEventListener('input',()=>{rot=+rotSlider.value;document.getElementById('rotVal').textContent=rot+'°';updatePreview();});
+function setRot(v){rot=v;rotSlider.value=v;document.getElementById('rotVal').textContent=v+'°';updatePreview();}
 
-// ===== MESH BUILDERS =====
+// Create meshes
 function mkWall(x,z,len,h,t,r,mi){
-const m=new T.Mesh(new T.BoxGeometry(len,h,t),(M[mi]||M.wBrick).clone());
+const g=new T.BoxGeometry(len,h,t);const m=new T.Mesh(g,(M[mi]||M.wBrick).clone());
 m.position.set(x,h/2,z);m.rotation.y=r;return m;}
-
-function mkWallWithGap(x,z,len,h,gap,r,mi,gapBottom,gapTop){
-// Creates 2 wall segments + optional lintel
-const grp=new T.Group();
-const sideLen=(len-gap)/2;
-const mat=(M[mi]||M.wBrick).clone();
-if(sideLen>0.1){
-const left=new T.Mesh(new T.BoxGeometry(sideLen,h,0.5),mat);
-left.position.set(-(gap+sideLen)/2,h/2,0);grp.add(left);
-const right=new T.Mesh(new T.BoxGeometry(sideLen,h,0.5),mat.clone());
-right.position.set((gap+sideLen)/2,h/2,0);grp.add(right);}
-// Lintel above gap
-const gBot=gapBottom||0;const gTop=gapTop||3;
-if(gTop<h){const lintelH=h-gTop;
-const lintel=new T.Mesh(new T.BoxGeometry(gap,lintelH,0.5),mat.clone());
-lintel.position.set(0,gTop+lintelH/2,0);grp.add(lintel);}
-// Bottom for windows
-if(gBot>0){const botH=gBot;
-const bot=new T.Mesh(new T.BoxGeometry(gap,botH,0.5),mat.clone());
-bot.position.set(0,botH/2,0);grp.add(bot);}
-grp.position.set(x,0,z);grp.rotation.y=r;return grp;}
-
-function mkFloor(x,z,w,d,mi,y){
+function mkFloor(x,z,w,d,mi){
 const g=new T.PlaneGeometry(w,d);g.rotateX(-Math.PI/2);
-const m=new T.Mesh(g,(M[mi]||M.fConcrete).clone());m.position.set(x,y||0.05,z);return m;}
-
+const m=new T.Mesh(g,(M[mi]||M.fConcrete).clone());m.position.set(x,0.05,z);return m;}
 function mkPoint(ty,x,z,r){let g,mt,h=1;
-const types={door:[new T.BoxGeometry(3,3,0.3),M.door,1.5],spawner:[new T.CylinderGeometry(0.5,0.8,2,8),M.spawner,1],
-drink:[new T.BoxGeometry(1.2,2.2,0.7),M.drink,1.1],trap:[new T.CylinderGeometry(1.5,1.5,0.3,12),M.trap,0.15],
-mystery:[new T.BoxGeometry(1.4,0.9,1),M.mystery,0.45],pap:[new T.BoxGeometry(1.5,2.5,1),M.pap,1.25],
-light:[new T.SphereGeometry(0.3,8,6),M.light,4.5],power:[new T.BoxGeometry(0.8,1.2,0.3),M.power,1.1]};
-const t=types[ty]||[new T.BoxGeometry(1,1,1),M.ref,0.5];
-const m=new T.Mesh(t[0],t[1].clone());m.position.set(x,t[2],z);m.rotation.y=r||0;return m;}
+if(ty==='door'){g=new T.BoxGeometry(3,3,0.3);mt=M.door;h=1.5;}
+else if(ty==='spawner'){g=new T.CylinderGeometry(0.5,0.8,2,8);mt=M.spawner;h=1;}
+else if(ty==='drink'){g=new T.BoxGeometry(1.2,2.2,0.7);mt=M.drink;h=1.1;}
+else if(ty==='trap'){g=new T.CylinderGeometry(1.5,1.5,0.3,12);mt=M.trap;h=0.15;}
+else if(ty==='mystery'){g=new T.BoxGeometry(1.4,0.9,1);mt=M.mystery;h=0.45;}
+else if(ty==='pap'){g=new T.BoxGeometry(1.5,2.5,1);mt=M.pap;h=1.25;}
+else if(ty==='light'){g=new T.SphereGeometry(0.3,8,6);mt=M.light;h=4.5;}
+else{g=new T.BoxGeometry(1,1,1);mt=M.ref;h=0.5;}
+const m=new T.Mesh(g,mt.clone());m.position.set(x,h,z);m.rotation.y=r;return m;}
 
-function buildObjMesh(o){
-if(o.type==='wall')return mkWall(o.data.x,o.data.z,o.data.len,o.data.h,o.data.t,o.data.rot,o.data.mat);
-if(o.type==='wallDoor')return mkWallWithGap(o.data.x,o.data.z,o.data.len,o.data.h,o.data.gap,o.data.rot,o.data.mat,0,3);
-if(o.type==='wallWin')return mkWallWithGap(o.data.x,o.data.z,o.data.len,o.data.h,o.data.gap,o.data.rot,o.data.mat,1.5,3.5);
-if(o.type==='floor'||o.type==='ceil')return mkFloor(o.data.x,o.data.z,o.data.w,o.data.d,o.data.mat,o.type==='ceil'?o.data.h||6:0.05);
-return mkPoint(o.type,o.data.x,o.data.z,o.data.rot);}
+// Preview on mousemove
+let lastPreviewPos=null;
+function updatePreview(){
+cPre();
+if(!lastPreviewPos||testMode)return;
+const p=lastPreviewPos;
+if(tool==='wall'){
+const h=+document.getElementById('wH').value,l=+document.getElementById('wL').value,t=+document.getElementById('wT').value;
+previewMesh=mkWall(p.x,p.z,l,h,t,rad(),'wBrick');
+}else if(tool==='floor'){
+const w=+document.getElementById('fW').value,d=+document.getElementById('fD').value;
+previewMesh=mkFloor(p.x,p.z,w,d,'fConcrete');
+}else if(tool!=='select'){
+previewMesh=mkPoint(tool,p.x,p.z,rad());
+}
+if(previewMesh){previewMesh.material=M.pre;sc.add(previewMesh);}
+}
 
-// Preview
-let lastP=null;
-function updPre(){cPre();if(!lastP||testMode)return;
-const d=getToolData(lastP.x,lastP.z);if(!d)return;
-const o={type:tool,data:d};const m=buildObjMesh(o);
-if(m){if(m.material)m.material=M.pre;else m.traverse(c=>{if(c.isMesh)c.material=M.pre;});
-previewMesh=m;sc.add(m);}}
+cv.addEventListener('mousemove',e=>{
+if(testMode)return;
+const p=gWP(e);if(!p)return;
+lastPreviewPos=p;
+document.getElementById('hud').textContent=`X:${p.x} Z:${p.z} | R:${rot}° | Obj:${ob.length}`;
+updatePreview();
+});
 
-function getToolData(x,z){
+// Place objects
+cv.addEventListener('click',e=>{
+if(testMode||e.button!==0)return;
+const p=gWP(e);if(!p)return;
 const r=rad();
-if(tool==='wall')return{x,z,len:+$('wL').value,h:+$('wH').value,t:+$('wT').value,rot:r,mat:$('wM').value};
-if(tool==='wallDoor')return{x,z,len:+$('wdL').value,h:+$('wdH').value,gap:+$('wdG').value,rot:r,mat:$('wdM').value};
-if(tool==='wallWin')return{x,z,len:+$('wwL').value,h:+$('wwH').value,gap:+$('wwG').value,rot:r,mat:$('wwM').value};
-if(tool==='floor'||tool==='ceil')return{x,z,w:+$('fW').value,d:+$('fD').value,mat:$('fM').value,h:tool==='ceil'?6:0};
-if(tool==='door')return{x,z,rot:r,cost:+$('dC').value,roomId:+$('dR').value,label:$('dL').value};
-if(tool==='drink')return{x,z,rot:r,drinkId:$('dk').value};
-if(tool==='trap')return{x,z,trapId:$('tr').value};
-if(tool==='spawner')return{x,z,rot:r,roomId:+$('sR2').value};
-if(tool==='mystery'||tool==='pap'||tool==='light'||tool==='power')return{x,z,rot:r};
-return null;}
-function $(id){return document.getElementById(id);}
+let mesh,data;
 
-cv.addEventListener('mousemove',e=>{if(testMode)return;const p=gWP(e);if(!p)return;lastP=p;
-$('hud').textContent=`X:${p.x} Z:${p.z} R:${rot}° Obj:${ob.length}`;updPre();});
-
-// PLACE
-cv.addEventListener('click',e=>{if(testMode||e.button!==0)return;const p=gWP(e);if(!p)return;
-if(tool==='select'){// Select nearest
-let bi=-1,bd=5;for(let i=0;i<ob.length;i++){const d2=Math.hypot(p.x-ob[i].data.x,p.z-ob[i].data.z);if(d2<bd){bd=d2;bi=i;}}
-selectObj(bi);return;}
-const d=getToolData(p.x,p.z);if(!d)return;
-const mesh=buildObjMesh({type:tool,data:d});if(!mesh)return;
-eg.add(mesh);ob.push({type:tool,mesh,data:d});uOL();});
-
-cv.addEventListener('contextmenu',e=>{e.preventDefault();if(testMode)return;const p=gWP(e);if(!p)return;
-let bi=-1,bd=5;for(let i=0;i<ob.length;i++){const d2=Math.hypot(p.x-ob[i].data.x,p.z-ob[i].data.z);if(d2<bd){bd=d2;bi=i;}}
-if(bi>=0){eg.remove(ob[bi].mesh);if(ob[bi].mesh.geometry)ob[bi].mesh.geometry.dispose();ob.splice(bi,1);if(selIdx===bi)selIdx=-1;uOL();}});
-
-// SELECT AND EDIT
-function selectObj(idx){
-// Remove old highlight
-if(selIdx>=0&&ob[selIdx]&&ob[selIdx]._selBox){sc.remove(ob[selIdx]._selBox);ob[selIdx]._selBox=null;}
-selIdx=idx;
-const sp=$('selPanel');
-if(idx<0||!ob[idx]){sp.style.display='none';return;}
-sp.style.display='block';
-const o=ob[idx];
-// Highlight
-const box=new T.Box3().setFromObject(o.mesh);box.expandByScalar(0.15);
-const sz=new T.Vector3();box.getSize(sz);const ct=new T.Vector3();box.getCenter(ct);
-const hm=new T.Mesh(new T.BoxGeometry(sz.x,sz.y,sz.z),M.sel);hm.position.copy(ct);sc.add(hm);o._selBox=hm;
-// Build edit fields
-let html='<div style="font-size:9px;color:#aaa;margin-bottom:4px">'+o.type.toUpperCase()+' ('+o.data.x+','+o.data.z+')</div>';
-const d=o.data;
-for(const k in d){
-if(k==='x'||k==='z')html+=`<label><span class="l">${k}</span><input type="number" class="sedit" data-k="${k}" value="${d[k]}" step="1"></label>`;
-else if(k==='rot')html+=`<label><span class="l">Rot</span><input type="number" class="sedit" data-k="rot" value="${(d[k]*180/Math.PI).toFixed(0)}" step="15"></label>`;
-else if(k==='mat')html+=`<label><span class="l">${k}</span><select class="sedit" data-k="${k}"><option ${d[k]==='wBrick'?'selected':''} value="wBrick">Ladrillo</option><option ${d[k]==='fConcrete'?'selected':''} value="fConcrete">Hormigon</option><option ${d[k]==='fBrick'?'selected':''} value="fBrick">Empedrado</option><option ${d[k]==='fGrass'?'selected':''} value="fGrass">Hierba</option><option ${d[k]==='fMetal'?'selected':''} value="fMetal">Metal</option></select></label>`;
-else if(typeof d[k]==='number')html+=`<label><span class="l">${k}</span><input type="number" class="sedit" data-k="${k}" value="${d[k]}" step="0.5"></label>`;
-else if(typeof d[k]==='string')html+=`<label><span class="l">${k}</span><input type="text" class="sedit" data-k="${k}" value="${d[k]}"></label>`;
+if(tool==='wall'){
+const h=+document.getElementById('wH').value,l=+document.getElementById('wL').value,t=+document.getElementById('wT').value,mi=document.getElementById('wM').value;
+mesh=mkWall(p.x,p.z,l,h,t,r,mi);
+data={x:p.x,z:p.z,len:l,h,t,rot:r,mat:mi};
+}else if(tool==='floor'){
+const w=+document.getElementById('fW').value,d=+document.getElementById('fD').value,mi=document.getElementById('fM').value;
+mesh=mkFloor(p.x,p.z,w,d,mi);
+data={x:p.x,z:p.z,w,d,mat:mi};
+}else if(tool==='door'){
+mesh=mkPoint('door',p.x,p.z,r);
+data={x:p.x,z:p.z,rot:r,cost:+document.getElementById('dC').value,roomId:+document.getElementById('dR').value,label:document.getElementById('dL').value};
+}else if(tool==='drink'){
+mesh=mkPoint('drink',p.x,p.z,r);
+data={x:p.x,z:p.z,rot:r,drinkId:document.getElementById('dk').value};
+}else if(tool==='trap'){
+mesh=mkPoint('trap',p.x,p.z,r);
+data={x:p.x,z:p.z,trapId:document.getElementById('tr').value};
+}else if(tool==='spawner'){
+mesh=mkPoint('spawner',p.x,p.z,r);
+data={x:p.x,z:p.z,rot:r,roomId:+document.getElementById('sR').value};
+}else if(tool==='mystery'||tool==='pap'||tool==='light'){
+mesh=mkPoint(tool,p.x,p.z,r);
+data={x:p.x,z:p.z};
 }
-$('selFields').innerHTML=html;
-}
-function applySelEdit(){
-if(selIdx<0||!ob[selIdx])return;const o=ob[selIdx];
-document.querySelectorAll('.sedit').forEach(el=>{const k=el.dataset.k;let v=el.value;
-if(k==='rot')v=parseFloat(v)*Math.PI/180;
-else if(typeof o.data[k]==='number')v=parseFloat(v);
-o.data[k]=v;});
-// Rebuild mesh
-eg.remove(o.mesh);if(o._selBox){sc.remove(o._selBox);o._selBox=null;}
-o.mesh=buildObjMesh(o);eg.add(o.mesh);selectObj(selIdx);uOL();}
-function delSel(){if(selIdx<0)return;eg.remove(ob[selIdx].mesh);if(ob[selIdx]._selBox)sc.remove(ob[selIdx]._selBox);ob.splice(selIdx,1);selIdx=-1;$('selPanel').style.display='none';uOL();}
+if(mesh&&tool!=='select'){eg.add(mesh);ob.push({type:tool,mesh,data});uOL();}
+});
+
+// Delete with right click
+cv.addEventListener('contextmenu',e=>{e.preventDefault();if(testMode)return;
+const p=gWP(e);if(!p)return;
+let bi=-1,bd=4;
+for(let i=0;i<ob.length;i++){const d=ob[i].data;const d2=Math.hypot(p.x-d.x,p.z-d.z);if(d2<bd){bd=d2;bi=i;}}
+if(bi>=0){eg.remove(ob[bi].mesh);ob[bi].mesh.geometry.dispose();ob.splice(bi,1);uOL();}
+});
 
 // Tool select
 document.querySelectorAll('.tb').forEach(b=>{b.addEventListener('click',()=>{
-document.querySelector('.tb.on').classList.remove('on');b.classList.add('on');tool=b.dataset.t;cPre();
+document.querySelector('.tb.on').classList.remove('on');b.classList.add('on');
+tool=b.dataset.t;cPre();
 document.querySelectorAll('.op').forEach(o=>o.classList.remove('sh'));
-const map={wall:'o_wall',wallDoor:'o_wallDoor',wallWin:'o_wallWin',floor:'o_floor',ceil:'o_floor',door:'o_door',drink:'o_drink',trap:'o_trap',spawner:'o_spawner'};
-if(map[tool])$(map[tool]).classList.add('sh');});});
+const op=document.getElementById('o_'+tool);if(op)op.classList.add('sh');
+const msgs={wall:'MURO: 1 click coloca. R o slider para rotar.',floor:'SUELO: 1 click coloca.',door:'PUERTA: 1 click. Usa rotación.',spawner:'SPAWNER: 1 click.',drink:'BEBIDA: 1 click. Usa rotación.',trap:'TRAMPA: 1 click.',mystery:'MYSTERY BOX: 1 click.',pap:'PACK-A-PUNCH: 1 click.',light:'LUZ: 1 click.',select:'Click der = borrar obj.'};
+document.getElementById('st').textContent=msgs[tool]||'';
+});});
 
-document.addEventListener('keydown',e=>{if(testMode){testKey(e);return;}
-if(e.code==='KeyR'){sR((rot+15)%360);}if(e.code==='KeyZ'&&e.ctrlKey)undo();if(e.code==='Delete'&&selIdx>=0)delSel();});
+// Keyboard
+document.addEventListener('keydown',e=>{
+if(testMode){testKey(e);return;}
+if(e.code==='KeyR'){setRot((rot+15)%360);}
+if(e.code==='KeyZ'&&e.ctrlKey)undo();
+});
 
-function uOL(){$('oc').textContent=ob.length;const l=$('ol');l.innerHTML='';
+// Object list
+function uOL(){document.getElementById('oc').textContent=ob.length;
+const l=document.getElementById('ol');l.innerHTML='';
 ob.forEach((o,i)=>{const d=document.createElement('div');d.className='oi';
-d.innerHTML=`<span>${o.type} (${o.data.x},${o.data.z})</span><span class="d" data-i="${i}">x</span>`;l.appendChild(d);});
-l.querySelectorAll('.d').forEach(d=>{d.addEventListener('click',()=>{const i=+d.dataset.i;eg.remove(ob[i].mesh);if(ob[i]._selBox)sc.remove(ob[i]._selBox);ob.splice(i,1);if(selIdx===i)selIdx=-1;uOL();});});}
-function undo(){if(!ob.length)return;const o=ob.pop();eg.remove(o.mesh);if(o._selBox)sc.remove(o._selBox);uOL();}
-function clrAll(){if(!confirm('Borrar?'))return;while(ob.length){const o=ob.pop();eg.remove(o.mesh);if(o._selBox)sc.remove(o._selBox);}selIdx=-1;uOL();}
+let desc=o.type.toUpperCase()+` (${o.data.x},${o.data.z})`;
+d.innerHTML=`<span>${desc}</span><span class="d" data-i="${i}">✕</span>`;l.appendChild(d);});
+l.querySelectorAll('.d').forEach(d=>{d.addEventListener('click',()=>{const i=+d.dataset.i;eg.remove(ob[i].mesh);ob.splice(i,1);uOL();});});}
+function undo(){if(ob.length){eg.remove(ob[ob.length-1].mesh);ob.pop();uOL();}}
+function clrAll(){if(!confirm('¿Borrar?'))return;while(ob.length){eg.remove(ob[0].mesh);ob.shift();}uOL();}
 
-$('sRef').addEventListener('change',e=>{rg.visible=e.target.checked;});
-$('sGr').addEventListener('change',e=>{gg.visible=e.target.checked;});
-$('gSnap').addEventListener('change',e=>{gs=+e.target.value||1;});
+// View toggles
+document.getElementById('sRef').addEventListener('change',e=>{rg.visible=e.target.checked;});
+document.getElementById('sGr').addEventListener('change',e=>{gg.visible=e.target.checked;});
+document.getElementById('gS').addEventListener('change',e=>{gs=+e.target.value||1;});
 
-// ===== PRESETS =====
-function addObj(type,data){const mesh=buildObjMesh({type,data});if(mesh){eg.add(mesh);ob.push({type,mesh,data});}}
-function preset(id){
-const H=6,OH=8,B='wBrick',C='fConcrete',P='fBrick';
-if(id==='spawn'||id==='ALL'){
-addObj('floor',{x:0,z:0,w:10,d:10,mat:C});
-addObj('wall',{x:-5,z:0,len:10,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:5,z:0,len:10,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:0,z:-5,len:10,h:H,t:0.5,rot:0,mat:B});
-addObj('wallDoor',{x:0,z:5,len:10,h:H,gap:4,rot:0,mat:B});
-addObj('drink',{x:0,z:-4,rot:0,drinkId:'redbull'});
-addObj('spawner',{x:-4,z:0,rot:Math.PI/2,roomId:0});
-addObj('spawner',{x:4,z:0,rot:-Math.PI/2,roomId:0});}
-if(id==='pas1'||id==='ALL'){
-addObj('floor',{x:0,z:10,w:4,d:10,mat:C});
-addObj('wall',{x:-2,z:10,len:10,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:2,z:10,len:10,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('door',{x:0,z:5,rot:0,cost:500,roomId:1,label:'PASILLO'});
-addObj('trap',{x:0,z:10,trapId:'spikes'});}
-if(id==='myst'||id==='ALL'){
-addObj('floor',{x:0,z:23,w:24,d:16,mat:P});
-addObj('wall',{x:-12,z:23,len:16,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:12,z:23,len:16,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wallDoor',{x:0,z:15,len:24,h:H,gap:4,rot:0,mat:B});
-addObj('wallDoor',{x:0,z:31,len:24,h:H,gap:4,rot:0,mat:B});
-addObj('door',{x:0,z:15,rot:0,cost:1000,roomId:2,label:'MYSTERY'});
-addObj('mystery',{x:6,z:23,rot:0});
-addObj('drink',{x:-11,z:20,rot:Math.PI/2,drinkId:'katxorro'});
-addObj('drink',{x:11,z:26,rot:-Math.PI/2,drinkId:'chupito'});
-addObj('light',{x:-6,z:20,rot:0});addObj('light',{x:6,z:26,rot:0});
-addObj('spawner',{x:-11,z:23,rot:Math.PI/2,roomId:1});addObj('spawner',{x:11,z:23,rot:-Math.PI/2,roomId:1});}
-if(id==='bif'||id==='ALL'){
-addObj('floor',{x:0,z:34,w:4,d:6,mat:C});addObj('floor',{x:0,z:39,w:20,d:4,mat:C});
-addObj('wall',{x:-2,z:34,len:6,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:2,z:34,len:6,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:-10,z:39,len:4,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:10,z:39,len:4,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wallDoor',{x:0,z:37,len:20,h:H,gap:4,rot:0,mat:B});
-addObj('wallDoor',{x:0,z:41,len:20,h:H,gap:8,rot:0,mat:B});
-addObj('door',{x:0,z:31,rot:0,cost:1500,roomId:3,label:'BIFURCACION'});}
-if(id==='salA'||id==='ALL'){
-addObj('floor',{x:-8,z:46,w:10,d:10,mat:P});
-addObj('wall',{x:-13,z:46,len:10,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:-3,z:46,len:10,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wallDoor',{x:-8,z:41,len:10,h:H,gap:4,rot:0,mat:B});
-addObj('wall',{x:-8,z:51,len:10,h:H,t:0.5,rot:0,mat:B});
-addObj('drink',{x:-8,z:50,rot:Math.PI,drinkId:'mojito'});
-addObj('spawner',{x:-12,z:46,rot:Math.PI/2,roomId:2});}
-if(id==='salB'||id==='ALL'){
-addObj('floor',{x:13,z:48,w:20,d:14,mat:P});
-addObj('wall',{x:3,z:48,len:14,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:23,z:48,len:14,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wallDoor',{x:13,z:41,len:20,h:H,gap:4,rot:0,mat:B});
-addObj('wallDoor',{x:13,z:55,len:20,h:H,gap:4,rot:0,mat:B});
-addObj('door',{x:13,z:55,rot:0,cost:2000,roomId:4,label:'PATIO'});
-addObj('trap',{x:13,z:48,trapId:'sawblade'});
-addObj('drink',{x:22,z:44,rot:-Math.PI/2,drinkId:'chartreuse'});
-addObj('drink',{x:4,z:48,rot:Math.PI/2,drinkId:'quintos'});
-addObj('spawner',{x:22,z:48,rot:-Math.PI/2,roomId:3});addObj('spawner',{x:4,z:52,rot:Math.PI/2,roomId:3});}
-if(id==='patio'||id==='ALL'){
-addObj('floor',{x:0,z:76,w:40,d:30,mat:P});
-addObj('wallDoor',{x:0,z:61,len:40,h:OH,gap:4,rot:0,mat:B});
-addObj('wall',{x:-20,z:76,len:30,h:OH,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:20,z:76,len:30,h:OH,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wallDoor',{x:0,z:91,len:40,h:OH,gap:8,rot:0,mat:B});
-addObj('trap',{x:-12,z:76,trapId:'electric'});addObj('trap',{x:14,z:70,trapId:'tesla'});
-addObj('drink',{x:-19,z:70,rot:Math.PI/2,drinkId:'cafelito'});
-addObj('drink',{x:19,z:70,rot:-Math.PI/2,drinkId:'cubata'});
-addObj('drink',{x:-19,z:84,rot:Math.PI/2,drinkId:'absenta'});
-addObj('drink',{x:19,z:84,rot:-Math.PI/2,drinkId:'bloody'});
-addObj('spawner',{x:-19,z:76,rot:Math.PI/2,roomId:4});addObj('spawner',{x:19,z:76,rot:-Math.PI/2,roomId:4});
-addObj('spawner',{x:-19,z:86,rot:Math.PI/2,roomId:4});addObj('spawner',{x:19,z:86,rot:-Math.PI/2,roomId:4});}
-if(id==='papR'||id==='ALL'){
-addObj('floor',{x:-16,z:95,w:8,d:8,mat:P});
-addObj('wall',{x:-20,z:95,len:8,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:-12,z:95,len:8,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:-16,z:99,len:8,h:H,t:0.5,rot:0,mat:B});
-addObj('door',{x:-16,z:91,rot:0,cost:4000,roomId:5,label:'PACK-A-PUNCH'});
-addObj('pap',{x:-16,z:95,rot:0});addObj('spawner',{x:-19,z:95,rot:Math.PI/2,roomId:5});}
-if(id==='chuc'||id==='ALL'){
-addObj('floor',{x:16,z:95,w:8,d:8,mat:P});
-addObj('wall',{x:12,z:95,len:8,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:20,z:95,len:8,h:H,t:0.5,rot:Math.PI/2,mat:B});
-addObj('wall',{x:16,z:99,len:8,h:H,t:0.5,rot:0,mat:B});
-addObj('door',{x:16,z:91,rot:0,cost:3000,roomId:6,label:'SALA PERK'});
-addObj('drink',{x:16,z:98,rot:Math.PI,drinkId:'chuchuwa'});
-addObj('power',{x:13,z:95,rot:Math.PI/2});addObj('spawner',{x:19,z:95,rot:-Math.PI/2,roomId:6});}
-uOL();}
-
-// ===== TEST MODE =====
-let tYaw=0,tPitch=0,tKeys={},tPoints=5000,tPowerOn=false,tDoors={};
-function enterTest(){testMode=true;$('tbanner').style.display='block';$('cross').style.display='block';$('pn').style.display='none';ctl.enabled=false;
-cam.fov=75;cam.updateProjectionMatrix();cam.position.set(0,1.7,0);tYaw=0;tPitch=0;tPoints=5000;tPowerOn=false;tDoors={};
-cv.requestPointerLock();}
-function exitTest(){testMode=false;$('tbanner').style.display='none';$('cross').style.display='none';$('tprompt').style.display='none';
-$('pn').style.display='block';ctl.enabled=true;cam.position.set(0,55,65);cam.fov=60;cam.updateProjectionMatrix();
-if(document.pointerLockElement)document.exitPointerLock();}
-function testKey(e){if(e.code==='Escape'){exitTest();return;}if(e.code==='KeyE')testInteract();tKeys[e.code]=true;}
-document.addEventListener('keyup',e=>{tKeys[e.code]=false;});
-document.addEventListener('mousemove',e=>{if(!testMode||document.pointerLockElement!==cv)return;
-tYaw-=e.movementX*0.002;tPitch=Math.max(-1.5,Math.min(1.5,tPitch-e.movementY*0.002));});
+// ===== TEST MODE (FPS walk) =====
+let testCam=null,testYaw=0,testPitch=0,testKeys={};
+function enterTest(){
+testMode=true;
+document.getElementById('testBanner').style.display='block';
+document.getElementById('testHud').style.display='block';
+document.getElementById('pn').style.display='none';
+ctl.enabled=false;
+// Save editor camera
+testCam={pos:cam.position.clone(),rot:cam.rotation.clone(),fov:cam.fov};
+cam.fov=75;cam.updateProjectionMatrix();
+cam.position.set(0,1.7,0);testYaw=0;testPitch=0;
+cv.requestPointerLock();
+}
+function exitTest(){
+testMode=false;
+document.getElementById('testBanner').style.display='none';
+document.getElementById('testHud').style.display='none';
+document.getElementById('pn').style.display='flex';
+ctl.enabled=true;
+if(testCam){cam.position.copy(testCam.pos);cam.rotation.copy(testCam.rot);cam.fov=testCam.fov;cam.updateProjectionMatrix();}
+if(document.pointerLockElement)document.exitPointerLock();
+}
+function testKey(e){
+if(e.code==='Escape'){exitTest();return;}
+testKeys[e.code]=true;
+}
+document.addEventListener('keyup',e=>{testKeys[e.code]=false;});
+document.addEventListener('mousemove',e=>{
+if(!testMode||document.pointerLockElement!==cv)return;
+testYaw-=e.movementX*0.002;
+testPitch-=e.movementY*0.002;
+testPitch=Math.max(-Math.PI/2+0.05,Math.min(Math.PI/2-0.05,testPitch));
+});
+document.addEventListener('pointerlockchange',()=>{
+if(testMode&&document.pointerLockElement!==cv){/* allow re-lock on click */}
+});
 cv.addEventListener('click',()=>{if(testMode&&document.pointerLockElement!==cv)cv.requestPointerLock();});
 
-function testInteract(){
-const pp=cam.position;let nearest=null,nd=4;
-for(const o of ob){const d2=Math.hypot(o.data.x-pp.x,o.data.z-pp.z);if(d2<nd){nd=d2;nearest=o;}}
-if(!nearest)return;
-const o=nearest,d=o.data;
-if(o.type==='door'){
-if(tDoors[o.data.x+'_'+o.data.z]){showTP('YA ABIERTA');return;}
-if(tPoints>=d.cost){tPoints-=d.cost;tDoors[d.x+'_'+d.z]=true;eg.remove(o.mesh);showTP('PUERTA ABIERTA -'+d.cost);
-}else showTP('FALTA DINERO ('+tPoints+'/'+d.cost+')');}
-else if(o.type==='drink')showTP('COMPRADO: '+d.drinkId.toUpperCase());
-else if(o.type==='mystery')showTP('ARMA ALEATORIA!');
-else if(o.type==='pap')showTP('ARMA MEJORADA!');
-else if(o.type==='power'){tPowerOn=!tPowerOn;showTP(tPowerOn?'ELECTRICIDAD ON':'ELECTRICIDAD OFF');}
-else if(o.type==='trap')showTP('TRAMPA '+d.trapId.toUpperCase()+' ACTIVADA');
-else showTP(o.type.toUpperCase());}
-function showTP(t){const el=$('tprompt');el.textContent=t;el.style.display='block';setTimeout(()=>{el.style.display='none';},1500);}
-
 function testUpdate(dt){
-cam.rotation.order='YXZ';cam.rotation.set(tPitch,tYaw,0);
-const sp=8*dt,fwd=new T.Vector3(-Math.sin(tYaw),0,-Math.cos(tYaw)),rgt=new T.Vector3(Math.cos(tYaw),0,-Math.sin(tYaw));
+if(!testMode)return;
+cam.rotation.order='YXZ';
+cam.rotation.set(testPitch,testYaw,0);
+const speed=8*dt;
+const fwd=new T.Vector3(-Math.sin(testYaw),0,-Math.cos(testYaw));
+const rgt=new T.Vector3(Math.cos(testYaw),0,-Math.sin(testYaw));
 const mv=new T.Vector3();
-if(tKeys['KeyW'])mv.add(fwd);if(tKeys['KeyS'])mv.sub(fwd);if(tKeys['KeyD'])mv.add(rgt);if(tKeys['KeyA'])mv.sub(rgt);
-if(mv.lengthSq()>0)mv.normalize().multiplyScalar(sp);
-const np=cam.position.clone().add(mv);np.y=1.7;
-// Collision
+if(testKeys['KeyW'])mv.add(fwd);
+if(testKeys['KeyS'])mv.sub(fwd);
+if(testKeys['KeyD'])mv.add(rgt);
+if(testKeys['KeyA'])mv.sub(rgt);
+if(mv.lengthSq()>0)mv.normalize().multiplyScalar(speed);
+// Simple collision: check against all wall meshes in editor
+const np=cam.position.clone().add(mv);
+np.y=1.7;
 let blocked=false;
-for(const o of ob){if(o.type!=='wall'&&o.type!=='wallDoor'&&o.type!=='wallWin')continue;
-if(tDoors[o.data.x+'_'+o.data.z])continue;
-const b=new T.Box3().setFromObject(o.mesh);b.expandByScalar(-0.05);
-if(b.containsPoint(np)){blocked=true;break;}}
+for(const o of ob){
+if(o.type!=='wall')continue;
+const b=new T.Box3().setFromObject(o.mesh);
+b.expandByScalar(-0.1);
+if(b.containsPoint(np)){blocked=true;break;}
+}
 if(!blocked)cam.position.copy(np);
-// Prompt
-let prompt='';
-for(const o of ob){const d2=Math.hypot(o.data.x-np.x,o.data.z-np.z);if(d2>3)continue;
-if(o.type==='door'&&!tDoors[o.data.x+'_'+o.data.z])prompt='[E] '+o.data.label+' — '+o.data.cost+' PTS';
-else if(o.type==='drink')prompt='[E] '+o.data.drinkId.toUpperCase();
-else if(o.type==='mystery')prompt='[E] MYSTERY BOX';
-else if(o.type==='pap')prompt='[E] PACK-A-PUNCH';
-else if(o.type==='power')prompt='[E] ELECTRICIDAD';
-else if(o.type==='trap')prompt='[E] TRAMPA';
-if(prompt)break;}
-const tp=$('tprompt');if(prompt){tp.textContent=prompt;tp.style.display='block';}else tp.style.display='none';}
+else cam.position.y=1.7;
+}
 
 // Export
-function doExport(){let c='    // === GENERADO POR EDITOR 3D ===\n\n';
-const types=['floor','ceil','wall','wallDoor','wallWin','door','spawner','drink','trap','mystery','pap','light','power'];
-types.forEach(ty=>{const it=ob.filter(o=>o.type===ty);if(!it.length)return;
-c+=`    // --- ${ty.toUpperCase()} ---\n`;
+function exp(){let c='    // ======= GENERADO POR EDITOR 3D PRO =======\n\n';
+const fl=ob.filter(o=>o.type==='floor'),wl=ob.filter(o=>o.type==='wall');
+if(fl.length){c+='    // --- SUELOS ---\n';fl.forEach(o=>{const d=o.data;c+=`    addFloorPlane(${d.x}, ${d.z}, ${d.w}, ${d.d}, ${d.mat});\n`;});c+='\n';}
+if(wl.length){c+='    // --- MUROS ---\n';wl.forEach(o=>{const d=o.data;
+// Calcular dirección del muro según rotación
+const cosR=Math.cos(d.rot),sinR=Math.sin(d.rot);
+const isHoriz=Math.abs(sinR)>0.5;
+if(isHoriz){c+=`    addWall(${d.x}, ${(d.h/2).toFixed(1)}, ${d.z}, ${d.t}, ${d.h}, ${d.len}, ${d.mat});\n`;}
+else{c+=`    addWall(${d.x}, ${(d.h/2).toFixed(1)}, ${d.z}, ${d.len}, ${d.h}, ${d.t}, ${d.mat});\n`;}
+});c+='\n';}
+['door','spawner','drink','trap','mystery','pap','light'].forEach(ty=>{
+const it=ob.filter(o=>o.type===ty);if(!it.length)return;c+=`    // --- ${ty.toUpperCase()} ---\n`;
 it.forEach(o=>{const d=o.data;const r=(d.rot||0).toFixed(2);
-if(ty==='wall'){const horiz=Math.abs(Math.sin(d.rot))>0.5;
-c+=`    addWall(${d.x}, ${(d.h/2).toFixed(1)}, ${d.z}, ${horiz?d.t:d.len}, ${d.h}, ${horiz?d.len:d.t}, ${d.mat});\n`;}
-else if(ty==='wallDoor'||ty==='wallWin'){const isW=ty==='wallWin';
-c+=`    addWallWithGap('${Math.abs(Math.sin(d.rot))>0.5?'z':'x'}', ${d.z}, ${d.x-d.len/2}, ${d.x+d.len/2}, ${(d.h/2).toFixed(1)}, ${d.h}, 0.5, ${d.mat}, ${(-d.gap/2).toFixed(1)}, ${(d.gap/2).toFixed(1)});\n`;}
-else if(ty==='floor')c+=`    addFloorPlane(${d.x}, ${d.z}, ${d.w}, ${d.d}, ${d.mat});\n`;
-else if(ty==='ceil')c+=`    addCeilingPlane(${d.x}, ${d.z}, ${d.w}, ${d.d}, ${d.h||6}, ceilMat);\n`;
-else if(ty==='door')c+=`    addDoor(${d.x}, ${d.z}, ${r}, ${d.cost}, ${d.roomId}, '${d.label}');\n`;
+if(ty==='door')c+=`    addDoor(${d.x}, ${d.z}, ${r}, ${d.cost}, ${d.roomId}, '${d.label}');\n`;
 else if(ty==='spawner')c+=`    addSpawner(${d.x}, 1.2, ${d.z}, ${r}, ${d.roomId});\n`;
 else if(ty==='drink')c+=`    addDrinkMachine(${d.x}, ${d.z}, ${r}, '${d.drinkId}');\n`;
 else if(ty==='trap')c+=`    addBuyableTrap(${d.x}, ${d.z}, '${d.trapId}');\n`;
+else if(ty==='mystery')c+=`    // Mystery box en (${d.x}, ${d.z})\n`;
+else if(ty==='pap')c+=`    // PAP en (${d.x}, ${d.z})\n`;
 else if(ty==='light')c+=`    makeHangingLamp(${d.x}, ${d.z}, 0xffaa44);\n`;
-else c+=`    // ${ty} en (${d.x}, ${d.z})\n`;});c+='\n';});
-$('co').value=c;}
+});c+='\n';});
+document.getElementById('co').value=c;}
 
-function sav(){localStorage.setItem('rmap3',JSON.stringify(ob.map(o=>({type:o.type,data:o.data}))));alert('Guardado');}
-function doLoad(){const r=localStorage.getItem('rmap3');if(!r){alert('No hay mapa');return;}
-while(ob.length){const o=ob.pop();eg.remove(o.mesh);}selIdx=-1;
-JSON.parse(r).forEach(o=>{const mesh=buildObjMesh(o);if(mesh){eg.add(mesh);ob.push({type:o.type,mesh,data:o.data});}});uOL();alert('Cargado');}
+function sav(){localStorage.setItem('raval_map3d',JSON.stringify(ob.map(o=>({type:o.type,data:o.data}))));alert('Guardado: '+ob.length+' objetos');}
+function ld(){const r=localStorage.getItem('raval_map3d');if(!r){alert('No hay mapa');return;}
+while(ob.length){eg.remove(ob[0].mesh);ob.shift();}
+JSON.parse(r).forEach(o=>{let m;
+if(o.type==='wall')m=mkWall(o.data.x,o.data.z,o.data.len,o.data.h,o.data.t,o.data.rot,o.data.mat);
+else if(o.type==='floor')m=mkFloor(o.data.x,o.data.z,o.data.w,o.data.d,o.data.mat);
+else m=mkPoint(o.type,o.data.x,o.data.z,o.data.rot||0);
+if(m){eg.add(m);ob.push({type:o.type,mesh:m,data:o.data});}});uOL();alert('Cargado: '+ob.length);}
 
-function resize(){const v=$('vp');ren.setSize(v.clientWidth,v.clientHeight);cam.aspect=v.clientWidth/v.clientHeight;cam.updateProjectionMatrix();}
+// Resize + loop
+function resize(){const v=document.getElementById('vp');ren.setSize(v.clientWidth,v.clientHeight);cam.aspect=v.clientWidth/v.clientHeight;cam.updateProjectionMatrix();}
 window.addEventListener('resize',resize);resize();
-let lt=performance.now();
-(function anim(){requestAnimationFrame(anim);const now=performance.now(),dt=Math.min((now-lt)/1000,0.05);lt=now;
-if(testMode)testUpdate(dt);else ctl.update();ren.render(sc,cam);})();
+let lastT=performance.now();
+(function anim(){requestAnimationFrame(anim);
+const now=performance.now(),dt=Math.min((now-lastT)/1000,0.05);lastT=now;
+if(testMode)testUpdate(dt);else ctl.update();
+ren.render(sc,cam);})();
 </script>
 </body>
 </html>
