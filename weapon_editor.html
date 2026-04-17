@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Raval Simulator — Editor de Armas</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#111;color:#eee;font-family:'Courier New',monospace;display:flex;height:100vh;overflow:hidden}
+#viewport{flex:1;position:relative}
+canvas{display:block;width:100%;height:100%}
+#panel{
+  width:340px;background:#1a1a1a;padding:16px;
+  overflow-y:auto;border-left:2px solid #ff2a6d;
+  display:flex;flex-direction:column;gap:12px;
+}
+h1{font-size:14px;color:#ff2a6d;text-align:center;border-bottom:1px solid #333;padding-bottom:8px}
+h2{font-size:11px;color:#39ff14;margin-top:8px}
+label{font-size:10px;color:#aaa;display:flex;align-items:center;gap:8px}
+label span{flex:0 0 30px;text-align:right;color:#ffe600;font-size:11px}
+select{
+  width:100%;padding:6px;background:#222;color:#fff;
+  border:1px solid #ff2a6d;font-family:inherit;font-size:12px;
+}
+input[type=range]{flex:1;accent-color:#ff2a6d}
+.row{display:flex;align-items:center;gap:6px}
+.section{background:#222;padding:10px;border-radius:4px;border:1px solid #333}
+#output{
+  background:#0a0a0a;padding:10px;font-size:10px;
+  border:1px solid #39ff14;color:#39ff14;
+  white-space:pre-wrap;word-break:break-all;
+  min-height:80px;border-radius:4px;
+  user-select:all;cursor:text;
+}
+button{
+  padding:8px 12px;background:#ff2a6d;color:#fff;
+  border:none;font-family:inherit;font-size:11px;
+  cursor:pointer;border-radius:3px;
+}
+button:hover{background:#ff4488}
+.hint{font-size:9px;color:#666;text-align:center;margin-top:4px}
+#info{font-size:9px;color:#888;text-align:center}
+.reset-btn{background:#444;font-size:10px;padding:4px 8px}
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <canvas id="c"></canvas>
+  <div id="info" style="position:absolute;bottom:8px;left:8px">
+    Arrastra con el ratón para rotar la vista · Scroll para zoom
+  </div>
+</div>
+
+<div id="panel">
+  <h1>🔫 EDITOR DE ARMAS</h1>
+  
+  <div class="section">
+    <label>Seleccionar arma:</label>
+    <select id="weaponSelect"></select>
+  </div>
+
+  <div class="section">
+    <h2>📐 POSICIÓN (viewmodel)</h2>
+    <label class="row">X <input type="range" id="px" min="-1" max="1" step="0.01" value="0.30"> <span id="pxV">0.30</span></label>
+    <label class="row">Y <input type="range" id="py" min="-1" max="0.5" step="0.01" value="-0.30"> <span id="pyV">-0.30</span></label>
+    <label class="row">Z <input type="range" id="pz" min="-1.5" max="0" step="0.01" value="-0.55"> <span id="pzV">-0.55</span></label>
+  </div>
+
+  <div class="section">
+    <h2>🔄 ROTACIÓN</h2>
+    <label class="row">RX <input type="range" id="rx" min="-3.15" max="3.15" step="0.01" value="0"> <span id="rxV">0</span></label>
+    <label class="row">RY <input type="range" id="ry" min="-3.15" max="3.15" step="0.01" value="0"> <span id="ryV">0</span></label>
+    <label class="row">RZ <input type="range" id="rz" min="-3.15" max="3.15" step="0.01" value="0"> <span id="rzV">0</span></label>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button class="reset-btn" onclick="setRY(0)">RY=0°</button>
+      <button class="reset-btn" onclick="setRY(Math.PI/2)">RY=90°</button>
+      <button class="reset-btn" onclick="setRY(Math.PI)">RY=180°</button>
+      <button class="reset-btn" onclick="setRY(-Math.PI/2)">RY=-90°</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📏 ESCALA</h2>
+    <label class="row">Size <input type="range" id="sz" min="0.1" max="2" step="0.01" value="0.60"> <span id="szV">0.60</span></label>
+  </div>
+
+  <div class="section">
+    <h2>📋 CÓDIGO PARA COPIAR</h2>
+    <div id="output">Selecciona un arma...</div>
+    <button onclick="copyOutput()" style="margin-top:6px;width:100%">📋 COPIAR AL PORTAPAPELES</button>
+  </div>
+
+  <div class="hint">
+    Coloca este archivo en la MISMA carpeta que index.html<br>
+    (junto a /models/) para que cargue los GLB.
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ===== CONFIG: mismos archivos y tamaños que el juego =====
+const WEAPON_MODEL_FILES = {
+  pistol:'pistol.glb', magnum:'revolver.glb', shotgun:'shotgun.glb',
+  autoshot:'shotgun.glb', rifle:'rifle.glb', burst:'rifle.glb',
+  ak47:'fusil.glb', sniper:'sniper.glb', lmg:'ametralladora pesada.glb',
+  plasma:'plasmagun.glb', perkygun:'plasmagun.glb', railgun:'railgun.glb',
+  bat:'bate.glb', katana:'katana.glb', machete:'machete.glb',
+  knife:'cuchillo.glb', deagle:'deagle6.glb', flamer:'flamethrower.glb',
+  perkynuke:'perkynuke.glb', rpg:'rpg.glb', smg:'smg.glb', tesla:'teslagun.glb',
+};
+const WEAPON_TARGET_SIZE = {
+  pistol:0.35,magnum:0.40,shotgun:0.75,autoshot:0.75,rifle:0.70,burst:0.70,
+  ak47:0.75,sniper:0.95,lmg:0.85,plasma:0.65,perkygun:0.65,railgun:0.85,
+  bat:0.70,katana:0.80,machete:0.60,knife:0.30,deagle:0.40,flamer:0.80,
+  perkynuke:0.90,rpg:0.90,smg:0.55,tesla:0.70,
+};
+const OVERRIDES = {
+  pistol:{x:0.28,y:-0.28,z:-0.50,rx:0,ry:-Math.PI/2,rz:0},
+  magnum:{x:0.28,y:-0.28,z:-0.50,rx:0,ry:Math.PI/2,rz:0},
+  shotgun:{x:0.30,y:-0.30,z:-0.60,rx:0,ry:Math.PI,rz:0},
+  autoshot:{x:0.30,y:-0.30,z:-0.60,rx:0,ry:0,rz:0},
+  rifle:{x:0.30,y:-0.30,z:-0.60,rx:0,ry:0,rz:0},
+  burst:{x:0.30,y:-0.30,z:-0.60,rx:0,ry:0,rz:0},
+  ak47:{x:0.30,y:-0.30,z:-0.60,rx:0,ry:Math.PI,rz:0},
+  sniper:{x:0.30,y:-0.30,z:-0.70,rx:0,ry:Math.PI,rz:0},
+  lmg:{x:0.32,y:-0.32,z:-0.65,rx:0,ry:0,rz:0},
+  plasma:{x:0.30,y:-0.28,z:-0.55,rx:0,ry:-Math.PI/2,rz:0},
+  perkygun:{x:0.30,y:-0.28,z:-0.55,rx:0,ry:-Math.PI/2,rz:0},
+  railgun:{x:0.32,y:-0.30,z:-0.65,rx:0,ry:0,rz:0},
+  bat:{x:0.30,y:-0.30,z:-0.55,rx:0,ry:0,rz:0},
+  katana:{x:0.30,y:-0.30,z:-0.55,rx:0,ry:Math.PI,rz:0},
+  machete:{x:0.30,y:-0.30,z:-0.55,rx:0,ry:Math.PI,rz:0},
+  knife:{x:0.25,y:-0.25,z:-0.45,rx:0,ry:Math.PI,rz:0},
+  deagle:{x:0.28,y:-0.28,z:-0.50,rx:0,ry:Math.PI,rz:0},
+  flamer:{x:0.32,y:-0.32,z:-0.65,rx:0,ry:Math.PI,rz:0},
+  perkynuke:{x:0.35,y:-0.35,z:-0.70,rx:0,ry:0,rz:0},
+  rpg:{x:0.32,y:-0.32,z:-0.70,rx:0,ry:Math.PI,rz:0},
+  smg:{x:0.28,y:-0.28,z:-0.55,rx:0,ry:0,rz:0},
+  tesla:{x:0.30,y:-0.28,z:-0.55,rx:0,ry:0,rz:0},
+};
+
+// ===== THREE.JS SETUP =====
+const canvas = document.getElementById('c');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+scene.fog = new THREE.Fog(0x1a1a2e, 5, 20);
+
+// Camera simula la vista en primera persona
+const camera = new THREE.PerspectiveCamera(75, 1, 0.05, 50);
+camera.position.set(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+if (THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+// Luz
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dirLight = new THREE.DirectionalLight(0xfff0e0, 0.8);
+dirLight.position.set(2, 3, 1);
+scene.add(dirLight);
+
+// Grid de referencia
+const grid = new THREE.GridHelper(10, 20, 0x333333, 0x222222);
+grid.position.y = -1.7;
+scene.add(grid);
+
+// Crosshair de referencia (punto rosa en el centro)
+const chGeo = new THREE.SphereGeometry(0.003, 8, 8);
+const chMat = new THREE.MeshBasicMaterial({ color: 0xff2a6d });
+const crosshair = new THREE.Mesh(chGeo, chMat);
+crosshair.position.set(0, 0, -0.5);
+camera.add(crosshair);
+scene.add(camera);
+
+// OrbitControls para rotar la vista (como inspección)
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enablePan = false;
+controls.target.set(0.3, -0.3, -0.5);
+controls.update();
+
+// ===== WEAPON MODEL =====
+let currentModel = null;
+let currentWeaponId = null;
+const loader = new THREE.GLTFLoader();
+
+function loadWeapon(weaponId) {
+  // Quitar modelo anterior
+  if (currentModel) {
+    scene.remove(currentModel);
+    currentModel = null;
+  }
+  currentWeaponId = weaponId;
+  const file = WEAPON_MODEL_FILES[weaponId];
+  if (!file) return;
+
+  loader.load('models/' + encodeURIComponent(file), (gltf) => {
+    const model = gltf.scene;
+    // Normalizar (mismo código que el juego)
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3(); box.getSize(size);
+    const center = new THREE.Vector3(); box.getCenter(center);
+    const targetSize = WEAPON_TARGET_SIZE[weaponId] || 0.6;
+    const maxDim = Math.max(size.x, size.y, size.z) || 1;
+    const scale = targetSize / maxDim;
+    model.position.set(-center.x, -center.y, -center.z);
+    const wrap = new THREE.Group();
+    wrap.add(model);
+    wrap.scale.setScalar(scale);
+    currentModel = wrap;
+    scene.add(currentModel);
+
+    // Aplicar overrides guardados
+    const ov = OVERRIDES[weaponId] || {};
+    setSlider('px', ov.x || 0.30);
+    setSlider('py', ov.y || -0.30);
+    setSlider('pz', ov.z || -0.55);
+    setSlider('rx', ov.rx || 0);
+    setSlider('ry', ov.ry || 0);
+    setSlider('rz', ov.rz || 0);
+    setSlider('sz', targetSize);
+    updateModel();
+  }, undefined, (err) => {
+    document.getElementById('output').textContent = 'ERROR: no se pudo cargar models/' + file + '\n\nAsegúrate de que weapon_editor.html está en la misma carpeta que index.html';
+  });
+}
+
+function updateModel() {
+  if (!currentModel) return;
+  const px = parseFloat(document.getElementById('px').value);
+  const py = parseFloat(document.getElementById('py').value);
+  const pz = parseFloat(document.getElementById('pz').value);
+  const rx = parseFloat(document.getElementById('rx').value);
+  const ry = parseFloat(document.getElementById('ry').value);
+  const rz = parseFloat(document.getElementById('rz').value);
+  const sz = parseFloat(document.getElementById('sz').value);
+  
+  currentModel.position.set(px, py, pz);
+  currentModel.rotation.set(rx, ry, rz);
+  // Escala se aplica al modelo interno (no al wrap)
+  const targetSize = sz;
+  const child = currentModel.children[0]; // el model original
+  if (child) {
+    const box = new THREE.Box3().setFromObject(child);
+    const size = new THREE.Vector3(); box.getSize(size);
+    // Ya está escalado, recalcular
+  }
+
+  // Update value displays
+  document.getElementById('pxV').textContent = px.toFixed(2);
+  document.getElementById('pyV').textContent = py.toFixed(2);
+  document.getElementById('pzV').textContent = pz.toFixed(2);
+  document.getElementById('rxV').textContent = rx.toFixed(2);
+  document.getElementById('ryV').textContent = ry.toFixed(2);
+  document.getElementById('rzV').textContent = rz.toFixed(2);
+  document.getElementById('szV').textContent = sz.toFixed(2);
+
+  // Generate code
+  const ryStr = formatAngle(ry);
+  const rxStr = formatAngle(rx);
+  const rzStr = formatAngle(rz);
+  
+  const code = `    ${currentWeaponId}: { x: ${px.toFixed(2)}, y:${py.toFixed(2)}, z:${pz.toFixed(2)}, rx: ${rxStr}, ry: ${ryStr}, rz: ${rzStr} },`;
+  const sizeCode = `    ${currentWeaponId}: ${sz.toFixed(2)},`;
+  
+  document.getElementById('output').textContent = 
+    '// WEAPON_MODEL_OVERRIDES:\n' + code + '\n\n// WEAPON_TARGET_SIZE:\n' + sizeCode;
+}
+
+function formatAngle(rad) {
+  // Detect common angles and show as Math.PI expressions
+  const pi = Math.PI;
+  if (Math.abs(rad) < 0.02) return '0';
+  if (Math.abs(rad - pi) < 0.05) return 'Math.PI';
+  if (Math.abs(rad + pi) < 0.05) return '-Math.PI';
+  if (Math.abs(rad - pi/2) < 0.05) return 'Math.PI/2';
+  if (Math.abs(rad + pi/2) < 0.05) return '-Math.PI/2';
+  if (Math.abs(rad - pi/4) < 0.05) return 'Math.PI/4';
+  if (Math.abs(rad + pi/4) < 0.05) return '-Math.PI/4';
+  return rad.toFixed(2);
+}
+
+function setSlider(id, val) {
+  const el = document.getElementById(id);
+  if (el) { el.value = val; }
+}
+
+function setRY(val) {
+  setSlider('ry', val);
+  updateModel();
+}
+
+function copyOutput() {
+  const text = document.getElementById('output').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    alert('Copiado al portapapeles');
+  });
+}
+
+// ===== INIT =====
+// Populate dropdown
+const select = document.getElementById('weaponSelect');
+Object.keys(WEAPON_MODEL_FILES).forEach(id => {
+  const opt = document.createElement('option');
+  opt.value = id;
+  opt.textContent = id.toUpperCase() + ' (' + WEAPON_MODEL_FILES[id] + ')';
+  select.appendChild(opt);
+});
+select.addEventListener('change', () => loadWeapon(select.value));
+
+// Slider listeners
+['px','py','pz','rx','ry','rz','sz'].forEach(id => {
+  document.getElementById(id).addEventListener('input', updateModel);
+});
+
+// Resize
+function resize() {
+  const vp = document.getElementById('viewport');
+  renderer.setSize(vp.clientWidth, vp.clientHeight);
+  camera.aspect = vp.clientWidth / vp.clientHeight;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// Render loop
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+// Load first weapon
+loadWeapon('pistol');
+</script>
+</body>
+</html>
