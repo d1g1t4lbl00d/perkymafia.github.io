@@ -104,7 +104,7 @@ canvas#measC{position:absolute;inset:0;pointer-events:none;z-index:4}
   <div id="hud">X:0 Z:0</div>
   <div id="st">Click colocar · Shift+click seleccionar · R rotar</div>
   <div id="cross"></div>
-  <div id="tbanner">MODO PRUEBA — ESC volver · WASD moverse · E interactuar</div>
+  <div id="tbanner">MODO PRUEBA — ESC volver · WASD moverse · ESPACIO saltar · SHIFT sprint · E interactuar</div>
   <div id="tprompt"></div>
   <div id="minimap"><canvas id="miniC" width="160" height="160"></canvas></div>
   <canvas id="measC"></canvas>
@@ -343,25 +343,93 @@ pre:new T.MeshBasicMaterial({color:0x44ff44,transparent:true,opacity:0.3,wirefra
 sel:new T.MeshBasicMaterial({color:0xffff00,transparent:true,opacity:0.3,wireframe:true}),
 };
 
-// Reference map
+// Reference map — exact game layout with real textures, semi-transparent
 var rg=new T.Group();scene.add(rg);
 function bRef(){var H=6,OH=8;
-function w(x,z,sx,sz,h){h=h||H;var m=new T.Mesh(new T.BoxGeometry(sx,h,sz),MAT.ref);m.position.set(x,h/2,z);rg.add(m);}
-function f(x,z,wd,dp){var m=new T.Mesh(new T.PlaneGeometry(wd,dp),MAT.refF);m.rotation.x=-Math.PI/2;m.position.set(x,0.01,z);rg.add(m);}
-f(0,0,10,10);w(-5,0,0.5,10);w(5,0,0.5,10);w(0,-5,10,0.5);
-f(0,10,4,10);w(-2,10,0.5,10);w(2,10,0.5,10);
-f(0,23,24,16);w(-12,23,0.5,16);w(12,23,0.5,16);w(0,15,24,0.5);w(0,31,24,0.5);
-f(0,34,4,6);f(0,39,20,4);w(-2,34,0.5,6);w(2,34,0.5,6);w(-10,39,0.5,4);w(10,39,0.5,4);w(0,37,20,0.5);w(0,41,20,0.5);
-f(-8,46,10,10);w(-13,46,0.5,10);w(-3,46,0.5,10);w(-8,41,10,0.5);w(-8,51,10,0.5);
-f(13,48,20,14);w(3,48,0.5,14);w(23,48,0.5,14);w(13,41,20,0.5);w(13,55,20,0.5);
-f(13,58,4,6);w(11,58,0.5,6);w(15,58,0.5,6);
-f(0,76,40,30);w(0,61,40,0.5,OH);w(0,91,40,0.5,OH);
-f(-16,95,8,8);w(-20,95,0.5,8);w(-12,95,0.5,8);w(-16,99,8,0.5);
-f(16,95,8,8);w(12,95,0.5,8);w(20,95,0.5,8);w(16,99,8,0.5);
-// Fences on patio sides
-var fmat=new T.MeshStandardMaterial({color:0x999,transparent:true,opacity:0.15,metalness:0.8});
-var fl=new T.Mesh(new T.BoxGeometry(0.15,2.4,30),fmat);fl.position.set(-20,1.2,76);rg.add(fl);
-var fr=new T.Mesh(new T.BoxGeometry(0.15,2.4,30),fmat.clone());fr.position.set(20,1.2,76);rg.add(fr);}
+// Semi-transparent clones of game textures
+var rWall=new T.MeshStandardMaterial({map:makeWallTex('brick'),transparent:true,opacity:0.35,roughness:0.85});
+var rOut=new T.MeshStandardMaterial({map:makeWallTex('outdoor'),transparent:true,opacity:0.35,roughness:0.7});
+var rConc=new T.MeshStandardMaterial({map:makeFloorTex('concrete'),transparent:true,opacity:0.25,roughness:0.8});
+var rBrk=new T.MeshStandardMaterial({map:makeFloorTex('brick'),transparent:true,opacity:0.25,roughness:0.8});
+var rFnc=new T.MeshStandardMaterial({color:0x888,metalness:0.8,transparent:true,opacity:0.25});
+// Helpers: wall with corner extension, floor, wall-gap (2 segments)
+function w(x,z,len,rot,h,mat){h=h||H;mat=mat||rWall;var ext=len+(0.5);
+var m=new T.Mesh(new T.BoxGeometry(ext,h,0.5),mat.clone());m.position.set(x,h/2,z);m.rotation.y=rot;rg.add(m);}
+function f(x,z,wd,dp,mat){mat=mat||rConc;var g=new T.PlaneGeometry(wd,dp);g.rotateX(-Math.PI/2);
+var m=new T.Mesh(g,mat.clone());m.position.set(x,0.02,z);rg.add(m);}
+function wg(x,z,len,gap,rot,h,mat){h=h||H;mat=mat||rWall;var sl=(len-gap)/2;
+if(sl>0.05){var l=new T.Mesh(new T.BoxGeometry(sl,h,0.5),mat.clone());l.position.set(-(gap+sl)/2,h/2,0);
+var r=new T.Mesh(new T.BoxGeometry(sl,h,0.5),mat.clone());r.position.set((gap+sl)/2,h/2,0);
+var lH=h-3.2;var grp=new T.Group();grp.add(l);grp.add(r);
+if(lH>0.1){var lt=new T.Mesh(new T.BoxGeometry(gap,lH,0.5),mat.clone());lt.position.set(0,3.2+lH/2,0);grp.add(lt);}
+grp.position.set(x,0,z);grp.rotation.y=rot;rg.add(grp);}}
+function fn(x,z,len,rot){var m=new T.Mesh(new T.BoxGeometry(len,2.4,0.1),rFnc.clone());m.position.set(x,1.2,z);m.rotation.y=rot;rg.add(m);}
+function mk(x,z,c){var m=new T.Mesh(new T.CylinderGeometry(0.4,0.4,3,8),new T.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:0.5,transparent:true,opacity:0.4}));m.position.set(x,1.5,z);rg.add(m);}
+var R=Math.PI/2;
+// SPAWN
+f(0,0,10,10,rConc);
+w(0,-5,10,0,H);w(-5,0,10,R,H);w(5,0,10,R,H);
+wg(0,5,10,4,0,H);
+// PASILLO
+f(0,10,4,10,rConc);
+w(-2,10,10,R,H);w(2,10,10,R,H);
+// MYSTERY
+f(0,23,24,16,rBrk);
+wg(0,15,24,4,0,H);wg(0,31,24,4,0,H);
+w(-12,23,16,R,H);w(12,23,16,R,H);
+// PASILLO2
+f(0,34,4,6,rConc);
+w(-2,34,6,R,H);w(2,34,6,R,H);
+// VESTIBULO
+f(0,39,20,4,rConc);
+wg(0,37,20,4,0,H);
+w(-10,39,4,R,H);w(10,39,4,R,H);
+// z=41: 3 segments with gaps for Sala A & B
+var m41a=new T.Mesh(new T.BoxGeometry(2,H,0.5),rWall.clone());m41a.position.set(-9,H/2,41);rg.add(m41a);
+var m41b=new T.Mesh(new T.BoxGeometry(6,H,0.5),rWall.clone());m41b.position.set(0,H/2,41);rg.add(m41b);
+var m41c=new T.Mesh(new T.BoxGeometry(2,H,0.5),rWall.clone());m41c.position.set(9,H/2,41);rg.add(m41c);
+// SALA A
+f(-8,46,10,10,rBrk);
+w(-13,46,10,R,H);w(-3,46,10,R,H);w(-8,51,10,0,H);
+var sa1=new T.Mesh(new T.BoxGeometry(5,H,0.5),rWall.clone());sa1.position.set(-10.5,H/2,41);rg.add(sa1);
+var sa2=new T.Mesh(new T.BoxGeometry(2,H,0.5),rWall.clone());sa2.position.set(-4,H/2,41);rg.add(sa2);
+// SALA B
+f(13,48,20,14,rBrk);
+w(3,48,14,R,H);w(23,48,14,R,H);
+var sb1=new T.Mesh(new T.BoxGeometry(2,H,0.5),rWall.clone());sb1.position.set(4,H/2,41);rg.add(sb1);
+var sb2=new T.Mesh(new T.BoxGeometry(15,H,0.5),rWall.clone());sb2.position.set(15.5,H/2,41);rg.add(sb2);
+var sb3=new T.Mesh(new T.BoxGeometry(9,H,0.5),rWall.clone());sb3.position.set(7.5,H/2,55);rg.add(sb3);
+var sb4=new T.Mesh(new T.BoxGeometry(9,H,0.5),rWall.clone());sb4.position.set(18.5,H/2,55);rg.add(sb4);
+// PREPATIO
+f(13,58,4,6,rBrk);
+w(11,58,6,R,H);w(15,58,6,R,H);
+// PATIO
+f(0,76,40,30,rBrk);
+var pw1=new T.Mesh(new T.BoxGeometry(31,OH,0.5),rOut.clone());pw1.position.set(-4.5,OH/2,61);rg.add(pw1);
+var pw2=new T.Mesh(new T.BoxGeometry(5,OH,0.5),rOut.clone());pw2.position.set(17.5,OH/2,61);rg.add(pw2);
+var pw3=new T.Mesh(new T.BoxGeometry(2,OH,0.5),rOut.clone());pw3.position.set(-19,OH/2,91);rg.add(pw3);
+var pw4=new T.Mesh(new T.BoxGeometry(28,OH,0.5),rOut.clone());pw4.position.set(0,OH/2,91);rg.add(pw4);
+var pw5=new T.Mesh(new T.BoxGeometry(2,OH,0.5),rOut.clone());pw5.position.set(19,OH/2,91);rg.add(pw5);
+fn(-20,76,30,R);fn(20,76,30,R);
+// PAP
+f(-16,95,8,8,rBrk);
+w(-20,95,8,R,H);w(-12,95,8,R,H);w(-16,99,8,0,H);
+// CHUCHUWA
+f(16,95,8,8,rBrk);
+w(12,95,8,R,H);w(20,95,8,R,H);w(16,99,8,0,H);
+// Markers: spawn, mystery, pap, chuchuwa, power
+mk(0,0,0x00ffff);mk(6,23,0xaa55ff);mk(-16,95,0xff2a6d);mk(16,95,0x39ff14);mk(13,95,0xff4444);
+// Room labels
+function label(x,z,txt){
+var c=document.createElement('canvas');c.width=256;c.height=64;var cx=c.getContext('2d');
+cx.fillStyle='transparent';cx.fillRect(0,0,256,64);
+cx.font='bold 28px Orbitron,monospace';cx.fillStyle='rgba(255,42,109,0.5)';cx.textAlign='center';cx.fillText(txt,128,40);
+var tex=new T.CanvasTexture(c);var sp=new T.Mesh(new T.PlaneGeometry(8,2),new T.MeshBasicMaterial({map:tex,transparent:true,side:T.DoubleSide}));
+sp.rotation.x=-Math.PI/2;sp.position.set(x,0.1,z);rg.add(sp);}
+label(0,0,'SPAWN');label(0,10,'PASILLO');label(0,23,'MYSTERY');label(0,34,'PAS.2');
+label(0,39,'VESTIBULO');label(-8,46,'SALA A');label(13,48,'SALA B');
+label(0,76,'PATIO');label(-16,95,'PAP');label(16,95,'CHUCHUWA');
+}
 bRef();
 
 // State
@@ -676,28 +744,91 @@ addP('power',{x:13,z:95,rot:R});addP('spawner',{x:19.5,z:95,rot:-R,roomId:6});}
 uOL();};
 
 // Test mode
-var tY=0,tP=0,tK={},tPts=5000,tDr={};
-window.enterTest=function(){testMode=true;$('tbanner').style.display='block';$('cross').style.display='block';$('pn').style.display='none';$('st').style.display='none';camera.fov=75;camera.updateProjectionMatrix();camera.position.set(0,1.7,0);tY=0;tP=0;tPts=5000;tDr={};cv.requestPointerLock();};
+var tY=0,tP=0,tK={},tDr={},tVelY=0,tOnGround=true,tEyeH=1.7,GRAVITY=22,JUMP_VEL=9;
+window.enterTest=function(){testMode=true;$('tbanner').style.display='block';$('cross').style.display='block';$('pn').style.display='none';$('st').style.display='none';camera.fov=75;camera.updateProjectionMatrix();camera.position.set(0,tEyeH,0);tY=0;tP=0;tDr={};tVelY=0;tOnGround=true;cv.requestPointerLock();};
 function exitTest(){testMode=false;$('tbanner').style.display='none';$('cross').style.display='none';$('tprompt').style.display='none';$('pn').style.display='flex';$('st').style.display='block';camera.position.set(0,60,70);camera.fov=60;camera.updateProjectionMatrix();orbUp();if(document.pointerLockElement)document.exitPointerLock();}
-function tKD(e){if(e.code==='Escape'){exitTest();return;}if(e.code==='KeyE')tInt();tK[e.code]=true;}
+function tKD(e){if(e.code==='Escape'){exitTest();return;}if(e.code==='KeyE')tInt();
+if(e.code==='Space'&&tOnGround){tVelY=JUMP_VEL;tOnGround=false;}
+tK[e.code]=true;}
 document.addEventListener('keyup',function(e){tK[e.code]=false;});
 document.addEventListener('mousemove',function(e){if(!testMode||document.pointerLockElement!==cv)return;tY-=e.movementX*0.002;tP=Math.max(-1.5,Math.min(1.5,tP-e.movementY*0.002));});
 cv.addEventListener('click',function(){if(testMode&&document.pointerLockElement!==cv)cv.requestPointerLock();});
-function tInt(){var pp=camera.position,nr=null,nd=4;for(var i=0;i<ob.length;i++){var d=Math.hypot(ob[i].data.x-pp.x,ob[i].data.z-pp.z);if(d<nd){nd=d;nr=ob[i];}}if(!nr)return;var d=nr.data;
+function tInt(){var pp=camera.position,nr=null,nd=4;for(var i=0;i<ob.length;i++){var d2=Math.hypot(ob[i].data.x-pp.x,ob[i].data.z-pp.z);if(d2<nd){nd=d2;nr=ob[i];}}if(!nr)return;var d=nr.data;
 if(nr.type==='door'){var k=d.x+'_'+d.z;if(tDr[k]){sTP('YA ABIERTA');return;}tDr[k]=true;eg.remove(nr.mesh);sTP('PUERTA ABIERTA');}
-else if(nr.type==='drink')sTP(d.drinkId.toUpperCase());else if(nr.type==='mystery')sTP('ARMA ALEATORIA!');else if(nr.type==='pap')sTP('MEJORADA!');else if(nr.type==='power')sTP('ELECTRICIDAD');else if(nr.type==='trap')sTP('TRAMPA '+(d.trapId||''));}
+else if(nr.type==='drink')sTP(d.drinkId?d.drinkId.toUpperCase():'BEBIDA');
+else if(nr.type==='mystery')sTP('ARMA ALEATORIA!');
+else if(nr.type==='pap')sTP('MEJORADA!');
+else if(nr.type==='power')sTP('ELECTRICIDAD');
+else if(nr.type==='trap')sTP('TRAMPA '+(d.trapId||''));}
 function sTP(t){$('tprompt').textContent=t;$('tprompt').style.display='block';setTimeout(function(){$('tprompt').style.display='none';},1500);}
-function tUpd(dt){camera.rotation.order='YXZ';camera.rotation.set(tP,tY,0);var sp=8*dt;if(tK['ShiftLeft'])sp*=1.8;
-var fw=new T.Vector3(-Math.sin(tY),0,-Math.cos(tY)),rt=new T.Vector3(Math.cos(tY),0,-Math.sin(tY)),m=new T.Vector3();
-if(tK['KeyW'])m.add(fw);if(tK['KeyS'])m.sub(fw);if(tK['KeyD'])m.add(rt);if(tK['KeyA'])m.sub(rt);
-if(m.lengthSq()>0)m.normalize().multiplyScalar(sp);var np=camera.position.clone().add(m);np.y=1.7;
-var blk=false;for(var i=0;i<ob.length;i++){var o=ob[i];if(o.type!=='wall'&&o.type!=='wallGap')continue;if(tDr[o.data.x+'_'+o.data.z])continue;
-var b=new T.Box3().setFromObject(o.mesh);var tp=np.clone();tp.y=1;if(b.containsPoint(tp)){blk=true;break;}}
-if(!blk)camera.position.copy(np);
-var pr='';for(var i=0;i<ob.length;i++){var o=ob[i],d2=Math.hypot(o.data.x-np.x,o.data.z-np.z);if(d2>3.5)continue;
-if(o.type==='door'&&!tDr[o.data.x+'_'+o.data.z])pr='[E] '+o.data.label+' — '+o.data.cost;
-else if(o.type==='drink')pr='[E] '+o.data.drinkId.toUpperCase();else if(o.type==='mystery')pr='[E] MYSTERY BOX';else if(o.type==='pap')pr='[E] PACK-A-PUNCH';else if(o.type==='power')pr='[E] ELECTRICIDAD';else if(o.type==='trap')pr='[E] TRAMPA';if(pr)break;}
-var el=$('tprompt');if(pr){el.textContent=pr;el.style.display='block';}else if(!el.textContent.match(/ABIERTA|ALEAT|MEJOR|ELEC|TRAMPA/i))el.style.display='none';}
+
+// Collision: check point against wall data, NOT bounding boxes
+function testWallCollision(px,pz,radius){
+for(var i=0;i<ob.length;i++){
+var o=ob[i];
+if(o.type!=='wall'&&o.type!=='wallGap'&&o.type!=='fence')continue;
+var d=o.data;
+// Skip opened doors nearby
+if(tDr[d.x+'_'+d.z])continue;
+var cr=Math.cos(d.rot||0),sr=Math.sin(d.rot||0);
+// Transform player pos into wall local space
+var dx=px-d.x,dz=pz-d.z;
+var lx=dx*cr+dz*sr; // along wall length
+var lz=-dx*sr+dz*cr; // perpendicular to wall
+var halfLen=(d.len||10)/2;
+var halfTk=(d.tk||0.5)/2;
+if(o.type==='wall'){
+halfLen+=(d.tk||0.5)/2; // corner extension
+if(Math.abs(lx)<halfLen+radius && Math.abs(lz)<halfTk+radius)return true;
+}else if(o.type==='wallGap'){
+var halfGap=(d.gap||4)/2;
+// Two side segments + lintel above
+// Side left: lx from -halfLen to -halfGap
+if(lx<-halfGap && Math.abs(lx)<halfLen+radius && Math.abs(lz)<0.25+radius)return true;
+// Side right: lx from halfGap to halfLen
+if(lx>halfGap && Math.abs(lx)<halfLen+radius && Math.abs(lz)<0.25+radius)return true;
+// In the gap zone: no collision at ground level (door opening)
+}else if(o.type==='fence'){
+if(Math.abs(lx)<halfLen+radius && Math.abs(lz)<0.1+radius)return true;
+}}
+return false;}
+
+function tUpd(dt){
+camera.rotation.order='YXZ';camera.rotation.set(tP,tY,0);
+// Movement
+var sp=7*dt;if(tK['ShiftLeft'])sp*=1.8;
+var fw=new T.Vector3(-Math.sin(tY),0,-Math.cos(tY));
+var rt=new T.Vector3(Math.cos(tY),0,-Math.sin(tY));
+var mx=0,mz=0;
+if(tK['KeyW']){mx+=fw.x;mz+=fw.z;}
+if(tK['KeyS']){mx-=fw.x;mz-=fw.z;}
+if(tK['KeyD']){mx+=rt.x;mz+=rt.z;}
+if(tK['KeyA']){mx-=rt.x;mz-=rt.z;}
+var ml=Math.sqrt(mx*mx+mz*mz);
+if(ml>0){mx=mx/ml*sp;mz=mz/ml*sp;}
+// Gravity + jump
+tVelY-=GRAVITY*dt;
+var newY=camera.position.y+tVelY*dt;
+if(newY<=tEyeH){newY=tEyeH;tVelY=0;tOnGround=true;}
+// Try X then Z separately (sliding collision)
+var curX=camera.position.x,curZ=camera.position.z;
+var newX=curX+mx,newZ=curZ+mz;
+if(!testWallCollision(newX,curZ,0.3))curX=newX;
+if(!testWallCollision(curX,newZ,0.3))curZ=newZ;
+camera.position.set(curX,newY,curZ);
+// Prompts
+var pr='';var pp=camera.position;
+for(var i=0;i<ob.length;i++){var o=ob[i],d2=Math.hypot(o.data.x-pp.x,o.data.z-pp.z);if(d2>3.5)continue;
+if(o.type==='door'&&!tDr[o.data.x+'_'+o.data.z])pr='[E] '+o.data.label;
+else if(o.type==='drink')pr='[E] '+(o.data.drinkId||'BEBIDA').toUpperCase();
+else if(o.type==='mystery')pr='[E] MYSTERY BOX';
+else if(o.type==='pap')pr='[E] PACK-A-PUNCH';
+else if(o.type==='power')pr='[E] ELECTRICIDAD';
+else if(o.type==='trap')pr='[E] TRAMPA '+(o.data.trapId||'');
+if(pr)break;}
+var el=$('tprompt');
+if(pr){el.textContent=pr;el.style.display='block';}
+else if(!el.textContent.match(/ABIERTA|ALEAT|MEJOR|ELEC|TRAMPA/i))el.style.display='none';}
 
 // Export
 window.doExport=function(){var c='    // GENERADO POR RAVAL LEVEL EDITOR\n\n';
