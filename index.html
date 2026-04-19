@@ -3,14 +3,34 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>★ PERKY MAFIA ★ oficial ★</title>
-<meta name="description" content="PERKY MAFIA — 58 himnos en SoundCloud.">
+<title>★ PERKY MAFIA ★ oficial ★ — FOR PERKY PAKOS</title>
+<meta name="description" content="PERKY MAFIA — 58 himnos en SoundCloud. Sello del Raval. For perky pakos.">
 <link rel="icon" href="assets/favicon.png" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=VT323&family=Bungee&family=Redacted+Script:wght@400;700&family=Rubik+Mono+One&family=DM+Mono:wght@400;500&family=Redaction+20&display=swap" rel="stylesheet">
 
+<script>
+// Tweaks defaults — the host rewrites this JSON on edits
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "palette": "uva",
+  "fontDisplay": "redaction",
+  "chaos": 0,
+  "mode": "night",
+  "effects": {
+    "grain": true,
+    "blur": false,
+    "glitch": true,
+    "scanlines": false,
+    "cursor": true,
+    "audio": false
+  },
+  "heroLayout": "sticker",
+  "marqueeText": ""
+}/*EDITMODE-END*/;
+window.__TWEAKS = TWEAKS;
+</script>
 
 <style>
 /* ============================ TOKENS ============================ */
@@ -249,17 +269,16 @@ header.topbar {
 .btn.alt:hover { box-shadow: 10px 10px 0 var(--accent2); }
 .btn.ghost { background: transparent; color: var(--fg); box-shadow: 6px 6px 0 var(--accent3); }
 
+/* Green screen chroma key filter */
+
+
 .hero .pill-art {
-  position:absolute; right: -40px; top: 60px;
-  width: clamp(260px, 36vw, 520px);
-  aspect-ratio: 3 / 4;
-  filter: drop-shadow(0 22px 36px rgba(0,0,0,.55)) contrast(1.12) saturate(1.15);
-  -webkit-mask-image: radial-gradient(ellipse 50% 55% at 50% 50%, #000 40%, transparent 75%);
-          mask-image: radial-gradient(ellipse 50% 55% at 50% 50%, #000 40%, transparent 75%);
+  position:absolute; right: -20px; top: 80px;
+  width: clamp(200px, 28vw, 400px);
+  filter: drop-shadow(0 16px 40px rgba(0,0,0,.6));
   animation: bob 6s ease-in-out infinite;
   transform-origin: center;
   z-index: 2;
-  mix-blend-mode: screen;
 }
 .hero .pill-art.wobble { animation: wobble 0.4s infinite; }
 @keyframes bob {
@@ -1204,35 +1223,24 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 }
 .game-section .container { max-width: 900px; margin: 0 auto; position: relative; }
 .game-launch-big {
-  display: inline-block;
-  padding: 20px 50px;
-  font-family: var(--f-display);
-  font-size: 36px;
+  display: inline-flex; align-items:center; gap:8px;
+  padding: 14px 28px;
   background: var(--accent);
   color: #fff;
-  border: 4px solid var(--fg);
-  cursor: pointer;
+  font-family: var(--f-display);
+  font-size: 28px;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  transition: all 0.3s;
-  box-shadow: 8px 8px 0 var(--accent2);
-  position: relative;
-  overflow: hidden;
+  border: 3px solid var(--fg);
+  cursor: pointer;
+  transform: rotate(-1deg);
+  box-shadow: 6px 6px 0 var(--accent2);
+  transition: transform .12s, box-shadow .12s;
+  letter-spacing: 0.02em;
 }
 .game-launch-big:hover {
-  transform: translate(-3px, -3px);
-  box-shadow: 12px 12px 0 var(--accent2);
-  background: var(--accent2);
-  color: var(--ink);
+  transform: rotate(1deg) translate(-2px,-2px);
+  box-shadow: 10px 10px 0 var(--accent2);
 }
-.game-launch-big::after {
-  content: '';
-  position: absolute; top: -50%; left: -50%;
-  width: 200%; height: 200%;
-  background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
-  animation: shine 3s infinite;
-}
-@keyframes shine { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 .game-lb-preview {
   margin-top: 30px;
   display: grid;
@@ -1247,6 +1255,8 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 <body>
 
 <!-- Topbar -->
+<!-- SVG chroma key filter for green screen removal -->
+
 <header class="topbar">
   <div class="brand">
     <img src="assets/favicon.png" alt="PM"/>
@@ -1262,7 +1272,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   </nav>
   <div class="right">
     <span class="blink">●</span>
-    <span>LIVE</span>
+    <span>FOR PERKY PAKOS</span>
   </div>
 </header>
 
@@ -1275,29 +1285,29 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   <img src="assets/perky-banquet.png" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position: center; opacity:.55; mix-blend-mode: screen; pointer-events:none; filter: contrast(1.1) saturate(1.2);"/>
 
   <div class="container" style="position:relative;">
-    <div class="small-caps">MAD · BCN · SEV · MLG · GR</div>
-    <h1 class="mega">PERKY<br>MAFIA<span class="tm">™</span></h1>
-   
+    <div class="small-caps">RAVAL · BCN · EST. 20XX</div>
+    <h1 class="mega">PERKY<br>MAFIA<span class="tm"></span></h1>
+    <p class="sub">Sello musical del Raval. <b>for perky pakos</b>.</p>
 
     <div class="cta-row">
       <a href="https://soundcloud.com/perky-labs" target="_blank" rel="noopener" class="btn">► SOUNDCLOUD</a>
       <a href="#artistas" class="btn alt">● los artistas</a>
-      <a href="#juego" class="btn ghost" style="background:var(--accent);border-color:var(--accent2);color:#fff;">☠ JUGAR EL RAVAL</a>
-      <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn ghost">☠ grupo whatsapp</a>
+      <a href="#juego" class="btn ghost" style="background:var(--accent);border-color:var(--accent2);color:#fff;">► JUGAR EL RAVAL</a>
+      <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn ghost">grupo whatsapp</a>
     </div>
   </div>
 
-  <video class="pill-art hero-img-deform" id="pillHero" autoplay muted loop playsinline>
-    <source src="assets/perky-creature.mp4" type="video/mp4"/>
-  </video>
-  <img class="logo-big hero-img-deform" id="logoHero" src="assets/logo.png" alt="logo"/>
+  <img class="pill-art hero-img-deform" src="assets/logo.png" alt="PERKY MAFIA" style="object-fit:contain;"/>
 
   <div class="sticker s1">58 bangers ↘</div>
- 
+  <div class="sticker s2">for<br>perky pakos</div>
 </section>
 
 <!-- ARTISTAS / SPOTIFY -->
-<section class="sect" id="artistas" style="background: var(--bg2); border-top: 3px solid var(--fg); border-bottom: 3px solid var(--fg);">
+<section class="sect" id="artistas" style="background: var(--bg2); border-top: 3px solid var(--fg); border-bottom: 3px solid var(--fg); position:relative; overflow:hidden;">
+  <video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.12;filter:saturate(0.8) contrast(1.2);pointer-events:none;">
+    <source src="assets/perky-creature.mp4" type="video/mp4"/>
+  </video>
   <div class="container">
     <h2>LOS <span class="chip">ARTISTAS</span></h2>
     <p class="lead">La mafia en spotify. dale follow.</p>
@@ -1327,12 +1337,15 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 </section>
 
 <!-- WHATSAPP GRUPO -->
-<section class="sect" id="grupo" style="text-align:center;">
+<section class="sect" id="grupo" style="text-align:center; position:relative; overflow:hidden;">
+  <video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.15;filter:saturate(0.6) contrast(1.3);pointer-events:none;">
+    <source src="assets/video-bg2.mp4" type="video/mp4"/>
+  </video>
   <div class="container">
     <div class="small-caps">&lt;unete_al_grupo&gt;</div>
     <h2>GRUPO <span class="chip">WHATSAPP</span></h2>
-    <p class="lead" style="margin: 0 auto 24px;">entra al grupo privado de la mafia</p>
-    <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn alt" style="font-size: 28px;">☠ UNIRSE AL GRUPO ☠</a>
+    <p class="lead" style="margin: 0 auto 24px;">entra al grupo privado de la mafia solo pa perky pakos</p>
+    <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn alt" style="font-size: 28px;">UNIRSE AL GRUPO</a>
   </div>
 </section>
 
@@ -1352,21 +1365,24 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 <!-- INSTAGRAM -->
 
 <!-- ============ EL RAVAL SIMULATOR ============ -->
-<section class="game-section" id="juego">
+<section class="game-section" id="juego" style="position:relative;overflow:hidden;">
+  <video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.08;filter:saturate(0.5) contrast(1.4);pointer-events:none;">
+    <source src="assets/eventos.mp4" type="video/mp4"/>
+  </video>
   <div class="container">
     <div class="small-caps">⚠ CUIDADO CON LOS ZOMBIS ⚠</div>
     <h2 style="font-family:var(--f-display);font-size:52px;margin:8px 0 16px;color:var(--accent2);text-shadow:3px 3px 0 var(--accent);">EL RAVAL<br>SIMULATOR</h2>
     <p class="lead" style="margin:0 auto 30px;max-width:50ch;">FPS estilo COD Zombies ambientado en el Raval. Sobrevive oleadas de zombis, compra armas y bebidas, y demuestra que eres el perky pako más duro.</p>
-    <button class="game-launch-big" id="gameLaunchBtn" onclick="document.getElementById('gameOverlay').classList.add('active');document.getElementById('gameStartScreen').classList.add('active');">☠ JUGAR ☠</button>
+    <button class="btn alt" id="gameLaunchBtn" onclick="document.getElementById('gameOverlay').classList.add('active');document.getElementById('gameStartScreen').classList.add('active');" style="font-size:28px;cursor:pointer;">► JUGAR</button>
     <div class="leaderboard-wrap reveal" style="margin-top:30px;">
-      <div class="leaderboard-head">★ TOP JOSEADORES ★</div>
+      <div class="leaderboard-head">★ TOP PERKY PAKOS ★</div>
       <div class="leaderboard-hdr">
         <span>#</span><span>NOMBRE</span><span class="c3">PUNTOS</span><span class="c4">OLEADA</span>
       </div>
       <div class="leaderboard-list" id="leaderboardList">
         <div class="leaderboard-empty">cargando...</div>
       </div>
-      <div class="leaderboard-foot">Sube rondas y mata yonkis</div>
+      <div class="leaderboard-foot">palmala con estilo y sal aqui arriba</div>
     </div>
   </div>
 </section>
@@ -1464,7 +1480,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 
   <div class="game-start-screen active" id="gameStartScreen">
     <h2>El Raval Simulator</h2>
-    <p class="game-sub">sobrevive a la noche del barrio ☠</p>
+    <p class="game-sub">sobrevive a la noche del barrio</p>
     <ul class="game-instr">
       <li>WASD — moverte</li>
       <li>RATON — mirar</li>
@@ -1508,8 +1524,8 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   <div>
     <h6>PERKY MAFIA</h6>
     <ul>
-      <li> ·powered by @francisconocorazon</li>
-      
+      <li>Raval · BCN</li>
+      <li>for perky pakos</li>
     </ul>
   </div>
   <div>
@@ -1517,78 +1533,14 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
     <ul>
       <li><a href="https://soundcloud.com/perky-labs" target="_blank">SoundCloud</a></li>
       <li><a href="https://instagram.com/francisconocorazon" target="_blank">Instagram</a></li>
-      <li><a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank">WhatsApp ☠</a></li>
+      <li><a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank">WhatsApp</a></li>
     </ul>
   </div>
 </footer>
 
 <!-- Floating tools (audio, easter egg) -->
-<div class="floating-tool" id="floatingTool">
-  <button id="audioBtn" title="Audio ambiente"><span id="audioIcon">🔈</span><span>ambient</span></button>
-  <button id="openTweaksBtn" title="Tweaks">✎ tweaks</button>
-</div>
-
 <!-- Tweaks panel -->
-<div class="tweaks-panel" id="tweaksPanel">
-  <header>
-    <span>TWEAKS</span>
-    <button id="closeTweaks">×</button>
-  </header>
-  <div class="row">
-    <label>Paleta</label>
-    <div class="chips" data-chip-group="palette">
-      <button class="chip-btn" data-v="rojo">Rojo Rx</button>
-      <button class="chip-btn" data-v="rosa">Rosa cursed</button>
-      <button class="chip-btn" data-v="uva">Uva ácida</button>
-      <button class="chip-btn" data-v="verde">Verde toxic</button>
-      <button class="chip-btn" data-v="blanco">Paper white</button>
-    </div>
-  </div>
-  <div class="row">
-    <label>Tipografía display</label>
-    <div class="chips" data-chip-group="fontDisplay">
-      <button class="chip-btn" data-v="anton">Anton</button>
-      <button class="chip-btn" data-v="bungee">Bungee</button>
-      <button class="chip-btn" data-v="rubik">Rubik Mono</button>
-      <button class="chip-btn" data-v="redaction">Redaction</button>
-      <button class="chip-btn" data-v="system">Serif</button>
-    </div>
-  </div>
-  <div class="row">
-    <label>Modo</label>
-    <div class="chips" data-chip-group="mode">
-      <button class="chip-btn" data-v="night">Noche</button>
-      <button class="chip-btn" data-v="day">Día</button>
-    </div>
-  </div>
-  <div class="row">
-    <label>Caos visual (<span id="chaosLbl">70</span>)</label>
-    <input type="range" id="chaosRange" min="0" max="100" step="5"/>
-  </div>
-  <div class="row">
-    <label>Layout hero</label>
-    <div class="chips" data-chip-group="heroLayout">
-      <button class="chip-btn" data-v="sticker">Stickers</button>
-      <button class="chip-btn" data-v="clean">Limpio</button>
-      <button class="chip-btn" data-v="tabloid">Tabloide</button>
-    </div>
-  </div>
-  <div class="row">
-    <label>Efectos</label>
-    <div class="toggles">
-      <label class="toggle"><input type="checkbox" data-fx="grain"/> Grain</label>
-      <label class="toggle"><input type="checkbox" data-fx="scanlines"/> Scanlines</label>
-      <label class="toggle"><input type="checkbox" data-fx="blur"/> Blur</label>
-      <label class="toggle"><input type="checkbox" data-fx="glitch"/> Glitch</label>
-      <label class="toggle"><input type="checkbox" data-fx="cursor"/> Pill cursor</label>
-      <label class="toggle"><input type="checkbox" data-fx="audio"/> Audio on</label>
-    </div>
-  </div>
-  <div class="row">
-    <label>Texto del marquee</label>
-    <input type="text" id="marqueeInput"/>
-  </div>
-</div>
+
 
 <!-- Easter egg modal -->
 <div class="eegg" id="eegg">
@@ -5626,7 +5578,7 @@ window.addEventListener('popstate', () => {
     { id:'speed',    color:0x44ddff, label:'VELOCIDAD++',weight:2, duration:15 },
     { id:'resist',   color:0x8844ff, label:'RESISTENTE', weight:2, duration:15 },
     { id:'double',   color:0xffffff, label:'x2 PUNTOS',  weight:2, duration:20 },
-    { id:'nuke',     color:0xff0000, label:'NUKE ☠',     weight:1 },
+    { id:'nuke',     color:0xff0000, label:'NUKE',     weight:1 },
   ];
 
   // Geo + materiales compartidos por color (evita allocs por powerup)
@@ -6829,7 +6781,7 @@ window.addEventListener('popstate', () => {
     if (wave % 5 === 0) {
       const bossIdx = Math.floor((wave / 5 - 1) % BOSS_ROTATION.length);
       _bossToSpawn = BOSS_ROTATION[bossIdx];
-      banner.textContent = '☠ JEFE: OLEADA ' + wave + ' ☠';
+      banner.textContent = 'JEFE: OLEADA ' + wave;
       banner.style.color = '#ff2222';
     } else {
       _bossToSpawn = null;
@@ -7086,7 +7038,7 @@ window.addEventListener('popstate', () => {
   }
   function renderLeaderboard(entries) {
     if (!entries || !entries.length) {
-      leaderboardList.innerHTML = '<div class="leaderboard-empty">vacio. se el primer perky pako en palmar ☠</div>';
+      leaderboardList.innerHTML = '<div class="leaderboard-empty">vacio. se el primer perky pako en palmar</div>';
       return;
     }
     leaderboardList.innerHTML = entries.slice(0, 20).map((e, i) => {
