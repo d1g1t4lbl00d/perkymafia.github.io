@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>★ PERKY MAFIA ★ oficial ★ — FOR PERKY PAKOS</title>
-<meta name="description" content="PERKY MAFIA — 58 himnos en SoundCloud. Sello del Raval. For perky pakos.">
+<title>★ PERKY MAFIA ★ oficial</title>
+<meta name="description" content="PERKY MAFIA — 58 himnos en SoundCloud. Sello musical.">
 <link rel="icon" href="assets/favicon.png" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +14,7 @@
 <script>
 // Tweaks defaults — the host rewrites this JSON on edits
 const TWEAKS = /*EDITMODE-BEGIN*/{
-  "palette": "uva",
+  "palette": "rojo",
   "fontDisplay": "redaction",
   "chaos": 0,
   "mode": "night",
@@ -39,9 +39,9 @@ window.__TWEAKS = TWEAKS;
   --bg: #0a0609;
   --bg2: #14090c;
   --fg: #ffece6;
-  --accent: #e8242a;   /* pill red */
-  --accent2: #ffc800;  /* Rx yellow */
-  --accent3: #8a3ab9;  /* purple */
+  --accent: #7c3aed;   /* vivid purple */
+  --accent2: #a78bfa;  /* lavender */
+  --accent3: #c084fc;  /* light purple */
   --muted: #7a5e5a;
   --paper: #f6eadf;
   --ink: #120b0d;
@@ -56,22 +56,22 @@ window.__TWEAKS = TWEAKS;
 }
 html[data-palette="rosa"] {
   --bg:#1a0612; --bg2:#2a0820; --fg:#ffe0ef;
-  --accent:#ff2e93; --accent2:#ffe14e; --accent3:#7b2dff;
+  --accent:#b44aff; --accent2:#d98fff; --accent3:#ff2e93;
   --paper:#ffdbe7; --ink:#22050f;
 }
 html[data-palette="uva"] {
   --bg:#0b0420; --bg2:#180630; --fg:#e8d9ff;
-  --accent:#8a3ab9; --accent2:#ffc400; --accent3:#ff2e93;
+  --accent:#9b4dca; --accent2:#c77dff; --accent3:#e040fb;
   --paper:#efe4ff; --ink:#12061c;
 }
 html[data-palette="verde"] {
   --bg:#041005; --bg2:#071a08; --fg:#d4ffdb;
-  --accent:#25e04a; --accent2:#fff000; --accent3:#ff2e93;
+  --accent:#25e04a; --accent2:#fff000; --accent3:#7c3aed;
   --paper:#e2ffe7; --ink:#06140a;
 }
 html[data-palette="blanco"] {
   --bg:#ede6d6; --bg2:#ddd4bf; --fg:#0d0a0c;
-  --accent:#e8242a; --accent2:#ffc800; --accent3:#4a2fbb;
+  --accent:#7c3aed; --accent2:#a78bfa; --accent3:#c084fc;
   --paper:#fff8ea; --ink:#0d0a0c;
 }
 html[data-mode="day"] {
@@ -224,8 +224,9 @@ header.topbar {
   overflow: hidden;
   padding: 30px 24px 80px;
   background:
-    radial-gradient(1200px 600px at 20% 0%, color-mix(in oklab, var(--accent) 35%, transparent) 0%, transparent 55%),
-    radial-gradient(900px 500px at 90% 80%, color-mix(in oklab, var(--accent3) 40%, transparent) 0%, transparent 60%),
+    radial-gradient(1200px 600px at 20% 0%, rgba(124,58,237,0.35) 0%, transparent 55%),
+    radial-gradient(900px 500px at 90% 80%, rgba(192,132,252,0.25) 0%, transparent 60%),
+    radial-gradient(600px 400px at 50% 100%, rgba(167,139,250,0.15) 0%, transparent 50%),
     var(--bg);
 }
 .hero .mega {
@@ -273,9 +274,10 @@ header.topbar {
 
 
 .hero .pill-art {
-  position:absolute; right: -20px; top: 80px;
-  width: clamp(200px, 28vw, 400px);
-  filter: drop-shadow(0 16px 40px rgba(0,0,0,.6));
+  position:absolute; right: 30px; top: 50%;
+  transform: translateY(-50%);
+  width: clamp(160px, 22vw, 320px);
+  filter: drop-shadow(0 12px 35px rgba(124,58,237,.5));
   animation: bob 6s ease-in-out infinite;
   transform-origin: center;
   z-index: 2;
@@ -656,7 +658,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 
 /* mobile */
 @media (max-width: 720px) {
-  .hero .pill-art { width: 180px; right: -20px; top: 80px; }
+  .hero .pill-art { width: 120px; right: 10px; top: auto; bottom: 20px; transform: none; }
   .hero .logo-big { width: 150px; }
   .hero .sticker.s1 { left: 4%; top: auto; bottom: 200px;}
   .hero .sticker.s3 { display:none; }
@@ -1218,7 +1220,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 .game-section::before {
   content: '';
   position: absolute; inset: 0;
-  background: radial-gradient(ellipse at center, rgba(255,42,109,0.08) 0%, transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(124,58,237,0.12) 0%, transparent 70%);
   pointer-events: none;
 }
 .game-section .container { max-width: 900px; margin: 0 auto; position: relative; }
@@ -1272,7 +1274,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   </nav>
   <div class="right">
     <span class="blink">●</span>
-    <span>FOR PERKY PAKOS</span>
+    <span>PERKY MAFIA</span>
   </div>
 </header>
 
@@ -1285,14 +1287,14 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   <img src="assets/perky-banquet.png" alt="" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position: center; opacity:.55; mix-blend-mode: screen; pointer-events:none; filter: contrast(1.1) saturate(1.2);"/>
 
   <div class="container" style="position:relative;">
-    <div class="small-caps">RAVAL · BCN · EST. 20XX</div>
+    <div class="small-caps">MAD · BCN · SEV · GR · MLG</div>
     <h1 class="mega">PERKY<br>MAFIA<span class="tm"></span></h1>
-    <p class="sub">Sello musical del Raval. <b>for perky pakos</b>.</p>
+    <p class="sub">Sello musical. <b>perky mafia</b>.</p>
 
     <div class="cta-row">
       <a href="https://soundcloud.com/perky-labs" target="_blank" rel="noopener" class="btn">► SOUNDCLOUD</a>
       <a href="#artistas" class="btn alt">● los artistas</a>
-      <a href="#juego" class="btn ghost" style="background:var(--accent);border-color:var(--accent2);color:#fff;">► JUGAR EL RAVAL</a>
+      <a href="#juego" class="btn ghost" style="background:var(--accent);border-color:var(--accent2);color:#fff;box-shadow:6px 6px 0 var(--accent3);">► JUGAR</a>
       <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn ghost">grupo whatsapp</a>
     </div>
   </div>
@@ -1300,7 +1302,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   <img class="pill-art hero-img-deform" src="assets/logo.png" alt="PERKY MAFIA" style="object-fit:contain;"/>
 
   <div class="sticker s1">58 bangers ↘</div>
-  <div class="sticker s2">for<br>perky pakos</div>
+  <div class="sticker s2">perky<br>mafia</div>
 </section>
 
 <!-- ARTISTAS / SPOTIFY -->
@@ -1344,7 +1346,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   <div class="container">
     <div class="small-caps">&lt;unete_al_grupo&gt;</div>
     <h2>GRUPO <span class="chip">WHATSAPP</span></h2>
-    <p class="lead" style="margin: 0 auto 24px;">entra al grupo privado de la mafia solo pa perky pakos</p>
+    <p class="lead" style="margin: 0 auto 24px;">entra al grupo privado de la mafia solo pa la mafia</p>
     <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn alt" style="font-size: 28px;">UNIRSE AL GRUPO</a>
   </div>
 </section>
@@ -1372,10 +1374,10 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   <div class="container">
     <div class="small-caps">⚠ CUIDADO CON LOS ZOMBIS ⚠</div>
     <h2 style="font-family:var(--f-display);font-size:52px;margin:8px 0 16px;color:var(--accent2);text-shadow:3px 3px 0 var(--accent);">EL RAVAL<br>SIMULATOR</h2>
-    <p class="lead" style="margin:0 auto 30px;max-width:50ch;">FPS estilo COD Zombies ambientado en el Raval. Sobrevive oleadas de zombis, compra armas y bebidas, y demuestra que eres el perky pako más duro.</p>
+    <p class="lead" style="margin:0 auto 30px;max-width:50ch;">FPS estilo COD Zombies Sobrevive oleadas de zombis, compra armas y bebidas, y demuestra que eres el más duro.</p>
     <button class="btn alt" id="gameLaunchBtn" onclick="document.getElementById('gameOverlay').classList.add('active');document.getElementById('gameStartScreen').classList.add('active');" style="font-size:28px;cursor:pointer;">► JUGAR</button>
     <div class="leaderboard-wrap reveal" style="margin-top:30px;">
-      <div class="leaderboard-head">★ TOP PERKY PAKOS ★</div>
+      <div class="leaderboard-head">★ TOP SCORES ★</div>
       <div class="leaderboard-hdr">
         <span>#</span><span>NOMBRE</span><span class="c3">PUNTOS</span><span class="c4">OLEADA</span>
       </div>
@@ -1491,7 +1493,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
       <li>ESC — pausa</li>
     </ul>
     <div class="game-username-row">
-      <label for="gameUsername">nombre de perky pako:</label>
+      <label for="gameUsername">tu nombre:</label>
       <input id="gameUsername" type="text" maxlength="14" placeholder="TU NOMBRE" autocomplete="off">
     </div>
     <button class="game-btn" id="gameStartBtn" type="button">▶ EMPEZAR</button>
@@ -1524,8 +1526,8 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   <div>
     <h6>PERKY MAFIA</h6>
     <ul>
-      <li>Raval · BCN</li>
-      <li>for perky pakos</li>
+      <li>MAD · BCN · SEV · GR · MLG</li>
+      <li>perky mafia</li>
     </ul>
   </div>
   <div>
@@ -7038,7 +7040,7 @@ window.addEventListener('popstate', () => {
   }
   function renderLeaderboard(entries) {
     if (!entries || !entries.length) {
-      leaderboardList.innerHTML = '<div class="leaderboard-empty">vacio. se el primer perky pako en palmar</div>';
+      leaderboardList.innerHTML = '<div class="leaderboard-empty">vacio. se el primero en palmar</div>';
       return;
     }
     leaderboardList.innerHTML = entries.slice(0, 20).map((e, i) => {
