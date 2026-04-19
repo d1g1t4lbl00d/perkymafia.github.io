@@ -1371,6 +1371,84 @@ html { scroll-behavior: smooth; }
 .game-section {
   background: linear-gradient(180deg, var(--bg) 0%, var(--bg2) 50%, var(--bg) 100%) !important;
 }
+/* ===== DESCARGAS SECTION ===== */
+.downloads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.dl-card {
+  background: rgba(124,58,237,0.06);
+  border: 1px solid rgba(124,58,237,0.2);
+  border-radius: 10px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+.dl-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+.dl-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(124,58,237,0.5);
+  box-shadow: 0 8px 30px rgba(124,58,237,0.2);
+}
+.dl-card:hover::before { opacity: 1; }
+.dl-card .dl-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+  display: block;
+}
+.dl-card .dl-title {
+  font-family: var(--f-display);
+  font-size: 20px;
+  color: var(--fg);
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+.dl-card .dl-desc {
+  font-family: var(--f-mono);
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.dl-card .dl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  font-family: var(--f-mono);
+  font-size: 13px;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: all 0.2s;
+  border: none;
+}
+.dl-card .dl-btn:hover {
+  box-shadow: 0 4px 18px rgba(124,58,237,0.45);
+  transform: translateY(-1px);
+}
+.dl-card .dl-tag {
+  position: absolute;
+  top: 12px; right: 12px;
+  font-family: var(--f-mono);
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(124,58,237,0.15);
+  color: var(--accent2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 </style>
 </head>
 <body>
@@ -1386,6 +1464,7 @@ html { scroll-behavior: smooth; }
   <nav>
     <a href="#artistas">[ARTISTAS]</a>
     <a href="#tracks">[TRACKS]</a>
+    <a href="#descargas">[DESCARGAS]</a>
     <a href="#ig">[IG]</a>
     <a href="#grupo">[GRUPO]</a>
     <a href="#juego">[JUGAR]</a>
@@ -1411,12 +1490,10 @@ html { scroll-behavior: smooth; }
     <p class="sub">Sello musical. <b>perky mafia</b>.</p>
 
     <div class="cta-row">
-      <a href="https://soundcloud.com/perky-labs" target="_blank" rel="noopener" class="btn" style="background:#ff5500;color:#fff;border-color:#ff7733;">► SOUNDCLOUD</a>
-      <a href="#artistas" class="btn" style="background:#111;color:#fff;border-color:#333;">● LOS ARTISTAS</a>
-      <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn" style="background:#25D366;color:#fff;border-color:#2ae67a;">WHATSAPP</a>
-    </div>
-    <div class="cta-row" style="margin-top:16px;">
-      <a href="#juego" class="btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;border-color:#c084fc;font-size:28px;padding:16px 32px;box-shadow:0 6px 25px rgba(124,58,237,0.5);">► JUGAR</a>
+      <a href="https://soundcloud.com/perky-labs" target="_blank" rel="noopener" class="btn">► SOUNDCLOUD</a>
+      <a href="#artistas" class="btn alt">● los artistas</a>
+      <a href="#juego" class="btn ghost" style="background:var(--accent);border-color:var(--accent2);color:#fff;">► JUGAR</a>
+      <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn ghost">grupo whatsapp</a>
     </div>
   </div>
 
@@ -1633,6 +1710,79 @@ html { scroll-behavior: smooth; }
     <button class="game-btn game-btn-alt" id="gameQuitBtn2" type="button">SALIR</button>
   </div>
 </div>
+
+<section class="sect" id="descargas" style="background: var(--bg2); border-top: 3px solid var(--fg); border-bottom: 3px solid var(--fg); position:relative; overflow:hidden;">
+  <video autoplay muted loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.06;filter:saturate(0.5);pointer-events:none;">
+    <source src="assets/video-bg2.mp4" type="video/mp4"/>
+  </video>
+  <div class="container" style="position:relative;">
+    <h2>LAS <span class="chip">DESCARGAS</span></h2>
+    <p class="lead">Software, packs y herramientas para la mafia.</p>
+
+    <div class="downloads-grid">
+
+      <!-- ============================================================
+           EDITAR AQUI: copia un bloque dl-card para añadir mas descargas.
+           - dl-icon: emoji o icono
+           - dl-title: nombre del programa/pack
+           - dl-desc: descripcion corta
+           - dl-tag: categoria (SOFTWARE, PACK, PLUGIN, etc.)
+           - dl-btn href: enlace de descarga (mega, drive, mediafire, etc.)
+           ============================================================ -->
+
+      <div class="dl-card reveal">
+        <span class="dl-tag">SOFTWARE</span>
+        <span class="dl-icon">🎹</span>
+        <h3 class="dl-title">FL Studio</h3>
+        <p class="dl-desc">DAW completo para produccion musical. El estandar de la industria.</p>
+        <a href="#" class="dl-btn">↓ Descargar</a>
+      </div>
+
+      <div class="dl-card reveal">
+        <span class="dl-tag">SOFTWARE</span>
+        <span class="dl-icon">🎨</span>
+        <h3 class="dl-title">Photoshop</h3>
+        <p class="dl-desc">Edicion de imagen profesional. Covers, flyers, visuales.</p>
+        <a href="#" class="dl-btn">↓ Descargar</a>
+      </div>
+
+      <div class="dl-card reveal">
+        <span class="dl-tag">PACK</span>
+        <span class="dl-icon">🥁</span>
+        <h3 class="dl-title">Drum Kit Vol.1</h3>
+        <p class="dl-desc">Pack de drums y percs para trap, drill y reggaeton.</p>
+        <a href="#" class="dl-btn">↓ Descargar</a>
+      </div>
+
+      <div class="dl-card reveal">
+        <span class="dl-tag">PLUGIN</span>
+        <span class="dl-icon">🔊</span>
+        <h3 class="dl-title">Omnisphere</h3>
+        <p class="dl-desc">Sintetizador con miles de presets para produccion.</p>
+        <a href="#" class="dl-btn">↓ Descargar</a>
+      </div>
+
+      <div class="dl-card reveal">
+        <span class="dl-tag">PACK</span>
+        <span class="dl-icon">🎤</span>
+        <h3 class="dl-title">Vocal Presets</h3>
+        <p class="dl-desc">Presets de mezcla vocal para FL Studio y Pro Tools.</p>
+        <a href="#" class="dl-btn">↓ Descargar</a>
+      </div>
+
+      <div class="dl-card reveal">
+        <span class="dl-tag">SOFTWARE</span>
+        <span class="dl-icon">🎬</span>
+        <h3 class="dl-title">After Effects</h3>
+        <p class="dl-desc">Edicion de video y motion graphics para visualizers.</p>
+        <a href="#" class="dl-btn">↓ Descargar</a>
+      </div>
+
+      <!-- FIN DE DESCARGAS — añade mas bloques dl-card arriba de esta linea -->
+
+    </div>
+  </div>
+</section>
 
 <section class="sect" id="ig" style="border-top:3px dashed var(--fg);">
   <div class="container" style="text-align:center;">
