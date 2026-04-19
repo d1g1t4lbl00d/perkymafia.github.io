@@ -269,19 +269,17 @@ header.topbar {
 .btn.alt:hover { box-shadow: 10px 10px 0 var(--accent2); }
 .btn.ghost { background: transparent; color: var(--fg); box-shadow: 6px 6px 0 var(--accent3); }
 
-/* Green screen chroma key filter */
-svg.chromakey-defs { position:absolute; width:0; height:0; }
-
 .hero .pill-art {
   position:absolute; right: -40px; top: 60px;
   width: clamp(260px, 36vw, 520px);
   aspect-ratio: 3 / 4;
-  filter: url(#chromakey) drop-shadow(0 12px 30px rgba(0,0,0,.5)) contrast(1.1) saturate(1.2);
-  -webkit-mask-image: radial-gradient(ellipse 52% 58% at 50% 48%, #000 45%, transparent 72%);
-          mask-image: radial-gradient(ellipse 52% 58% at 50% 48%, #000 45%, transparent 72%);
+  filter: drop-shadow(0 22px 36px rgba(0,0,0,.55)) contrast(1.12) saturate(1.15);
+  -webkit-mask-image: radial-gradient(ellipse 50% 55% at 50% 50%, #000 40%, transparent 75%);
+          mask-image: radial-gradient(ellipse 50% 55% at 50% 50%, #000 40%, transparent 75%);
   animation: bob 6s ease-in-out infinite;
   transform-origin: center;
   z-index: 2;
+  mix-blend-mode: screen;
 }
 .hero .pill-art.wobble { animation: wobble 0.4s infinite; }
 @keyframes bob {
@@ -1226,24 +1224,35 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 }
 .game-section .container { max-width: 900px; margin: 0 auto; position: relative; }
 .game-launch-big {
-  display: inline-flex; align-items:center; gap:8px;
-  padding: 14px 28px;
+  display: inline-block;
+  padding: 20px 50px;
+  font-family: var(--f-display);
+  font-size: 36px;
   background: var(--accent);
   color: #fff;
-  font-family: var(--f-display);
-  font-size: 28px;
-  text-transform: uppercase;
-  border: 3px solid var(--fg);
+  border: 4px solid var(--fg);
   cursor: pointer;
-  transform: rotate(-1deg);
-  box-shadow: 6px 6px 0 var(--accent2);
-  transition: transform .12s, box-shadow .12s;
-  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+  box-shadow: 8px 8px 0 var(--accent2);
+  position: relative;
+  overflow: hidden;
 }
 .game-launch-big:hover {
-  transform: rotate(1deg) translate(-2px,-2px);
-  box-shadow: 10px 10px 0 var(--accent2);
+  transform: translate(-3px, -3px);
+  box-shadow: 12px 12px 0 var(--accent2);
+  background: var(--accent2);
+  color: var(--ink);
 }
+.game-launch-big::after {
+  content: '';
+  position: absolute; top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+  animation: shine 3s infinite;
+}
+@keyframes shine { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
 .game-lb-preview {
   margin-top: 30px;
   display: grid;
@@ -1258,21 +1267,6 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 <body>
 
 <!-- Topbar -->
-<!-- SVG chroma key filter for green screen removal -->
-<svg class="chromakey-defs" xmlns="http://www.w3.org/2000/svg">
-  <filter id="chromakey" color-interpolation-filters="sRGB">
-    <feColorMatrix type="matrix" values="
-      1   0   0   0   0
-      0   1   0   0   0
-      0   0   1   0   0
-      0.3 -0.59 0.11 0   0.2
-    " result="matte"/>
-    <feComponentTransfer in="matte" result="alpha">
-      <feFuncA type="linear" slope="3" intercept="-0.4"/>
-    </feComponentTransfer>
-    <feComposite in="SourceGraphic" in2="alpha" operator="in"/>
-  </filter>
-</svg>
 <header class="topbar">
   <div class="brand">
     <img src="assets/favicon.png" alt="PM"/>
@@ -1308,8 +1302,8 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
     <div class="cta-row">
       <a href="https://soundcloud.com/perky-labs" target="_blank" rel="noopener" class="btn">► SOUNDCLOUD</a>
       <a href="#artistas" class="btn alt">● los artistas</a>
-      <a href="#juego" class="btn ghost" style="background:var(--accent);border-color:var(--accent2);color:#fff;">► JUGAR EL RAVAL</a>
-      <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn ghost">grupo whatsapp</a>
+      <a href="#juego" class="btn ghost" style="background:var(--accent);border-color:var(--accent2);color:#fff;">☠ JUGAR EL RAVAL</a>
+      <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn ghost">☠ grupo whatsapp</a>
     </div>
   </div>
 
@@ -1357,8 +1351,8 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
   <div class="container">
     <div class="small-caps">&lt;unete_al_grupo&gt;</div>
     <h2>GRUPO <span class="chip">WHATSAPP</span></h2>
-    <p class="lead" style="margin: 0 auto 24px;">entra al grupo privado de la mafia solo pa perky pakos</p>
-    <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn alt" style="font-size: 28px;">UNIRSE AL GRUPO</a>
+    <p class="lead" style="margin: 0 auto 24px;">entra al grupo privado de la mafia ☠ solo pa perky pakos</p>
+    <a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank" rel="noopener" class="btn alt" style="font-size: 28px;">☠ UNIRSE AL GRUPO ☠</a>
   </div>
 </section>
 
@@ -1383,7 +1377,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
     <div class="small-caps">⚠ CUIDADO CON LOS ZOMBIS ⚠</div>
     <h2 style="font-family:var(--f-display);font-size:52px;margin:8px 0 16px;color:var(--accent2);text-shadow:3px 3px 0 var(--accent);">EL RAVAL<br>SIMULATOR</h2>
     <p class="lead" style="margin:0 auto 30px;max-width:50ch;">FPS estilo COD Zombies ambientado en el Raval. Sobrevive oleadas de zombis, compra armas y bebidas, y demuestra que eres el perky pako más duro.</p>
-    <button class="game-launch-big" id="gameLaunchBtn" onclick="document.getElementById('gameOverlay').classList.add('active');document.getElementById('gameStartScreen').classList.add('active');">► JUGAR</button>
+    <button class="game-launch-big" id="gameLaunchBtn" onclick="document.getElementById('gameOverlay').classList.add('active');document.getElementById('gameStartScreen').classList.add('active');">☠ JUGAR ☠</button>
     <div class="leaderboard-wrap reveal" style="margin-top:30px;">
       <div class="leaderboard-head">★ TOP PERKY PAKOS ★</div>
       <div class="leaderboard-hdr">
@@ -1392,7 +1386,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
       <div class="leaderboard-list" id="leaderboardList">
         <div class="leaderboard-empty">cargando...</div>
       </div>
-      <div class="leaderboard-foot">palmala con estilo y sal aqui arriba</div>
+      <div class="leaderboard-foot">palmala con estilo y sal aqui arriba ☠</div>
     </div>
   </div>
 </section>
@@ -1490,7 +1484,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 
   <div class="game-start-screen active" id="gameStartScreen">
     <h2>El Raval Simulator</h2>
-    <p class="game-sub">sobrevive a la noche del barrio</p>
+    <p class="game-sub">sobrevive a la noche del barrio ☠</p>
     <ul class="game-instr">
       <li>WASD — moverte</li>
       <li>RATON — mirar</li>
@@ -1543,7 +1537,7 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
     <ul>
       <li><a href="https://soundcloud.com/perky-labs" target="_blank">SoundCloud</a></li>
       <li><a href="https://instagram.com/francisconocorazon" target="_blank">Instagram</a></li>
-      <li><a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank">WhatsApp</a></li>
+      <li><a href="https://chat.whatsapp.com/BOFbA3lDBWP4RA5J4aJr4r" target="_blank">WhatsApp ☠</a></li>
     </ul>
   </div>
 </footer>
@@ -5652,7 +5646,7 @@ window.addEventListener('popstate', () => {
     { id:'speed',    color:0x44ddff, label:'VELOCIDAD++',weight:2, duration:15 },
     { id:'resist',   color:0x8844ff, label:'RESISTENTE', weight:2, duration:15 },
     { id:'double',   color:0xffffff, label:'x2 PUNTOS',  weight:2, duration:20 },
-    { id:'nuke',     color:0xff0000, label:'NUKE',     weight:1 },
+    { id:'nuke',     color:0xff0000, label:'NUKE ☠',     weight:1 },
   ];
 
   // Geo + materiales compartidos por color (evita allocs por powerup)
@@ -6855,7 +6849,7 @@ window.addEventListener('popstate', () => {
     if (wave % 5 === 0) {
       const bossIdx = Math.floor((wave / 5 - 1) % BOSS_ROTATION.length);
       _bossToSpawn = BOSS_ROTATION[bossIdx];
-      banner.textContent = 'JEFE: OLEADA ' + wave + ';
+      banner.textContent = '☠ JEFE: OLEADA ' + wave + ' ☠';
       banner.style.color = '#ff2222';
     } else {
       _bossToSpawn = null;
@@ -7112,7 +7106,7 @@ window.addEventListener('popstate', () => {
   }
   function renderLeaderboard(entries) {
     if (!entries || !entries.length) {
-      leaderboardList.innerHTML = '<div class="leaderboard-empty">vacio. se el primer perky pako en palmar</div>';
+      leaderboardList.innerHTML = '<div class="leaderboard-empty">vacio. se el primer perky pako en palmar ☠</div>';
       return;
     }
     leaderboardList.innerHTML = entries.slice(0, 20).map((e, i) => {
