@@ -94,10 +94,14 @@ body {
   font-size: 15px;
   line-height: 1.45;
   overflow-x: hidden;
-  cursor: none;
+  cursor: auto;
 }
 body.no-custom-cursor { cursor: auto; }
 body.no-custom-cursor .pill-cursor { display:none; }
+
+.fx-layer { display:none !important; }
+.pill-cursor { display:none !important; }
+.pill-tail { display:none !important; }
 
 a { color: inherit; }
 img { display:block; max-width:100%; }
@@ -1261,22 +1265,6 @@ html[data-chaos="high"] img.hero-img-deform { animation: pulse-deform 9s ease-in
 </style>
 </head>
 <body>
-
-<!-- effects overlays -->
-<div class="fx-layer fx-grain"></div>
-<div class="fx-layer fx-scan"></div>
-
-<!-- custom cursor: crosshair w/ pill trail -->
-<div class="pill-cursor" id="cursor">
-  <div class="crosshair"></div>
-  <div class="dot"></div>
-</div>
-<div class="pill-tail" id="cursorTail"><img src="assets/pill-bottle.png" alt=""/></div>
-
-<!-- Sticky ticker -->
-<div class="ticker" aria-hidden="true">
-  <div class="track" id="ticker-track"></div>
-</div>
 
 <!-- Topbar -->
 <header class="topbar">
