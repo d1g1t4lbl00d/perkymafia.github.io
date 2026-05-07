@@ -1,0 +1,3225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#04060a">
+<title>SecureVision PRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════════════ */
+:root {
+  /* Backgrounds */
+  --bg:       #04060a;
+  --bg-1:     #070b12;
+  --bg-2:     #0b1018;
+  --bg-3:     #101620;
+  --bg-4:     #151d28;
+
+  /* Borders */
+  --border-0: rgba(0, 200, 120, .04);
+  --border-1: rgba(0, 200, 120, .10);
+  --border-2: rgba(0, 200, 120, .22);
+  --border-3: rgba(0, 200, 120, .45);
+
+  /* Text */
+  --txt-1:    #d4e4f0;
+  --txt-2:    #7a96ae;
+  --txt-3:    #3e5468;
+  --txt-4:    #1e2e3c;
+
+  /* Accent – green */
+  --green:    #00e87a;
+  --green-2:  #00c060;
+  --green-3:  rgba(0, 232, 122, .14);
+  --green-4:  rgba(0, 232, 122, .06);
+  --green-glow: 0 0 20px rgba(0, 232, 122, .25);
+
+  /* Status colors */
+  --red:      #ff4545;
+  --red-2:    rgba(255, 69, 69, .14);
+  --amber:    #ffb020;
+  --amber-2:  rgba(255, 176, 32, .14);
+  --blue:     #3d9bff;
+  --cyan:     #00d4f0;
+  --purple:   #9b7ef8;
+
+  /* Typography */
+  --font-ui:   'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Spacing & radii */
+  --r-sm:  4px;
+  --r-md:  8px;
+  --r-lg:  12px;
+  --r-xl:  16px;
+
+  /* Safe area */
+  --safe-b: env(safe-area-inset-bottom, 0px);
+}
+
+/* Scrollbar – Firefox */
+* { scrollbar-width: thin; scrollbar-color: rgba(0,200,120,.12) transparent; }
+
+/* Focus visible */
+:focus-visible { outline: 1px solid var(--border-2); outline-offset: 2px; }
+
+/* ══════════════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-mono);
+  background: var(--bg);
+  color: var(--txt-1);
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ══════════════════════════════════════════════════
+   KEYFRAMES
+══════════════════════════════════════════════════ */
+@keyframes fadeIn     { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes pulseGlow  { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+@keyframes recBlink   { 50% { opacity: .2; } }
+@keyframes dotPulse   { 0%,100% { box-shadow: 0 0 0 0 rgba(0,232,122,.5); } 60% { box-shadow: 0 0 0 6px rgba(0,232,122,0); } }
+@keyframes loaderFade { to { opacity: 0; pointer-events: none; } }
+@keyframes sheetSlide { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes alertSlide { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes toastIn    { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+@keyframes toastOut   { to { opacity: 0; transform: translateX(20px); } }
+@keyframes spin       { to { transform: rotate(360deg); } }
+@keyframes barFill    { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* ══════════════════════════════════════════════════
+   GLOBAL COMPONENTS
+══════════════════════════════════════════════════ */
+button {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .06em;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-1);
+  background: transparent;
+  color: var(--txt-2);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .1s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+button:hover:not(:disabled) {
+  background: var(--green-3);
+  border-color: var(--border-2);
+  color: var(--green);
+}
+button:active:not(:disabled) { transform: scale(.96); }
+button:disabled { opacity: .3; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--green-2);
+  border-color: var(--green-2);
+  color: #000;
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--green);
+  border-color: var(--green);
+  color: #000;
+}
+
+select, input[type=range] {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 6px 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-1);
+  background: var(--bg-2);
+  color: var(--txt-2);
+  cursor: pointer;
+  outline: none;
+  transition: border-color .15s;
+}
+select:focus, select:hover { border-color: var(--border-2); }
+
+/* Toggle switch */
+.toggle { position: relative; width: 32px; height: 18px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-track {
+  position: absolute; inset: 0;
+  background: var(--border-1);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background .2s;
+  border: 1px solid var(--border-1);
+}
+.toggle-track::before {
+  content: '';
+  position: absolute;
+  height: 12px; width: 12px;
+  left: 2px; bottom: 2px;
+  background: var(--txt-3);
+  border-radius: 50%;
+  transition: transform .2s, background .2s;
+}
+.toggle input:checked + .toggle-track { background: var(--green-2); border-color: var(--green-2); }
+.toggle input:checked + .toggle-track::before { transform: translateX(14px); background: #fff; }
+
+/* Pill badge */
+.pill {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: .06em;
+  padding: 3px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-1);
+  color: var(--txt-3);
+  transition: all .3s;
+}
+.pill.live   { color: var(--green); border-color: var(--border-2); background: var(--green-4); }
+.pill.warn   { color: var(--amber); border-color: rgba(255,176,32,.3); background: var(--amber-2); }
+.pill.danger {
+  color: var(--red); border-color: rgba(255,69,69,.3); background: var(--red-2);
+  animation: pulseGlow .7s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════
+   LOADER
+══════════════════════════════════════════════════ */
+#loader {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse 60% 50% at 50% 50%, rgba(0,232,122,.04) 0%, transparent 70%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 36px; z-index: 9999; padding: 24px;
+  transition: opacity .6s ease;
+}
+#loader::before {
+  content: '';
+  position: absolute; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--green) 50%, transparent 100%);
+  opacity: 0;
+  animation: loaderScan 2.4s ease-in-out infinite;
+}
+@keyframes loaderScan {
+  0%   { top: 0; opacity: 0; }
+  10%  { opacity: .35; }
+  90%  { opacity: .35; }
+  100% { top: 100%; opacity: 0; }
+}
+#loader.hidden { opacity: 0; pointer-events: none; }
+
+.ld-brand {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.ld-icon {
+  width: 48px; height: 48px;
+  border: 1.5px solid var(--border-2);
+  border-radius: var(--r-md);
+  background: var(--green-4);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 4px;
+  box-shadow: var(--green-glow);
+}
+.ld-icon svg { width: 22px; height: 22px; color: var(--green); }
+.ld-title {
+  font-family: var(--font-ui);
+  font-size: clamp(20px, 5vw, 30px);
+  font-weight: 700;
+  letter-spacing: .16em;
+  color: var(--green);
+  text-shadow: var(--green-glow);
+}
+.ld-sub {
+  font-size: 9px; letter-spacing: .22em; color: var(--txt-3);
+}
+
+.ld-tasks { width: min(320px, 90vw); display: flex; flex-direction: column; gap: 16px; }
+.ld-task { display: grid; grid-template-columns: 90px 1fr 56px; gap: 10px; align-items: center; }
+.ld-label { font-size: 9px; letter-spacing: .1em; color: var(--txt-3); }
+.ld-track {
+  height: 2px;
+  background: var(--border-0);
+  border-radius: 1px;
+  overflow: hidden;
+  position: relative;
+}
+.ld-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 1px;
+  transition: width .7s cubic-bezier(.4,0,.2,1);
+  transform-origin: left;
+}
+.lf-green  { background: var(--green); }
+.lf-red    { background: var(--red); }
+.lf-cyan   { background: var(--cyan); }
+.ld-status { font-size: 9px; color: var(--txt-3); text-align: right; }
+.ld-note {
+  font-size: 10px; letter-spacing: .1em; color: var(--txt-3);
+  animation: pulseGlow 1.5s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════
+   HEADER (desktop)
+══════════════════════════════════════════════════ */
+header {
+  display: flex; align-items: center;
+  height: 48px; padding: 0 20px;
+  border-bottom: 1px solid var(--border-1);
+  background: var(--bg-1);
+  flex-shrink: 0;
+  position: relative; z-index: 100;
+  gap: 0;
+}
+header::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--green) 50%, transparent 100%);
+  opacity: .18;
+}
+
+/* Brand */
+.h-brand {
+  display: flex; align-items: center; gap: 12px;
+  padding-right: 20px;
+  border-right: 1px solid var(--border-1);
+}
+.h-icon {
+  width: 30px; height: 30px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  background: var(--green-4);
+  display: flex; align-items: center; justify-content: center;
+  transition: box-shadow .3s;
+}
+.h-icon:hover { box-shadow: var(--green-glow); }
+.h-icon svg { width: 14px; height: 14px; color: var(--green); }
+.h-name {
+  font-family: var(--font-ui);
+  font-size: 13px; font-weight: 700;
+  letter-spacing: .2em;
+  color: var(--green);
+  text-shadow: 0 0 12px rgba(0,232,122,.25);
+  line-height: 1;
+}
+.h-ver { font-size: 8px; letter-spacing: .12em; color: var(--txt-3); margin-top: 2px; }
+
+/* Stats */
+.h-stats {
+  display: flex; align-items: center;
+  padding: 0 16px;
+  border-right: 1px solid var(--border-1);
+}
+.hstat {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 0 14px;
+  border-right: 1px solid var(--border-0);
+}
+.hstat:last-child { border-right: none; }
+.hstat-v { font-size: 18px; line-height: 1; color: var(--txt-1); font-weight: 500; }
+.hstat-v.live    { color: var(--green); }
+.hstat-v.active  { color: var(--amber); }
+.hstat-v.rec     { color: var(--red); animation: recBlink .9s step-end infinite; }
+.hstat-l { font-size: 7px; letter-spacing: .12em; color: var(--txt-3); margin-top: 3px; font-weight: 500; }
+
+.h-spacer { flex: 1; }
+
+/* Pill group */
+.h-pills { display: flex; gap: 6px; padding: 0 16px; border-left: 1px solid var(--border-1); }
+
+/* Clock */
+.h-time { padding: 0 16px; border-left: 1px solid var(--border-1); text-align: right; }
+.h-clock { font-size: 15px; color: var(--txt-2); letter-spacing: .06em; line-height: 1; }
+.h-date  { font-size: 8px; color: var(--txt-3); letter-spacing: .08em; margin-top: 2px; }
+
+/* ══════════════════════════════════════════════════
+   WORKSPACE
+══════════════════════════════════════════════════ */
+.workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  overflow: hidden;
+  min-height: 0;
+  animation: fadeIn .4s ease;
+}
+
+/* Camera area */
+.cam-area { display: flex; flex-direction: column; overflow: hidden; }
+
+.cam-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 14px;
+  border-bottom: 1px solid var(--border-1);
+  background: var(--bg-1);
+  flex-shrink: 0;
+}
+.ct-label { font-size: 8px; letter-spacing: .14em; color: var(--txt-3); font-weight: 500; }
+.ct-spacer { flex: 1; }
+
+.cam-grid {
+  flex: 1; display: grid; gap: 2px;
+  overflow: hidden; background: #020406;
+  position: relative;
+}
+.cam-grid.n0, .cam-grid.n1 { grid-template-columns: 1fr; }
+.cam-grid.n2 { grid-template-columns: 1fr 1fr; }
+.cam-grid.n3, .cam-grid.n4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+/* Empty state */
+.grid-empty {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 14px; pointer-events: none;
+}
+.ge-icon {
+  width: 56px; height: 56px;
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  opacity: .15;
+}
+.ge-icon svg { width: 26px; height: 26px; color: var(--green); }
+.ge-txt  { font-size: 10px; letter-spacing: .2em; color: var(--txt-3); font-weight: 500; }
+.ge-sub  { font-size: 8px; letter-spacing: .14em; color: var(--txt-4); }
+
+/* Camera card */
+.cam-card {
+  position: relative;
+  background: #020406;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.cam-card.fs { position: absolute; inset: 0; z-index: 50; }
+
+/* Overlays */
+.cam-over-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 10px 24px;
+  background: linear-gradient(180deg, rgba(4,6,10,.9), transparent);
+  pointer-events: none;
+}
+.cam-over-actions {
+  position: absolute; top: 6px; right: 8px; z-index: 21;
+  display: flex; gap: 4px;
+}
+.cam-btn {
+  font-size: 9px; padding: 3px 8px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(0,200,120,.18);
+  background: rgba(4,6,10,.88);
+  color: var(--txt-3); cursor: pointer;
+  backdrop-filter: blur(8px);
+  letter-spacing: .04em;
+  transition: all .15s;
+}
+.cam-btn:hover { border-color: var(--border-2); color: var(--green); background: rgba(4,6,10,.95); }
+.cam-btn.rec-on { color: var(--red); border-color: rgba(255,69,69,.4); background: rgba(255,69,69,.08); }
+.cam-btn.close-btn:hover { color: var(--red); border-color: rgba(255,69,69,.3); }
+
+.cam-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--txt-4); flex-shrink: 0;
+}
+.cam-dot.on { background: var(--green); animation: dotPulse 2.5s ease-in-out infinite; }
+.cam-name {
+  font-size: 9px; letter-spacing: .1em; color: var(--green);
+  text-shadow: 0 0 8px rgba(0,232,122,.35);
+  max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.cam-fps-badge { font-size: 8px; color: var(--txt-3); }
+.cam-rec-badge {
+  font-size: 8px; color: var(--red);
+  display: none; animation: recBlink .9s step-end infinite;
+}
+.cam-rec-badge.on { display: inline; }
+.cam-rec-timer { font-size: 8px; color: var(--red); display: none; }
+.cam-rec-timer.on { display: inline; }
+
+.cam-over-bot {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 10px 6px;
+  background: linear-gradient(0deg, rgba(4,6,10,.9), transparent);
+  pointer-events: none;
+}
+.cam-persons { font-size: 9px; color: var(--txt-3); transition: color .3s; }
+.cam-persons.on { color: var(--green); }
+.cam-res { font-size: 8px; color: var(--txt-4); }
+
+canvas.cam-cv { width: 100%; height: 100%; object-fit: contain; display: none; }
+.cam-card { transition: outline .15s; }
+.cam-card:hover { outline: 1px solid var(--border-1); outline-offset: -1px; }
+.cam-card.fs { outline: none; }
+
+.cam-placeholder {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+}
+.cam-placeholder svg { opacity: .06; }
+.cam-placeholder p { font-size: 9px; letter-spacing: .14em; color: var(--txt-3); }
+.cam-placeholder small { font-size: 7px; letter-spacing: .1em; color: var(--txt-4); }
+
+/* ══════════════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════════════ */
+.sidebar {
+  border-left: 1px solid var(--border-1);
+  display: flex; flex-direction: column;
+  overflow: hidden; background: var(--bg-1);
+}
+
+/* Tabs */
+.tab-bar {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  border-bottom: 1px solid var(--border-1);
+  flex-shrink: 0; background: var(--bg-2);
+}
+.tab-btn {
+  font-family: var(--font-mono);
+  font-size: 8px; letter-spacing: .12em;
+  padding: 10px 4px;
+  border: none; border-bottom: 2px solid transparent;
+  background: transparent; color: var(--txt-3);
+  cursor: pointer; transition: all .2s; border-radius: 0;
+  font-weight: 500;
+}
+.tab-btn:hover { color: var(--txt-2); background: var(--green-4); }
+.tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: var(--green-4); }
+
+.tab-panel { display: none; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
+.tab-panel.active { display: flex; }
+
+/* Events tab */
+.ev-toolbar {
+  display: flex; gap: 6px; padding: 8px 10px;
+  border-bottom: 1px solid var(--border-1); flex-shrink: 0; align-items: center;
+}
+.ev-search {
+  flex: 1; font-family: var(--font-mono); font-size: 9px;
+  padding: 6px 9px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-1); background: var(--bg-2);
+  color: var(--txt-2); outline: none; letter-spacing: .04em;
+  transition: border-color .15s;
+}
+.ev-search:focus { border-color: var(--border-2); }
+.ev-search::placeholder { color: var(--txt-3); }
+.ev-filter {
+  font-size: 9px; padding: 6px 7px; max-width: 90px;
+  border-radius: var(--r-sm); border: 1px solid var(--border-1);
+  background: var(--bg-2); color: var(--txt-2); cursor: pointer;
+}
+.ev-clear {
+  font-size: 8px; padding: 5px 9px;
+  border-radius: var(--r-sm); border: 1px solid var(--border-1);
+  background: transparent; color: var(--txt-3); cursor: pointer;
+  transition: all .15s;
+}
+.ev-clear:hover { color: var(--red); border-color: rgba(255,69,69,.3); }
+
+.ev-list { flex: 1; overflow-y: auto; min-height: 0; }
+.ev-list::-webkit-scrollbar { width: 2px; }
+.ev-list::-webkit-scrollbar-thumb { background: var(--border-1); border-radius: 1px; }
+
+.ev-item {
+  display: flex; gap: 10px; padding: 10px 12px;
+  border-bottom: 1px solid var(--border-0);
+  cursor: pointer; transition: background .15s;
+  animation: fadeIn .2s ease;
+}
+.ev-item:hover { background: var(--green-4); }
+.ev-snap {
+  width: 44px; height: 54px; border-radius: var(--r-sm);
+  object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-1);
+}
+.ev-snap-ph {
+  width: 44px; height: 54px; border-radius: var(--r-sm);
+  flex-shrink: 0; border: 1px solid var(--border-1);
+  background: var(--bg-2); display: flex; align-items: center;
+  justify-content: center; color: var(--txt-4); font-size: 18px;
+}
+.ev-data { flex: 1; min-width: 0; }
+.ev-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.ev-id   { font-size: 11px; color: var(--green); font-weight: 600; }
+.ev-cam  {
+  font-size: 7px; color: var(--txt-3); padding: 2px 5px;
+  border-radius: 2px; background: var(--bg-3); letter-spacing: .04em;
+}
+.ev-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.etag {
+  font-size: 7px; padding: 2px 6px; border-radius: 3px;
+  font-weight: 500; letter-spacing: .04em;
+}
+.etag-h { background: rgba(61,155,255,.12); color: var(--blue); }
+.etag-b { background: var(--amber-2); color: var(--amber); }
+.etag-c { background: var(--green-3); color: var(--green); }
+.ev-time { font-size: 7px; color: var(--txt-3); margin-top: 6px; }
+.ev-empty {
+  padding: 32px 14px; text-align: center; font-size: 9px;
+  color: var(--txt-3); line-height: 2.2; letter-spacing: .1em;
+}
+
+/* Gallery tab */
+.gal-toolbar {
+  padding: 8px 10px; border-bottom: 1px solid var(--border-1);
+  flex-shrink: 0; display: flex; align-items: center; gap: 8px;
+}
+.gal-count { font-size: 9px; color: var(--txt-3); flex: 1; }
+.gal-grid {
+  flex: 1; overflow-y: auto; padding: 6px;
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 4px; align-content: start;
+}
+.gal-grid::-webkit-scrollbar { width: 2px; }
+.gal-grid::-webkit-scrollbar-thumb { background: var(--border-1); }
+.gal-item {
+  aspect-ratio: 3/4; border-radius: var(--r-sm);
+  overflow: hidden; cursor: pointer;
+  border: 1px solid var(--border-1);
+  background: var(--bg-2);
+  transition: border-color .15s, transform .15s;
+  position: relative;
+}
+.gal-item:hover { border-color: var(--border-2); transform: scale(1.04); }
+.gal-item img { width: 100%; height: 100%; object-fit: cover; }
+.gal-item-id {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  font-size: 7px; color: var(--green); padding: 4px 6px;
+  background: linear-gradient(0deg, rgba(4,6,10,.9), transparent);
+}
+.gal-empty { grid-column: 1/-1; text-align: center; padding: 32px 10px; font-size: 9px; color: var(--txt-3); }
+
+/* Stats tab */
+.stats-body {
+  flex: 1; overflow-y: auto; padding: 10px;
+  min-height: 0; display: flex; flex-direction: column; gap: 10px;
+}
+.stats-body::-webkit-scrollbar { width: 2px; }
+.stats-body::-webkit-scrollbar-thumb { background: var(--border-1); }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.stat-card {
+  background: var(--bg-2); border: 1px solid var(--border-1);
+  border-radius: var(--r-md); padding: 12px;
+}
+.stat-value { font-size: 24px; color: var(--green); line-height: 1; font-weight: 600; }
+.stat-label { font-size: 8px; color: var(--txt-3); letter-spacing: .12em; margin-top: 5px; font-weight: 500; }
+.stat-sub   { font-size: 9px; color: var(--txt-2); margin-top: 3px; }
+
+.chart-card {
+  background: var(--bg-2); border: 1px solid var(--border-1);
+  border-radius: var(--r-md); padding: 10px;
+}
+.chart-title { font-size: 8px; letter-spacing: .14em; color: var(--txt-3); margin-bottom: 10px; font-weight: 500; }
+#chart-cv { width: 100%; height: 84px; display: block; }
+
+.breakdown-card {
+  background: var(--bg-2); border: 1px solid var(--border-1);
+  border-radius: var(--r-md); padding: 10px;
+}
+.bd-title { font-size: 8px; letter-spacing: .14em; color: var(--txt-3); margin-bottom: 10px; font-weight: 500; }
+.bd-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.bd-name { font-size: 9px; color: var(--txt-2); width: 86px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-track { flex: 1; height: 2px; background: var(--border-1); border-radius: 1px; overflow: hidden; }
+.bd-fill { height: 100%; background: var(--green); transition: width .5s ease; border-radius: 1px; }
+.bd-count { font-size: 9px; color: var(--txt-3); width: 22px; text-align: right; }
+
+/* System tab */
+.sys-body {
+  flex: 1; overflow-y: auto; padding: 10px;
+  min-height: 0; display: flex; flex-direction: column; gap: 8px;
+}
+.sys-body::-webkit-scrollbar { width: 2px; }
+.sys-body::-webkit-scrollbar-thumb { background: var(--border-1); }
+.sys-section {
+  background: var(--bg-2); border: 1px solid var(--border-1);
+  border-radius: var(--r-md); padding: 12px;
+}
+.sys-section-title { font-size: 8px; letter-spacing: .16em; color: var(--txt-3); margin-bottom: 12px; font-weight: 500; }
+.sys-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 0; border-bottom: 1px solid var(--border-0);
+}
+.sys-row:last-child { border-bottom: none; }
+.sys-key { font-size: 9px; color: var(--txt-2); }
+.sys-val { font-size: 9px; color: var(--txt-3); }
+.sys-val.ok   { color: var(--green); }
+.sys-val.err  { color: var(--red); }
+.sys-val.warn { color: var(--amber); }
+
+.range-slider {
+  width: 100%; -webkit-appearance: none;
+  height: 2px; background: var(--border-1);
+  border-radius: 1px; outline: none; cursor: pointer;
+}
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%; background: var(--green);
+  cursor: pointer; box-shadow: 0 0 8px rgba(0,232,122,.4);
+}
+
+.sys-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 2px; }
+.sys-action {
+  font-size: 8px; padding: 9px 6px;
+  border-radius: var(--r-sm); border: 1px solid var(--border-1);
+  background: transparent; color: var(--txt-2);
+  cursor: pointer; letter-spacing: .06em; transition: all .15s;
+}
+.sys-action:hover { background: var(--green-3); border-color: var(--border-2); color: var(--green); }
+.sys-action.danger:hover { background: var(--red-2); border-color: rgba(255,69,69,.3); color: var(--red); }
+
+/* Sidebar footer */
+.sidebar-footer {
+  display: flex; border-top: 1px solid var(--border-1);
+  flex-shrink: 0; background: var(--bg-2);
+}
+.sf-stat {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; padding: 7px;
+  border-right: 1px solid var(--border-0);
+}
+.sf-stat:last-child { border-right: none; }
+.sf-val { font-size: 14px; color: var(--txt-2); font-weight: 500; }
+.sf-val.green { color: var(--green); }
+.sf-val.red   { color: var(--red); animation: recBlink .9s step-end infinite; }
+.sf-label { font-size: 6px; letter-spacing: .14em; color: var(--txt-3); margin-top: 2px; font-weight: 500; }
+
+/* Status bar */
+.statusbar {
+  display: flex; align-items: center;
+  height: 22px; border-top: 1px solid var(--border-1);
+  background: var(--bg-2); flex-shrink: 0;
+}
+.sb-item {
+  font-size: 8px; letter-spacing: .07em; color: var(--txt-3);
+  padding: 0 12px; border-right: 1px solid var(--border-0);
+  height: 100%; display: flex; align-items: center; white-space: nowrap;
+}
+.sb-item.ok { color: var(--green); }
+.sb-spacer { flex: 1; }
+
+/* ══════════════════════════════════════════════════
+   LIGHTBOX
+══════════════════════════════════════════════════ */
+.lightbox-bg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(2,3,6,.96); z-index: 2000;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(6px);
+}
+.lightbox-bg.open { display: flex; }
+
+.lightbox-box {
+  display: flex; background: var(--bg-2);
+  border: 1px solid var(--border-2); border-radius: var(--r-lg);
+  overflow: hidden; width: min(840px, 96vw); max-height: 92vh;
+  box-shadow: 0 0 80px rgba(0,232,122,.08);
+}
+.lb-media {
+  flex: 1; background: #000;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; min-height: 200px;
+}
+#lb-img { max-width: 100%; max-height: 86vh; object-fit: contain; display: block; }
+.lb-nav-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(4,6,10,.85); border: 1px solid var(--border-1);
+  color: var(--txt-2); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s; backdrop-filter: blur(4px);
+}
+.lb-nav-btn:hover { background: var(--green-3); border-color: var(--border-2); color: var(--green); }
+.lb-prev { left: 10px; }
+.lb-next { right: 10px; }
+.lb-meta {
+  width: 220px; border-left: 1px solid var(--border-1);
+  display: flex; flex-direction: column; flex-shrink: 0;
+}
+.lb-meta-hdr {
+  padding: 14px 16px; border-bottom: 1px solid var(--border-1);
+  display: flex; justify-content: space-between; align-items: flex-start;
+}
+.lb-entry-id { font-size: 20px; color: var(--green); font-weight: 600; }
+.lb-close-btn {
+  font-size: 9px; padding: 3px 8px;
+  border-radius: var(--r-sm); border: 1px solid var(--border-1);
+  background: transparent; color: var(--txt-3); cursor: pointer;
+}
+.lb-close-btn:hover { color: var(--red); border-color: rgba(255,69,69,.3); }
+.lb-fields {
+  padding: 14px 16px; flex: 1; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.lb-field-label { font-size: 7px; letter-spacing: .17em; color: var(--txt-3); margin-bottom: 3px; font-weight: 500; }
+.lb-field-value { font-size: 11px; color: var(--txt-1); }
+.lb-divider { border: none; border-top: 1px solid var(--border-0); }
+.lb-position {
+  font-size: 8px; color: var(--txt-3); text-align: center;
+  padding: 9px; border-top: 1px solid var(--border-1);
+}
+
+/* ══════════════════════════════════════════════════
+   CAMERA MODAL
+══════════════════════════════════════════════════ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(2,3,6,.92);
+  background-image: radial-gradient(ellipse 50% 60% at 50% 40%, rgba(0,232,122,.03) 0%, transparent 70%);
+  z-index: 1500;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(6px);
+}
+.modal-overlay.open { display: flex; }
+
+.modal-panel {
+  background: var(--bg-2); border: 1px solid var(--border-2);
+  border-radius: var(--r-lg); width: min(400px, 95vw);
+  overflow: hidden; box-shadow: 0 0 60px rgba(0,232,122,.06);
+}
+.modal-header {
+  font-size: 9px; letter-spacing: .18em; color: var(--green);
+  padding: 14px 18px; border-bottom: 1px solid var(--border-1);
+  background: var(--bg-1); display: flex; align-items: center; gap: 10px;
+}
+.modal-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+.modal-body { padding: 16px; }
+.device-list {
+  display: flex; flex-direction: column; gap: 5px;
+  max-height: 260px; overflow-y: auto; margin-bottom: 16px;
+}
+.device-list::-webkit-scrollbar { width: 2px; }
+.device-list::-webkit-scrollbar-thumb { background: var(--border-1); }
+.device-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border: 1px solid var(--border-1);
+  border-radius: var(--r-sm); cursor: pointer; transition: all .15s;
+}
+.device-item:hover:not(.used) { border-color: var(--border-2); background: var(--green-4); }
+.device-item.selected { border-color: var(--green); background: var(--green-3); }
+.device-item.used { opacity: .4; cursor: not-allowed; }
+.device-icon { font-size: 18px; flex-shrink: 0; }
+.device-label { font-size: 9px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: .04em; }
+.device-badge {
+  font-size: 7px; color: var(--green); padding: 2px 6px;
+  border-radius: 3px; background: var(--green-3); font-weight: 500;
+}
+.device-msg { font-size: 9px; color: var(--txt-3); padding: 16px; text-align: center; line-height: 2; }
+.modal-footer {
+  display: flex; gap: 8px; justify-content: flex-end;
+  padding: 0 16px 16px;
+}
+
+/* ══════════════════════════════════════════════════
+   TOASTS
+══════════════════════════════════════════════════ */
+#toast-wrap {
+  position: fixed; bottom: 20px; right: 20px;
+  z-index: 3000; display: flex; flex-direction: column-reverse;
+  gap: 8px; pointer-events: none;
+}
+.toast {
+  font-size: 10px; letter-spacing: .06em;
+  padding: 10px 14px; border-radius: var(--r-md);
+  border: 1px solid var(--border-1);
+  background: rgba(11,16,24,.95);
+  backdrop-filter: blur(12px);
+  color: var(--txt-2);
+  max-width: 300px; animation: toastIn .3s ease forwards;
+  pointer-events: auto; font-weight: 500;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5);
+}
+.toast.removing { animation: toastOut .3s ease forwards; }
+.toast.ok   { border-color: rgba(0,232,122,.3);  color: var(--green); }
+.toast.warn { border-color: rgba(255,176,32,.3); color: var(--amber); }
+.toast.err  { border-color: rgba(255,69,69,.3);  color: var(--red); }
+
+/* ══════════════════════════════════════════════════
+   MOBILE
+══════════════════════════════════════════════════ */
+.mob {
+  display: none; flex-direction: column;
+  position: fixed; inset: 0;
+  background: var(--bg); z-index: 50;
+  padding-bottom: calc(56px + var(--safe-b));
+}
+
+/* Mobile header */
+.mob-header {
+  display: flex; align-items: center;
+  height: 50px; padding: 0 16px;
+  background: var(--bg-1); border-bottom: 1px solid var(--border-1);
+  flex-shrink: 0; gap: 10px; position: relative; z-index: 200;
+}
+.mob-header::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent 0%, var(--green) 50%, transparent 100%);
+  opacity: .18;
+}
+.mob-brand {
+  font-family: var(--font-ui);
+  font-size: 14px; font-weight: 700;
+  letter-spacing: .2em; color: var(--green);
+  text-shadow: 0 0 10px rgba(0,232,122,.3);
+}
+.mob-spacer { flex: 1; }
+.mob-menu-btn {
+  width: 34px; height: 34px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-1); background: transparent;
+  color: var(--txt-3); cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+
+/* Mobile cam area */
+.mob-cam-area { flex: 1; overflow: hidden; position: relative; }
+.mob-carousel {
+  display: flex; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; height: 100%;
+}
+.mob-carousel::-webkit-scrollbar { display: none; }
+.mob-slide {
+  flex: 0 0 100%; scroll-snap-align: start;
+  position: relative; background: #020406;
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.mob-slide canvas {
+  width: 100%; height: 100%; object-fit: cover;
+  display: none; position: absolute; inset: 0;
+}
+.mob-slide canvas.vis { display: block; }
+.mob-slide-ph {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px;
+}
+.mob-slide-ph p { font-size: 10px; letter-spacing: .12em; color: var(--txt-3); }
+.mob-slide-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 14px 30px;
+  background: linear-gradient(180deg, rgba(4,6,10,.92), transparent);
+  pointer-events: none;
+}
+.mob-slide-name { font-size: 10px; letter-spacing: .1em; color: var(--green); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mob-slide-fps  { font-size: 8px; color: var(--txt-3); }
+.mob-slide-rec  { font-size: 8px; color: var(--red); display: none; animation: recBlink .9s step-end infinite; }
+.mob-slide-rec.on { display: inline; }
+.mob-slide-bot {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: flex-end; justify-content: space-between;
+  padding: 28px 14px 16px;
+  background: linear-gradient(0deg, rgba(4,6,10,.92), transparent);
+}
+.mob-slide-pb { font-size: 9px; color: var(--txt-3); transition: color .3s; }
+.mob-slide-pb.on { color: var(--green); }
+
+.mob-fab {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: rgba(4,6,10,.92); border: 2px solid rgba(255,69,69,.4);
+  color: var(--red); font-size: 22px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s; backdrop-filter: blur(8px);
+}
+.mob-fab:active { transform: scale(.88); }
+.mob-fab.on {
+  background: var(--red); border-color: var(--red); color: #fff;
+  box-shadow: 0 0 20px rgba(255,69,69,.4);
+}
+.mob-fab:disabled { opacity: .3; }
+
+.mob-empty {
+  flex: 0 0 100%; scroll-snap-align: start;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 16px;
+}
+.mob-empty-icon { font-size: 52px; opacity: .05; }
+.mob-empty-txt { font-size: 10px; letter-spacing: .18em; color: var(--txt-3); font-weight: 500; }
+.mob-empty-sub { font-size: 8px; letter-spacing: .12em; color: var(--txt-4); }
+
+/* Dots */
+.mob-dots { display: flex; gap: 6px; justify-content: center; padding: 8px 0 2px; flex-shrink: 0; }
+.mob-dot  { width: 5px; height: 5px; border-radius: 50%; background: var(--txt-4); transition: all .3s; }
+.mob-dot.active { width: 20px; border-radius: 3px; background: var(--green); }
+
+/* Action bar */
+.mob-actions { display: flex; gap: 8px; padding: 8px 14px 4px; flex-shrink: 0; }
+.mob-action {
+  flex: 1; font-size: 9px; padding: 11px 6px;
+  border-radius: var(--r-md); border: 1px solid var(--border-1);
+  background: var(--bg-2); color: var(--txt-2);
+  cursor: pointer; letter-spacing: .06em;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  -webkit-tap-highlight-color: transparent;
+  transition: all .15s; position: relative; font-weight: 500;
+}
+.mob-action:active { transform: scale(.95); background: var(--bg-3); }
+.mob-action.primary { background: var(--green-2); border-color: var(--green-2); color: #000; font-weight: 700; }
+.mob-action.primary:active { background: var(--green); }
+.mob-badge {
+  min-width: 17px; height: 17px; border-radius: 9px;
+  background: var(--red); color: #fff;
+  font-size: 7px; display: none; align-items: center;
+  justify-content: center; padding: 0 3px;
+}
+.mob-badge.show { display: flex; }
+
+/* Bottom nav */
+.mob-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  display: none; height: calc(56px + var(--safe-b));
+  background: var(--bg-1); border-top: 1px solid var(--border-1);
+  z-index: 300; padding-bottom: var(--safe-b);
+}
+.mob-nav-grid { display: grid; grid-template-columns: repeat(4,1fr); height: 56px; }
+.mob-nav-btn {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  border: none; border-top: 2px solid transparent;
+  background: transparent; color: var(--txt-3);
+  cursor: pointer; transition: color .2s, border-color .2s;
+  border-radius: 0; padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-nav-btn .ni { font-size: 18px; line-height: 1; }
+.mob-nav-btn .nl { font-size: 7px; letter-spacing: .1em; font-weight: 500; }
+.mob-nav-btn.active { color: var(--green); border-top-color: var(--green); }
+
+/* Sheet overlay */
+.mob-overlay { display: none; position: fixed; inset: 0; background: rgba(2,3,6,.75); z-index: 400; backdrop-filter: blur(3px); }
+.mob-overlay.open { display: block; }
+
+/* Sheets */
+.mob-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 78vh;
+  background: var(--bg-1); border-radius: var(--r-xl) var(--r-xl) 0 0;
+  border-top: 1px solid var(--border-1); z-index: 500;
+  transform: translateY(100%); transition: transform .35s cubic-bezier(.32,0,.67,0);
+  display: none; flex-direction: column; overflow: hidden;
+  padding-bottom: var(--safe-b);
+}
+.mob-sheet.open {
+  transform: translateY(0);
+  transition: transform .35s cubic-bezier(.33,1,.68,1);
+  display: flex;
+}
+.mob-handle-row { padding: 10px 0 4px; display: flex; justify-content: center; flex-shrink: 0; cursor: grab; }
+.mob-handle { width: 38px; height: 4px; border-radius: 2px; background: var(--border-1); }
+.mob-sheet-hdr {
+  display: flex; align-items: center; gap: 8px;
+  padding: 2px 18px 14px; flex-shrink: 0; border-bottom: 1px solid var(--border-1);
+}
+.mob-sheet-title { font-size: 10px; letter-spacing: .16em; color: var(--green); flex: 1; font-weight: 500; }
+.mob-sh-badge {
+  font-size: 8px; padding: 2px 7px; border-radius: 3px;
+  background: var(--red-2); color: var(--red); border: 1px solid rgba(255,69,69,.2);
+}
+.mob-sh-badge.zero { background: var(--green-3); color: var(--green); border-color: var(--border-1); }
+.mob-sh-close {
+  font-size: 9px; padding: 5px 10px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-1); background: transparent; color: var(--txt-3); cursor: pointer;
+}
+.mob-sh-close:active { color: var(--red); }
+.mob-sheet-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.mob-sheet-body::-webkit-scrollbar { width: 0; }
+
+/* Mobile events */
+.mob-ev-item {
+  display: flex; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border-0); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.mob-ev-item:active { background: var(--green-4); }
+.mob-ev-snap {
+  width: 50px; height: 60px; border-radius: var(--r-sm);
+  object-fit: cover; flex-shrink: 0; border: 1px solid var(--border-1);
+}
+.mob-ev-ph {
+  width: 50px; height: 60px; border-radius: var(--r-sm);
+  flex-shrink: 0; border: 1px solid var(--border-1);
+  background: var(--bg-2); display: flex; align-items: center;
+  justify-content: center; color: var(--txt-4); font-size: 22px;
+}
+.mob-ev-info { flex: 1; min-width: 0; }
+.mob-ev-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.mob-ev-id  { font-size: 13px; color: var(--green); font-weight: 600; }
+.mob-ev-cam { font-size: 8px; color: var(--txt-3); }
+.mob-ev-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.mob-ev-tag { font-size: 8px; padding: 3px 8px; border-radius: 3px; background: var(--bg-3); font-weight: 500; }
+.mob-ev-time { font-size: 8px; color: var(--txt-3); margin-top: 6px; }
+.mob-ev-empty {
+  padding: 44px 20px; text-align: center;
+  font-size: 10px; letter-spacing: .12em; color: var(--txt-3); line-height: 2.4;
+}
+
+/* Mobile gallery */
+.mob-gal-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 3px; padding: 8px; }
+.mob-gal-item {
+  aspect-ratio: 3/4; border-radius: var(--r-sm);
+  overflow: hidden; cursor: pointer; border: 1px solid var(--border-1);
+  position: relative; -webkit-tap-highlight-color: transparent;
+}
+.mob-gal-item:active { opacity: .75; }
+.mob-gal-item img { width: 100%; height: 100%; object-fit: cover; }
+.mob-gal-id {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  font-size: 7px; color: var(--green); padding: 4px 6px;
+  background: linear-gradient(0deg, rgba(4,6,10,.9), transparent);
+}
+.mob-gal-empty { grid-column: 1/-1; text-align: center; padding: 44px; font-size: 10px; color: var(--txt-3); }
+
+/* Mobile system sheet */
+.mob-sys-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.mob-sys-section { background: var(--bg-2); border: 1px solid var(--border-1); border-radius: var(--r-md); padding: 14px; }
+.mob-sys-title { font-size: 8px; letter-spacing: .16em; color: var(--txt-3); margin-bottom: 12px; font-weight: 500; }
+.mob-sys-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border-0); }
+.mob-sys-row:last-child { border-bottom: none; }
+.mob-sys-key { font-size: 10px; color: var(--txt-2); }
+.mob-sys-val { font-size: 10px; color: var(--txt-3); }
+.mob-sys-val.ok { color: var(--green); }
+.mob-sys-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mob-sys-btn {
+  font-size: 9px; padding: 14px 8px; border-radius: var(--r-sm);
+  border: 1px solid var(--border-1); background: var(--bg-3);
+  color: var(--txt-2); cursor: pointer; letter-spacing: .06em;
+  transition: all .15s; font-weight: 500;
+}
+.mob-sys-btn:active { background: var(--green-3); color: var(--green); }
+.mob-sys-btn.danger:active { background: var(--red-2); color: var(--red); }
+
+/* Alert banner */
+.mob-alert {
+  position: fixed; top: 50px; left: 0; right: 0; z-index: 600;
+  display: flex; align-items: center; gap: 12px; padding: 12px 18px;
+  background: linear-gradient(135deg, #cc2020, #ff3030);
+  transform: translateY(-110%); transition: transform .3s cubic-bezier(.33,1,.68,1);
+  cursor: pointer; box-shadow: 0 4px 20px rgba(255,69,69,.3);
+}
+.mob-alert.show { transform: translateY(0); }
+.mob-alert-main { font-size: 11px; letter-spacing: .08em; color: #fff; }
+.mob-alert-cam  { font-size: 9px; color: rgba(255,255,255,.7); margin-top: 1px; }
+.mob-alert-arrow { font-size: 14px; color: rgba(255,255,255,.6); }
+
+/* ══════════════════════════════════════════════════
+   ECO MODE BADGE
+══════════════════════════════════════════════════ */
+.eco-badge {
+  font-size: 7px; letter-spacing: .12em; padding: 2px 6px;
+  border-radius: var(--r-sm); border: 1px solid var(--border-1);
+  background: rgba(0,232,122,.1); color: var(--green); transition: all .4s;
+}
+.eco-badge.off { color: var(--txt-4); background: transparent; border-color: transparent; }
+
+/* ══════════════════════════════════════════════════
+   RECONNECT OVERLAY
+══════════════════════════════════════════════════ */
+.reconnect-overlay {
+  display: none; position: absolute; inset: 0; z-index: 30;
+  background: rgba(4,6,10,.86); backdrop-filter: blur(4px);
+  flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+}
+.reconnect-overlay.show { display: flex; }
+.reconnect-msg  { font-size: 11px; color: var(--amber); letter-spacing: .14em; animation: pulseGlow 1s ease-in-out infinite; }
+.reconnect-count{ font-size: 9px; color: var(--txt-3); }
+
+/* ══════════════════════════════════════════════════
+   SYSTEM INPUTS  (webhook, telegram)
+══════════════════════════════════════════════════ */
+.sys-input {
+  width: 100%; padding: 6px 8px; margin-top: 6px;
+  font-family: var(--font-mono); font-size: 9px;
+  background: var(--bg-3); border: 1px solid var(--border-1);
+  border-radius: var(--r-sm); color: var(--txt-2); outline: none;
+  transition: border-color .15s; letter-spacing: .04em;
+}
+.sys-input:focus { border-color: var(--border-2); color: var(--txt-1); }
+.sys-input::placeholder { color: var(--txt-4); }
+.sys-btn-row { display: flex; gap: 6px; margin-top: 6px; }
+.sys-btn-row .sys-action { flex: 1; }
+.notif-btn {
+  width: 100%; margin-top: 8px; font-size: 8px; padding: 8px 6px;
+  border-radius: var(--r-sm); border: 1px solid var(--border-1);
+  background: transparent; color: var(--txt-2); cursor: pointer;
+  letter-spacing: .07em; transition: all .15s; font-family: var(--font-mono);
+}
+.notif-btn:hover   { background: var(--green-3); border-color: var(--border-2); color: var(--green); }
+.notif-btn.granted { color: var(--green); border-color: var(--border-2); background: var(--green-4); }
+.notif-btn.denied  { color: var(--red);   border-color: rgba(255,69,69,.3); }
+
+/* ══════════════════════════════════════════════════
+   EVENT TYPE TAGS
+══════════════════════════════════════════════════ */
+.etag-type-person  { color: var(--green);  border-color: var(--border-2); background: var(--green-4); }
+.etag-type-animal  { color: var(--amber);  border-color: rgba(255,176,32,.3); background: var(--amber-2); }
+.etag-type-vehicle { color: var(--blue);   border-color: rgba(61,155,255,.3); background: rgba(61,155,255,.08); }
+.etag-type-other   { color: var(--purple); border-color: rgba(155,126,248,.3); background: rgba(155,126,248,.07); }
+
+/* ══════════════════════════════════════════════════
+   STATUS BAR LATENCY
+══════════════════════════════════════════════════ */
+#sb-latency { font-variant-numeric: tabular-nums; transition: color .4s; }
+#sb-latency.lat-ok   { color: var(--green); }
+#sb-latency.lat-warn { color: var(--amber); }
+#sb-latency.lat-slow { color: var(--red); animation: pulseGlow .7s ease-in-out infinite; }
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  header, .cam-toolbar, .workspace, .sidebar, .statusbar, #toast-wrap { display: none !important; }
+  .mob, .mob-nav { display: flex; }
+  .mob-nav { display: block; }
+}
+@media (min-width: 769px) {
+  .mob, .mob-nav, .mob-overlay, .mob-alert, .mob-sheet { display: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════ LOADER ════════════════════ -->
+<div id="loader">
+  <div class="ld-brand">
+    <div class="ld-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <div class="ld-title">SECUREVISION PRO</div>
+    <div class="ld-sub">SISTEMA DE VIGILANCIA · IA · v2.1</div>
+  </div>
+  <div class="ld-tasks">
+    <div class="ld-task">
+      <span class="ld-label">DETECCIÓN</span>
+      <div class="ld-track"><div class="ld-fill lf-green" id="p-coco"></div></div>
+      <span class="ld-status" id="st-coco">—</span>
+    </div>
+    <div class="ld-task">
+      <span class="ld-label">FACIAL</span>
+      <div class="ld-track"><div class="ld-fill lf-red" id="p-face"></div></div>
+      <span class="ld-status" id="st-face">—</span>
+    </div>
+    <div class="ld-task">
+      <span class="ld-label">POSE 3D</span>
+      <div class="ld-track"><div class="ld-fill lf-cyan" id="p-pose"></div></div>
+      <span class="ld-status" id="st-pose">—</span>
+    </div>
+  </div>
+  <div class="ld-note" id="ld-note">INICIANDO TENSORFLOW.JS…</div>
+</div>
+
+<!-- ════════════════════ HEADER ════════════════════ -->
+<header>
+  <div class="h-brand">
+    <div class="h-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="h-name">SECUREVISION PRO</div>
+      <div class="h-ver">MULTI-CÁMARA · AI · v2.1</div>
+    </div>
+  </div>
+  <div class="h-stats">
+    <div class="hstat"><span class="hstat-v live" id="hs-cams">0</span><span class="hstat-l">CÁMARAS</span></div>
+    <div class="hstat"><span class="hstat-v active" id="hs-today">0</span><span class="hstat-l">HOY</span></div>
+    <div class="hstat"><span class="hstat-v" id="hs-live">0</span><span class="hstat-l">EN ESCENA</span></div>
+    <div class="hstat"><span class="hstat-v rec" id="hs-rec" style="color:var(--txt-3)">0</span><span class="hstat-l">GRABANDO</span></div>
+  </div>
+  <div class="h-spacer"></div>
+  <div class="h-pills">
+    <span class="pill" id="pill-sys">CARGANDO…</span>
+    <span class="pill danger" id="pill-alert" style="display:none">▲ NUEVA PERSONA</span>
+  </div>
+  <div class="h-time">
+    <div class="h-date" id="h-date">—</div>
+    <div class="h-clock" id="h-clock">--:--:--</div>
+  </div>
+</header>
+
+<!-- ════════════════════ WORKSPACE ════════════════════ -->
+<div class="workspace">
+  <div class="cam-area">
+    <div class="cam-toolbar">
+      <span class="ct-label">CÁMARAS ACTIVAS</span>
+      <div class="ct-spacer"></div>
+      <select id="conf-sel">
+        <option value="0.3">CONF 30%</option>
+        <option value="0.4" selected>CONF 40%</option>
+        <option value="0.5">CONF 50%</option>
+        <option value="0.65">CONF 65%</option>
+      </select>
+      <button class="btn-primary" id="btn-add" disabled>+ CÁMARA</button>
+      <button id="btn-dir">📁 CARPETA</button>
+    </div>
+    <div class="cam-grid n0" id="cam-grid">
+      <div class="grid-empty" id="grid-empty">
+        <div class="ge-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
+            <path d="M23 7l-7 5 7 5V7z"/>
+            <rect x="1" y="5" width="15" height="14" rx="2"/>
+          </svg>
+        </div>
+        <div class="ge-txt">SIN CÁMARAS ACTIVAS</div>
+        <div class="ge-sub">PULSA "+ CÁMARA" PARA INICIAR</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="t-events">EVENTOS</button>
+      <button class="tab-btn" data-tab="t-gallery">GALERÍA</button>
+      <button class="tab-btn" data-tab="t-stats">STATS</button>
+      <button class="tab-btn" data-tab="t-system">SISTEMA</button>
+    </div>
+
+    <!-- Events -->
+    <div class="tab-panel active" id="t-events">
+      <div class="ev-toolbar">
+        <input class="ev-search" id="ev-search" type="text" placeholder="BUSCAR…" spellcheck="false" autocomplete="off">
+        <select class="ev-filter" id="ev-fil"><option value="all">TODAS</option></select>
+        <select class="ev-filter" id="ev-type-fil">
+          <option value="all">TIPO</option>
+          <option value="person">👤 PERSONA</option>
+          <option value="animal">🐾 ANIMAL</option>
+          <option value="vehicle">🚗 VEHÍCULO</option>
+          <option value="other">📦 OTRO</option>
+        </select>
+        <button class="ev-clear" id="ev-clr">LIMPIAR</button>
+      </div>
+      <div class="ev-list" id="ev-list">
+        <div class="ev-empty">[ SISTEMA ACTIVO ] — SIN EVENTOS AÚN</div>
+      </div>
+    </div>
+
+    <!-- Gallery -->
+    <div class="tab-panel" id="t-gallery">
+      <div class="gal-toolbar">
+        <span class="gal-count" id="gal-cnt">0 capturas</span>
+        <button id="btn-exp-csv-g" style="font-size:8px;padding:4px 9px;">⬇ CSV</button>
+      </div>
+      <div class="gal-grid" id="gal-grid"><div class="gal-empty">SIN CAPTURAS AÚN</div></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="tab-panel" id="t-stats">
+      <div class="stats-body">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-value" id="sc-today">0</div><div class="stat-label">DETECTADAS HOY</div></div>
+          <div class="stat-card"><div class="stat-value" id="sc-peak">—</div><div class="stat-label">HORA PICO</div><div class="stat-sub" id="sc-peak-v">—</div></div>
+          <div class="stat-card"><div class="stat-value" id="sc-avgc">—</div><div class="stat-label">CONFIANZA MEDIA</div></div>
+          <div class="stat-card"><div class="stat-value" id="sc-topc">—</div><div class="stat-label">CAM + ACTIVA</div></div>
+        </div>
+        <div class="chart-card"><div class="chart-title">DETECCIONES POR HORA (24H)</div><canvas id="chart-cv"></canvas></div>
+        <div class="breakdown-card"><div class="bd-title">DESGLOSE POR CÁMARA</div><div id="bd-rows"><div style="font-size:9px;color:var(--txt-3)">Sin datos</div></div></div>
+      </div>
+    </div>
+
+    <!-- System -->
+    <div class="tab-panel" id="t-system">
+      <div class="sys-body">
+        <div class="sys-section">
+          <div class="sys-section-title">MODELOS IA</div>
+          <div class="sys-row"><span class="sys-key">COCO-SSD</span><span class="sys-val" id="sys-coco">—</span></div>
+          <div class="sys-row"><span class="sys-key">BlazeFace</span><span class="sys-val" id="sys-face">—</span></div>
+          <div class="sys-row"><span class="sys-key">MoveNet MultiPose</span><span class="sys-val" id="sys-pose">—</span></div>
+        </div>
+        <div class="sys-section">
+          <div class="sys-section-title">CONFIGURACIÓN</div>
+          <div class="sys-row"><span class="sys-key">Alerta sonora</span><label class="toggle"><input type="checkbox" id="tog-sound" checked><span class="toggle-track"></span></label></div>
+          <div class="sys-row"><span class="sys-key">Esqueleto 3D</span><label class="toggle"><input type="checkbox" id="tog-skel" checked><span class="toggle-track"></span></label></div>
+          <div class="sys-row"><span class="sys-key">Guardar capturas</span><label class="toggle"><input type="checkbox" id="tog-snaps" checked><span class="toggle-track"></span></label></div>
+          <div class="sys-row" style="flex-direction:column;align-items:stretch;gap:9px;">
+            <div style="display:flex;justify-content:space-between;">
+              <span class="sys-key">Umbral detección</span>
+              <span class="sys-val" id="thresh-val">40%</span>
+            </div>
+            <input type="range" class="range-slider" id="thresh-sl" min="20" max="75" value="40">
+          </div>
+        </div>
+        <div class="sys-section">
+          <div class="sys-section-title">RENDIMIENTO</div>
+          <div class="sys-row"><span class="sys-key">Modo ECO (ahorro CPU)</span><label class="toggle"><input type="checkbox" id="tog-eco"><span class="toggle-track"></span></label></div>
+          <div class="sys-row"><span class="sys-key">Latencia IA</span><span class="sys-val" id="sys-latency">—</span></div>
+          <div class="sys-row"><span class="sys-key">Auto-reconexión cámaras</span><span class="sys-val ok">ACTIVA ✓</span></div>
+        </div>
+        <div class="sys-section">
+          <div class="sys-section-title">NOTIFICACIONES PUSH</div>
+          <div class="sys-row"><span class="sys-key">Activar notificaciones</span><label class="toggle"><input type="checkbox" id="tog-push"><span class="toggle-track"></span></label></div>
+          <div class="sys-row"><span class="sys-key">Estado permiso</span><span class="sys-val" id="sys-push-st">—</span></div>
+          <button class="notif-btn" id="btn-req-notif">🔔 SOLICITAR PERMISO DE NOTIFICACIÓN</button>
+        </div>
+        <div class="sys-section">
+          <div class="sys-section-title">WEBHOOK</div>
+          <div class="sys-row"><span class="sys-key">Estado</span><span class="sys-val" id="sys-webhook-st">No configurado</span></div>
+          <input class="sys-input" id="inp-webhook" type="url" placeholder="https://tu-servidor.com/webhook">
+          <div class="sys-btn-row">
+            <button class="sys-action" id="btn-webhook-save">GUARDAR</button>
+            <button class="sys-action" id="btn-webhook-test">TEST</button>
+            <button class="sys-action danger" id="btn-webhook-clr">✕</button>
+          </div>
+        </div>
+        <div class="sys-section">
+          <div class="sys-section-title">TELEGRAM BOT</div>
+          <div class="sys-row"><span class="sys-key">Estado</span><span class="sys-val" id="sys-tg-st">No configurado</span></div>
+          <input class="sys-input" id="inp-tg-token" type="text" placeholder="Bot Token: 123456:ABCDef…">
+          <input class="sys-input" id="inp-tg-chat" type="text" placeholder="Chat ID: -100123456789">
+          <div class="sys-btn-row">
+            <button class="sys-action" id="btn-tg-save">GUARDAR</button>
+            <button class="sys-action" id="btn-tg-test">TEST</button>
+            <button class="sys-action danger" id="btn-tg-clr">✕</button>
+          </div>
+        </div>
+        <div class="sys-section">
+          <div class="sys-section-title">ALMACENAMIENTO</div>
+          <div class="sys-row"><span class="sys-key">Carpeta activa</span><span class="sys-val" id="sys-dir">No seleccionada</span></div>
+          <div style="margin-top:10px;">
+            <button onclick="document.getElementById('btn-dir').click()" style="width:100%;padding:8px;font-size:8px;">📁 SELECCIONAR CARPETA</button>
+          </div>
+        </div>
+        <div class="sys-section">
+          <div class="sys-section-title">EXPORTAR / ACCIONES</div>
+          <div class="sys-actions">
+            <button class="sys-action" id="btn-exp-csv">⬇ CSV</button>
+            <button class="sys-action" id="btn-exp-json">⬇ JSON</button>
+            <button class="sys-action danger" id="btn-clr-all">🗑 BORRAR</button>
+            <button class="sys-action" id="btn-about">ℹ INFO</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sf-stat"><span class="sf-val green" id="sf-total">0</span><span class="sf-label">EVENTOS</span></div>
+      <div class="sf-stat"><span class="sf-val" id="sf-cams">0</span><span class="sf-label">CÁMARAS</span></div>
+      <div class="sf-stat"><span class="sf-val" id="sf-live">0</span><span class="sf-label">LIVE</span></div>
+      <div class="sf-stat"><span class="sf-val" id="sf-rec" style="color:var(--txt-3)">0</span><span class="sf-label">REC</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="statusbar">
+  <span class="sb-item ok">● SECUREVISION PRO v2.3</span>
+  <span class="sb-item" id="sb-model">CARGANDO…</span>
+  <span class="sb-item" id="sb-dir-st">📁 DESCARGA AUTO</span>
+  <span class="sb-item eco-badge off" id="sb-eco">ECO</span>
+  <div class="sb-spacer"></div>
+  <span class="sb-item" id="sb-latency">AI: —ms</span>
+  <span class="sb-item" id="sb-fps">— fps</span>
+  <span class="sb-item ok" id="sb-clock">—</span>
+</div>
+
+<!-- ════════════════════ MOBILE ════════════════════ -->
+<div class="mob" id="mob">
+  <div class="mob-header">
+    <div class="mob-brand">SECUREVISION</div>
+    <div class="mob-spacer"></div>
+    <span class="pill" id="mob-pill-cams">0 CAM</span>
+    <span class="pill" id="mob-pill-live">0 LIVE</span>
+    <button class="mob-menu-btn" id="mob-menu">⋮</button>
+  </div>
+  <div class="mob-cam-area">
+    <div class="mob-carousel" id="mob-carousel">
+      <div class="mob-empty" id="mob-empty">
+        <div class="mob-empty-icon">📷</div>
+        <div class="mob-empty-txt">SIN CÁMARAS ACTIVAS</div>
+        <div class="mob-empty-sub">PULSA + PARA AÑADIR</div>
+      </div>
+    </div>
+  </div>
+  <div class="mob-dots" id="mob-dots"></div>
+  <div class="mob-actions">
+    <button class="mob-action primary" id="mob-btn-add">+ CAM</button>
+    <button class="mob-action" id="mob-btn-events">
+      📋 EVENTOS <span class="mob-badge" id="mob-ev-badge">0</span>
+    </button>
+    <button class="mob-action" id="mob-btn-folder">📁 CARPETA</button>
+  </div>
+  <div class="mob-alert" id="mob-alert">
+    <span style="font-size:22px">⚠</span>
+    <div style="flex:1">
+      <div class="mob-alert-main" id="mob-alert-txt">NUEVA PERSONA</div>
+      <div class="mob-alert-cam" id="mob-alert-cam">—</div>
+    </div>
+    <span class="mob-alert-arrow">›</span>
+  </div>
+</div>
+
+<nav class="mob-nav" id="mob-nav">
+  <div class="mob-nav-grid">
+    <button class="mob-nav-btn active" data-sheet=""><span class="ni">📷</span><span class="nl">CÁMARAS</span></button>
+    <button class="mob-nav-btn" data-sheet="events"><span class="ni">📋</span><span class="nl">EVENTOS</span></button>
+    <button class="mob-nav-btn" data-sheet="gallery"><span class="ni">🖼</span><span class="nl">GALERÍA</span></button>
+    <button class="mob-nav-btn" data-sheet="system"><span class="ni">⚙</span><span class="nl">SISTEMA</span></button>
+  </div>
+</nav>
+
+<div class="mob-overlay" id="mob-overlay"></div>
+
+<!-- Mobile sheets -->
+<div class="mob-sheet" id="mob-sheet-events">
+  <div class="mob-handle-row"><div class="mob-handle"></div></div>
+  <div class="mob-sheet-hdr">
+    <span class="mob-sheet-title">EVENTOS</span>
+    <span class="mob-sh-badge zero" id="mob-sh-ev-cnt">0</span>
+    <button class="mob-sh-close" id="mob-ev-close">✕</button>
+  </div>
+  <div class="mob-sheet-body" id="mob-ev-list"><div class="mob-ev-empty">SIN EVENTOS AÚN</div></div>
+</div>
+
+<div class="mob-sheet" id="mob-sheet-gallery">
+  <div class="mob-handle-row"><div class="mob-handle"></div></div>
+  <div class="mob-sheet-hdr">
+    <span class="mob-sheet-title">GALERÍA</span>
+    <span class="mob-sh-badge zero" id="mob-sh-gal-cnt">0</span>
+    <button class="mob-sh-close" id="mob-gal-close">✕</button>
+  </div>
+  <div class="mob-sheet-body">
+    <div class="mob-gal-grid" id="mob-gal-grid"><div class="mob-gal-empty">SIN CAPTURAS AÚN</div></div>
+  </div>
+</div>
+
+<div class="mob-sheet" id="mob-sheet-system">
+  <div class="mob-handle-row"><div class="mob-handle"></div></div>
+  <div class="mob-sheet-hdr">
+    <span class="mob-sheet-title">SISTEMA</span>
+    <button class="mob-sh-close" id="mob-sys-close">✕</button>
+  </div>
+  <div class="mob-sheet-body">
+    <div class="mob-sys-body">
+      <div class="mob-sys-section">
+        <div class="mob-sys-title">MODELOS IA</div>
+        <div class="mob-sys-row"><span class="mob-sys-key">COCO-SSD</span><span class="mob-sys-val" id="mob-m-coco">—</span></div>
+        <div class="mob-sys-row"><span class="mob-sys-key">FACIAL</span><span class="mob-sys-val" id="mob-m-face">—</span></div>
+        <div class="mob-sys-row"><span class="mob-sys-key">POSE 3D</span><span class="mob-sys-val" id="mob-m-pose">—</span></div>
+      </div>
+      <div class="mob-sys-section">
+        <div class="mob-sys-title">AJUSTES</div>
+        <div class="mob-sys-row"><span class="mob-sys-key">Alerta sonora</span><label class="toggle"><input type="checkbox" id="mob-tog-sound" checked><span class="toggle-track"></span></label></div>
+        <div class="mob-sys-row"><span class="mob-sys-key">Esqueleto 3D</span><label class="toggle"><input type="checkbox" id="mob-tog-skel" checked><span class="toggle-track"></span></label></div>
+        <div class="mob-sys-row"><span class="mob-sys-key">Carpeta</span><span class="mob-sys-val" id="mob-dir-val">Descarga auto</span></div>
+      </div>
+      <div class="mob-sys-section">
+        <div class="mob-sys-title">ACCIONES</div>
+        <div class="mob-sys-btns">
+          <button class="mob-sys-btn" onclick="exportCSV()">⬇ CSV</button>
+          <button class="mob-sys-btn" onclick="exportJSON()">⬇ JSON</button>
+          <button class="mob-sys-btn" onclick="document.getElementById('btn-dir').click()">📁 CARPETA</button>
+          <button class="mob-sys-btn danger" onclick="clearAllData()">🗑 BORRAR TODO</button>
+        </div>
+      </div>
+      <div style="height:24px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ LIGHTBOX ════════════════════ -->
+<div class="lightbox-bg" id="lightbox">
+  <div class="lightbox-box">
+    <div class="lb-media">
+      <img id="lb-img" src="" alt="">
+      <button class="lb-nav-btn lb-prev" id="lb-prev">◀</button>
+      <button class="lb-nav-btn lb-next" id="lb-next">▶</button>
+    </div>
+    <div class="lb-meta">
+      <div class="lb-meta-hdr">
+        <div class="lb-entry-id" id="lb-id">#0000</div>
+        <button class="lb-close-btn" id="lb-close">ESC ✕</button>
+      </div>
+      <div class="lb-fields">
+        <div><div class="lb-field-label">CÁMARA</div><div class="lb-field-value" id="lb-cam">—</div></div>
+        <div><div class="lb-field-label">FECHA / HORA</div><div class="lb-field-value" id="lb-time">—</div></div>
+        <hr class="lb-divider">
+        <div><div class="lb-field-label">ESTATURA</div><div class="lb-field-value" id="lb-height">—</div></div>
+        <div><div class="lb-field-label">COMPLEXIÓN</div><div class="lb-field-value" id="lb-build">—</div></div>
+        <div><div class="lb-field-label">CONFIANZA</div><div class="lb-field-value" id="lb-conf">—</div></div>
+      </div>
+      <div class="lb-position" id="lb-pos">— / —</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════ CAMERA MODAL ════════════════════ -->
+<div class="modal-overlay" id="cam-modal">
+  <div class="modal-panel">
+    <div class="modal-header"><div class="modal-dot"></div>CONECTAR CÁMARA</div>
+    <div class="modal-body">
+      <div class="device-list" id="dev-list"><div class="device-msg">DETECTANDO CÁMARAS…</div></div>
+      <div class="modal-footer">
+        <button id="modal-cancel">CANCELAR</button>
+        <button class="btn-primary" id="modal-confirm" disabled>CONECTAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<!-- ════════════════════ SCRIPTS ════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.7/dist/blazeface.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+const models = { coco: null, face: null, pose: null };
+const cameras = {};
+let camCounter = 0;
+let regCounter = 0;
+let registry = [];
+let saveDir = null;
+let selDevId = '';
+let selDevLabel = '';
+let lbIndex = 0;
+let hourlyStats = new Array(24).fill(0);
+let confThresh = 0.40;
+let alertSound = true;
+let showSkeleton = true;
+let saveSnaps = true;
+let audioCtx = null;
+let activeCamIdx = 0;
+let carouselTimer = null;
+
+/* ── New feature state ── */
+let ecoMode = false;
+let lastInferenceMs = 0;
+let webhookUrl = '';
+let telegramToken = '';
+let telegramChatId = '';
+let pushNotifs = false;
+
+/* Utility */
+const $ = id => document.getElementById(id);
+const isMobile = () => window.innerWidth <= 768;
+
+/* ══════════════════════════════════════
+   CLOCK
+══════════════════════════════════════ */
+function tickClock() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('es-ES');
+  const dateStr = now.toLocaleDateString('es-ES', { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase();
+  const hc = $('h-clock'), hd = $('h-date'), sc = $('sb-clock');
+  if (hc) hc.textContent = timeStr;
+  if (hd) hd.textContent = dateStr;
+  if (sc) sc.textContent = timeStr;
+}
+tickClock();
+setInterval(tickClock, 500);
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function toast(msg, type = 'ok', dur = 3500) {
+  const wrap = $('toast-wrap');
+  if (!wrap) return;
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  const remove = () => {
+    el.classList.add('removing');
+    setTimeout(() => el.remove(), 400);
+  };
+  const t = setTimeout(remove, dur);
+  el.addEventListener('click', () => { clearTimeout(t); remove(); });
+}
+
+/* ══════════════════════════════════════
+   AUDIO
+══════════════════════════════════════ */
+function initAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
+  }
+}
+function playAlert() {
+  if (!alertSound || !audioCtx) return;
+  try {
+    [880, 1100].forEach((freq, i) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      const t = audioCtx.currentTime + i * .12;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(.14, t + .02);
+      gain.gain.exponentialRampToValueAtTime(.001, t + .18);
+      osc.start(t);
+      osc.stop(t + .18);
+    });
+  } catch (_) {}
+}
+
+/* ══════════════════════════════════════
+   LOADER
+══════════════════════════════════════ */
+function ldSet(id, pct, text, color) {
+  const fill = $('p-' + id);
+  const status = $('st-' + id);
+  if (fill) fill.style.width = pct + '%';
+  if (status) { status.textContent = text; if (color) status.style.color = color; }
+}
+
+async function loadAll() {
+  try {
+    $('ld-note').textContent = 'INICIANDO TENSORFLOW.JS…';
+    await tf.ready();
+  } catch (e) {
+    $('ld-note').textContent = 'ERROR: ' + e.message;
+    return;
+  }
+  await Promise.allSettled([loadCoco(), loadFace(), loadPose()]);
+  if (!models.coco) {
+    $('ld-note').textContent = 'ERROR CRÍTICO: MODELO COCO NO CARGÓ';
+    return;
+  }
+
+  const modelInfo = 'COCO' + (models.face ? '·FACIAL' : '') + (models.pose ? '·POSE' : '');
+
+  // Update model status UI
+  [['sys-coco', models.coco], ['sys-face', models.face], ['sys-pose', models.pose]].forEach(([id, ok]) => {
+    const el = $(id); if (!el) return;
+    el.textContent = ok ? 'OK ✓' : 'N/A';
+    el.className = 'sys-val ' + (ok ? 'ok' : 'warn');
+  });
+  [['mob-m-coco', models.coco], ['mob-m-face', models.face], ['mob-m-pose', models.pose]].forEach(([id, ok]) => {
+    const el = $(id); if (!el) return;
+    el.textContent = ok ? 'OK ✓' : 'N/A';
+    el.className = 'mob-sys-val ' + (ok ? 'ok' : 'warn');
+  });
+
+  const sbModel = $('sb-model');
+  if (sbModel) { sbModel.textContent = modelInfo + ' · LISTO'; sbModel.style.color = 'var(--green)'; }
+  const pillSys = $('pill-sys');
+  if (pillSys) { pillSys.textContent = 'SISTEMA OK'; pillSys.className = 'pill live'; }
+
+  $('ld-note').textContent = '¡LISTO! ' + modelInfo;
+
+  setTimeout(() => {
+    const loader = $('loader');
+    if (loader) loader.classList.add('hidden');
+    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 550);
+    $('btn-add').disabled = false;
+    initChartCanvas();
+  }, 500);
+}
+
+async function loadCoco() {
+  ldSet('coco', 20, 'CARGANDO…');
+  try {
+    models.coco = await cocoSsd.load({ base: 'mobilenet_v2' });
+    ldSet('coco', 100, 'OK ✓', 'var(--green)');
+  } catch (e) {
+    ldSet('coco', 100, 'ERROR', 'var(--red)');
+    console.error('[COCO]', e);
+  }
+}
+async function loadFace() {
+  ldSet('face', 15, 'CARGANDO…');
+  try {
+    if (typeof blazeface === 'undefined') throw new Error('blazeface no disponible');
+    models.face = await blazeface.load();
+    ldSet('face', 100, 'OK ✓', 'var(--green)');
+  } catch (e) {
+    ldSet('face', 100, 'N/A', 'var(--amber)');
+  }
+}
+async function loadPose() {
+  ldSet('pose', 15, 'CARGANDO…');
+  try {
+    if (typeof poseDetection === 'undefined') throw new Error('poseDetection no disponible');
+    const modelType = poseDetection.movenet?.modelType?.MULTIPOSE_LIGHTNING ?? 'MultiPose.Lightning';
+    models.pose = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, { modelType, enableTracking: true });
+    ldSet('pose', 100, 'OK ✓', 'var(--green)');
+  } catch (e) {
+    ldSet('pose', 100, 'N/A', 'var(--amber)');
+  }
+}
+
+/* ══════════════════════════════════════
+   GEOMETRY UTILS
+══════════════════════════════════════ */
+function iou(a, b) {
+  const [ax, ay, aw, ah] = a;
+  const [bx, by, bw, bh] = b;
+  const iw = Math.min(ax + aw, bx + bw) - Math.max(ax, bx);
+  const ih = Math.min(ay + ah, by + bh) - Math.max(ay, by);
+  if (iw <= 0 || ih <= 0) return 0;
+  return (iw * ih) / (aw * ah + bw * bh - iw * ih);
+}
+
+function nms(preds, threshold = 0.42) {
+  const sorted = [...preds].sort((a, b) => b.score - a.score);
+  const kept = [];
+  const suppressed = new Set();
+  for (let i = 0; i < sorted.length; i++) {
+    if (suppressed.has(i)) continue;
+    kept.push(sorted[i]);
+    for (let j = i + 1; j < sorted.length; j++) {
+      if (!suppressed.has(j) && iou(sorted[i].bbox, sorted[j].bbox) > threshold) {
+        suppressed.add(j);
+      }
+    }
+  }
+  return kept;
+}
+
+/* ══════════════════════════════════════
+   ESTIMATION
+══════════════════════════════════════ */
+function estimateHeight(bbox, pose, frameHeight) {
+  let ratio;
+  if (pose?.keypoints) {
+    const kp = pose.keypoints;
+    const nose = kp.find(k => k.name === 'nose');
+    const la = kp.find(k => k.name === 'left_ankle');
+    const ra = kp.find(k => k.name === 'right_ankle');
+    const ankle = (la && ra) ? ((la.score || 0) > (ra.score || 0) ? la : ra) : (la || ra);
+    if (nose && ankle && (nose.score || 0) > .3 && (ankle.score || 0) > .3) {
+      ratio = Math.abs(ankle.y - nose.y) / frameHeight;
+    }
+  }
+  if (ratio === undefined) ratio = bbox[3] / frameHeight;
+  if (ratio > .62) return { label: 'ALTA', sub: '1.80m+', color: '#3d9bff' };
+  if (ratio > .37) return { label: 'MEDIA', sub: '1.60–1.80m', color: '#00e87a' };
+  return { label: 'BAJA', sub: '<1.60m', color: '#ffb020' };
+}
+
+function estimateBuild(bbox, pose) {
+  let ratio;
+  if (pose?.keypoints) {
+    const kp = pose.keypoints;
+    const ls = kp.find(k => k.name === 'left_shoulder');
+    const rs = kp.find(k => k.name === 'right_shoulder');
+    if (ls && rs && (ls.score || 0) > .3 && (rs.score || 0) > .3) {
+      ratio = Math.abs(rs.x - ls.x) / Math.max(1, bbox[3]);
+    }
+  }
+  if (ratio === undefined) ratio = bbox[2] / Math.max(1, bbox[3]);
+  if (ratio > .54) return { label: 'ROBUSTA', color: '#d85a30' };
+  if (ratio > .31) return { label: 'MEDIA', color: '#00e87a' };
+  return { label: 'DELGADA', color: '#9b7ef8' };
+}
+
+/* ══════════════════════════════════════
+   TRACKER
+══════════════════════════════════════ */
+class Tracker {
+  constructor() { this.tracked = []; }
+
+  update(detections, now) {
+    const fresh = [];
+    const matched = new Set();
+    for (const det of detections) {
+      let bestIdx = -1;
+      let bestScore = .15;
+      for (let i = 0; i < this.tracked.length; i++) {
+        if (matched.has(i)) continue;
+        const score = iou(det.bbox, this.tracked[i].bbox);
+        if (score > bestScore) { bestScore = score; bestIdx = i; }
+      }
+      if (bestIdx >= 0) {
+        this.tracked[bestIdx].bbox = det.bbox;
+        this.tracked[bestIdx].lastSeen = now;
+        matched.add(bestIdx);
+      } else {
+        this.tracked.push({ bbox: det.bbox, lastSeen: now });
+        fresh.push(det);
+      }
+    }
+    this.tracked = this.tracked.filter(t => now - t.lastSeen < 4500);
+    return fresh;
+  }
+
+  get count() { return this.tracked.length; }
+}
+
+/* ══════════════════════════════════════
+   GRID LAYOUT
+══════════════════════════════════════ */
+function rebuildGrid() {
+  const n = Object.keys(cameras).length;
+  const grid = $('cam-grid');
+  if (grid) {
+    grid.className = 'cam-grid n' + Math.min(n, 4);
+    const empty = $('grid-empty');
+    if (empty) empty.style.display = n === 0 ? 'flex' : 'none';
+  }
+  const elCams = $('hs-cams'); if (elCams) elCams.textContent = n;
+  const sfCams = $('sf-cams'); if (sfCams) sfCams.textContent = n;
+  const mobPill = $('mob-pill-cams');
+  if (mobPill) { mobPill.textContent = n + ' CAM'; mobPill.className = 'pill' + (n > 0 ? ' live' : ''); }
+}
+
+/* ══════════════════════════════════════
+   ADD CAMERA
+══════════════════════════════════════ */
+async function addCamera(deviceId, label) {
+  const id = 'cam' + (++camCounter);
+  const name = (label || '').replace(/\(.*\)/g, '').trim().substring(0, 26) || ('CÁMARA ' + camCounter);
+
+  // Desktop card
+  const card = document.createElement('div');
+  card.className = 'cam-card';
+  card.id = 'card-' + id;
+  card.innerHTML = `
+    <div class="cam-over-top">
+      <div class="cam-dot" id="dot-${id}"></div>
+      <span class="cam-name">${name}</span>
+      <span class="cam-fps-badge" id="fps-${id}"></span>
+      <span class="cam-rec-badge" id="rbadge-${id}">● REC</span>
+      <span class="cam-rec-timer" id="rtimer-${id}"></span>
+      <span class="eco-badge off" id="eco-${id}">ECO</span>
+    </div>
+    <div class="cam-over-actions">
+      <button class="cam-btn" id="rec-btn-${id}" disabled>⏺ REC</button>
+      <button class="cam-btn" id="max-btn-${id}" title="Pantalla completa">⤢</button>
+      <button class="cam-btn close-btn" id="cls-btn-${id}">✕</button>
+    </div>
+    <canvas class="cam-cv" id="cv-${id}"></canvas>
+    <div class="cam-placeholder" id="ph-${id}">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+      </svg>
+      <p>INICIANDO…</p><small>${name}</small>
+    </div>
+    <div class="reconnect-overlay" id="recon-${id}">
+      <div class="reconnect-msg">⟳ RECONECTANDO…</div>
+      <div class="reconnect-count" id="recon-cnt-${id}"></div>
+    </div>
+    <div class="cam-over-bot">
+      <span class="cam-persons" id="pb-${id}">0 personas</span>
+      <span class="cam-res" id="res-${id}"></span>
+    </div>`;
+  $('cam-grid').appendChild(card);
+
+  // Mobile slide
+  const slide = document.createElement('div');
+  slide.className = 'mob-slide';
+  slide.id = 'slide-' + id;
+  const mobCanvas = document.createElement('canvas');
+  mobCanvas.id = 'mob-cv-' + id;
+  slide.innerHTML = `
+    <div class="mob-slide-ph" id="mob-ph-${id}"><p>INICIANDO…</p></div>
+    <div class="mob-slide-top">
+      <div class="cam-dot" id="mob-dot-${id}"></div>
+      <span class="mob-slide-name">${name}</span>
+      <span class="mob-slide-fps" id="mob-fps-${id}"></span>
+      <span class="mob-slide-rec" id="mob-rec-${id}">● REC</span>
+    </div>
+    <div class="mob-slide-bot">
+      <span class="mob-slide-pb" id="mob-pb-${id}">0 personas</span>
+      <button class="mob-fab" id="mob-fab-${id}" disabled>⏺</button>
+    </div>`;
+  slide.insertBefore(mobCanvas, slide.firstChild);
+
+  const emptyEl = $('mob-empty');
+  if (emptyEl) emptyEl.style.display = 'none';
+  $('mob-carousel').appendChild(slide);
+
+  // Shared video element
+  const video = document.createElement('video');
+  video.autoplay = true;
+  video.playsInline = true;
+  video.muted = true;
+  video.style.cssText = 'display:none;position:fixed;left:-9999px;top:0;width:1px;height:1px;';
+  document.body.appendChild(video);
+
+  const cvD = $('cv-' + id);
+  const cvM = $('mob-cv-' + id);
+  const ctxD = cvD.getContext('2d');
+  const ctxM = cvM.getContext('2d');
+
+  const state = {
+    id, name, deviceId, video,
+    cvD, ctxD, cvM, ctxM,
+    stream: null, raf: null, running: false,
+    tracker: new Tracker(),
+    mediaRecorder: null, recChunks: [], recStartTime: null,
+    hist: [], frameSkip: 0, fpsCount: 0, fpsT: 0, fps: 0,
+    lastR: { persons: [], faces: [], poses: [], objects: [] },
+    fullscreen: false,
+    reconnecting: false, reconnectAttempts: 0, reconnectTimer: null,
+    idleFrames: 0
+  };
+  cameras[id] = state;
+  rebuildGrid();
+  updateFilterOptions();
+  updateMobDots();
+
+  // Attach events
+  $('cls-btn-' + id).addEventListener('click', () => removeCamera(id));
+  $('rec-btn-' + id).addEventListener('click', () => toggleRecord(id));
+  $('max-btn-' + id).addEventListener('click', () => toggleFullscreen(id));
+  cvD.addEventListener('dblclick', () => toggleFullscreen(id));
+  $('mob-fab-' + id).addEventListener('click', () => toggleRecord(id));
+
+  // Start stream
+  try {
+    const constraints = {
+      video: { ...(deviceId ? { deviceId: { exact: deviceId } } : {}), width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    };
+    state.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = state.stream;
+    await new Promise((resolve, reject) => {
+      video.onloadedmetadata = resolve;
+      video.onerror = reject;
+      setTimeout(() => reject(new Error('Timeout al cargar stream')), 8000);
+    });
+    await video.play();
+
+    // Show canvases
+    $('ph-' + id).style.display = 'none';
+    cvD.style.display = 'block';
+    $('dot-' + id).className = 'cam-dot on';
+    $('rec-btn-' + id).disabled = false;
+
+    $('mob-ph-' + id).style.display = 'none';
+    mobCanvas.className = 'vis';
+    $('mob-dot-' + id).className = 'cam-dot on';
+    $('mob-fab-' + id).disabled = false;
+
+    state.running = true;
+    detectionLoop(id);
+    toast(name + ' CONECTADA', 'ok');
+  } catch (e) {
+    const msg = 'ERROR: ' + e.message;
+    const ph = $('ph-' + id);
+    if (ph) ph.querySelector('p').textContent = msg;
+    const mph = $('mob-ph-' + id);
+    if (mph) mph.querySelector('p').textContent = msg;
+    toast(msg, 'err', 5000);
+    console.error('[' + id + ']', e);
+  }
+  updateStats();
+}
+
+/* ══════════════════════════════════════
+   REMOVE CAMERA
+══════════════════════════════════════ */
+function removeCamera(id) {
+  const st = cameras[id];
+  if (!st) return;
+  if (st.mediaRecorder?.state === 'recording') st.mediaRecorder.stop();
+  st.running = false;
+  if (st.raf) cancelAnimationFrame(st.raf);
+  st.stream?.getTracks().forEach(t => t.stop());
+  st.video.remove();
+  $('card-' + id)?.remove();
+  $('slide-' + id)?.remove();
+  document.querySelector(`#ev-fil option[value="${id}"]`)?.remove();
+  delete cameras[id];
+  if (!Object.keys(cameras).length) {
+    const emptyEl = $('mob-empty');
+    if (emptyEl) emptyEl.style.display = 'flex';
+  }
+  rebuildGrid();
+  updateMobDots();
+  updateStats();
+  toast(st.name + ' DESCONECTADA', 'warn');
+}
+
+/* ══════════════════════════════════════
+   FULLSCREEN
+══════════════════════════════════════ */
+function toggleFullscreen(id) {
+  const st = cameras[id];
+  if (!st) return;
+  const card = $('card-' + id);
+  st.fullscreen = !st.fullscreen;
+  card.className = 'cam-card' + (st.fullscreen ? ' fs' : '');
+  $('max-btn-' + id).textContent = st.fullscreen ? '⤡' : '⤢';
+}
+
+/* ══════════════════════════════════════
+   RECORDING
+══════════════════════════════════════ */
+function toggleRecord(id) {
+  const st = cameras[id];
+  if (!st) return;
+  if (st.mediaRecorder?.state === 'recording') {
+    st.mediaRecorder.stop();
+    st.recStartTime = null;
+    $('rbadge-' + id)?.classList.remove('on');
+    $('rtimer-' + id)?.classList.remove('on');
+    const btn = $('rec-btn-' + id);
+    if (btn) { btn.className = 'cam-btn'; btn.textContent = '⏺ REC'; }
+    $('mob-rec-' + id)?.classList.remove('on');
+    const fab = $('mob-fab-' + id);
+    if (fab) fab.className = 'mob-fab';
+    updateStats();
+    return;
+  }
+  let opts = {};
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) opts = { mimeType: 'video/webm;codecs=vp9' };
+  else if (MediaRecorder.isTypeSupported('video/webm')) opts = { mimeType: 'video/webm' };
+  st.recChunks = [];
+  st.mediaRecorder = new MediaRecorder(st.cvD.captureStream(25), opts);
+  st.mediaRecorder.ondataavailable = e => { if (e.data.size > 0) st.recChunks.push(e.data); };
+  st.mediaRecorder.onstop = () => saveRecording(id);
+  st.mediaRecorder.start(1000);
+  st.recStartTime = Date.now();
+  $('rbadge-' + id)?.classList.add('on');
+  $('rtimer-' + id)?.classList.add('on');
+  const btn = $('rec-btn-' + id);
+  if (btn) { btn.className = 'cam-btn rec-on'; btn.textContent = '⏹ STOP'; }
+  $('mob-rec-' + id)?.classList.add('on');
+  const fab = $('mob-fab-' + id);
+  if (fab) fab.className = 'mob-fab on';
+  updateStats();
+}
+
+// Rec timer
+setInterval(() => {
+  Object.values(cameras).forEach(st => {
+    const el = $('rtimer-' + st.id);
+    if (!el || st.mediaRecorder?.state !== 'recording' || !st.recStartTime) return;
+    const s = Math.floor((Date.now() - st.recStartTime) / 1000);
+    el.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  });
+}, 1000);
+
+async function saveRecording(id) {
+  const st = cameras[id];
+  if (!st?.recChunks.length) return;
+  const blob = new Blob(st.recChunks, { type: 'video/webm' });
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+  const fname = `${st.name.replace(/[^a-zA-Z0-9]/g, '_')}_${ts}.webm`;
+  if (saveDir) {
+    try {
+      const dir = await saveDir.getDirectoryHandle('recordings', { create: true });
+      const fh = await dir.getFileHandle(fname, { create: true });
+      const writer = await fh.createWritable();
+      await writer.write(blob);
+      await writer.close();
+      toast('GRABACIÓN GUARDADA: ' + fname, 'ok');
+      return;
+    } catch (e) { console.warn('[saveRec]', e); }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: fname });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 8000);
+  toast('GRABACIÓN DESCARGADA', 'ok');
+}
+
+async function saveSnapshot(st, dataUrl) {
+  if (!saveDir || !saveSnaps || !dataUrl) return;
+  try {
+    const dir = await saveDir.getDirectoryHandle('snapshots', { create: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    const fname = `${st.name.replace(/[^a-zA-Z0-9]/g, '_')}_${ts}.jpg`;
+    const fh = await dir.getFileHandle(fname, { create: true });
+    const res = await fetch(dataUrl);
+    const ab = await res.arrayBuffer();
+    const writer = await fh.createWritable();
+    await writer.write(ab);
+    await writer.close();
+  } catch (_) {}
+}
+
+/* ══════════════════════════════════════
+   DETECTION LOOP
+══════════════════════════════════════ */
+const HIST_SIZE = 3;
+const BONES = [
+  [0,1],[0,2],[1,3],[2,4],[5,6],[5,7],[7,9],[6,8],[8,10],
+  [5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]
+];
+
+async function detectionLoop(id) {
+  const st = cameras[id];
+  if (!st?.running) return;
+  const { video, cvD, ctxD, cvM, ctxM } = st;
+
+  // ── Stream health check → auto-reconnect ──
+  if (st.stream && (!st.stream.active || video.readyState < 2)) {
+    if (!st.reconnecting) scheduleReconnect(id);
+    st.raf = requestAnimationFrame(() => detectionLoop(id));
+    return;
+  }
+
+  if (video.readyState === 4 && video.videoWidth > 0) {
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+
+    if (cvD.width !== vw || cvD.height !== vh) { cvD.width = vw; cvD.height = vh; }
+    if (cvM.width !== vw || cvM.height !== vh) { cvM.width = vw; cvM.height = vh; }
+
+    ctxD.drawImage(video, 0, 0, vw, vh);
+
+    // FPS counter
+    st.fpsCount++;
+    const nowMs = performance.now();
+    if (!st.fpsT) st.fpsT = nowMs;
+    if (nowMs - st.fpsT >= 1000) {
+      st.fps = Math.round(st.fpsCount * 1000 / (nowMs - st.fpsT));
+      st.fpsCount = 0; st.fpsT = nowMs;
+      const fpsEl = $('fps-' + id);
+      if (fpsEl) { fpsEl.textContent = st.fps + 'fps'; fpsEl.style.color = st.fps < 12 ? 'var(--amber)' : 'var(--txt-3)'; }
+      const mobFps = $('mob-fps-' + id);
+      if (mobFps) mobFps.textContent = st.fps + 'fps';
+      const allFps = Object.values(cameras).map(c => c.fps + 'fps').join(' | ');
+      const sbf = $('sb-fps'); if (sbf) sbf.textContent = allFps;
+    }
+
+    // ── Adaptive frame skip ──
+    // ECO mode: skip 5 frames when idle, 2 when active
+    // Normal mode: skip based on inference latency
+    const isIdle = st.tracker.count === 0 && !(st.lastR.objects?.length);
+    const skipTarget = ecoMode
+      ? (isIdle ? 5 : 2)
+      : (lastInferenceMs > 700 ? 3 : lastInferenceMs > 350 ? 2 : 1);
+
+    // Update ECO badge on this camera
+    const ecoBadge = $('eco-' + id);
+    if (ecoBadge) {
+      ecoBadge.className = 'eco-badge' + (ecoMode ? (isIdle ? '' : ' off') : ' off');
+      ecoBadge.textContent = ecoMode ? (isIdle ? 'ECO' : 'ACTIVO') : '';
+    }
+
+    st.frameSkip++;
+    if (st.frameSkip > skipTarget) {
+      st.frameSkip = 0;
+      try {
+        const t0 = performance.now();
+
+        const [allDetections, faces, poses] = await Promise.all([
+          models.coco ? models.coco.detect(video) : [],
+          models.face ? models.face.estimateFaces(video, false).catch(() => []) : [],
+          models.pose ? models.pose.estimatePoses(video).catch(() => []) : []
+        ]);
+
+        lastInferenceMs = Math.round(performance.now() - t0);
+        updateLatencyUI(lastInferenceMs);
+
+        const rawDetections = (allDetections || []).filter(d => d.class === 'person' && d.score >= confThresh);
+        const otherDetections = (allDetections || []).filter(d => d.class !== 'person' && d.score >= confThresh);
+
+        st.hist.push(rawDetections);
+        if (st.hist.length > HIST_SIZE) st.hist.shift();
+        const persons = nms(st.hist.flat());
+        st.lastR = { persons, faces: faces || [], poses: poses || [], objects: otherDetections };
+
+        const now = Date.now();
+        const newPersons = st.tracker.update(persons.map(p => ({ bbox: p.bbox, score: p.score })), now);
+        for (const np of newPersons) {
+          const matchedPose = poseForBbox(np.bbox, st.lastR.poses);
+          const heightEst = estimateHeight(np.bbox, matchedPose, vh);
+          const buildEst  = estimateBuild(np.bbox, matchedPose);
+          const snap = takeSnapshot(cvD, np.bbox, vw, vh);
+          const entry = addToRegistry({ camId: id, camName: st.name, height: heightEst, build: buildEst, conf: Math.round(np.score * 100), snapUrl: snap, objType: 'person', objClass: 'person' });
+          saveSnapshot(st, snap);
+          initAudio(); playAlert();
+          // Notifications & integrations
+          fireAlertIntegrations({ camName: st.name, type: 'PERSONA', objClass: 'person', conf: Math.round(np.score * 100), snapUrl: snap });
+        }
+
+        const count = st.tracker.count;
+        const objCount = otherDetections.length;
+        const pbTxt = count + ' persona' + (count !== 1 ? 's' : '') + (objCount > 0 ? ' · ' + objCount + ' obj' : '');
+        const pb = $('pb-' + id);
+        if (pb) { pb.textContent = pbTxt; pb.className = 'cam-persons' + (count > 0 || objCount > 0 ? ' on' : ''); }
+        const mpb = $('mob-pb-' + id);
+        if (mpb) { mpb.textContent = pbTxt; mpb.className = 'mob-slide-pb' + (count > 0 || objCount > 0 ? ' on' : ''); }
+        const res = $('res-' + id); if (res) res.textContent = vw + '×' + vh;
+        updateLive();
+      } catch (e) {
+        console.warn('[' + id + '] detect:', e);
+      }
+    }
+
+    drawScene(st.lastR.persons, st.lastR.poses, st.lastR.faces, st.lastR.objects || [], vw, vh, ctxD);
+    ctxM.drawImage(cvD, 0, 0, vw, vh);
+  }
+
+  st.raf = requestAnimationFrame(() => detectionLoop(id));
+}
+
+function poseForBbox(bbox, poses) {
+  if (!poses?.length) return null;
+  const [bx, by, bw, bh] = bbox;
+  for (const p of poses) {
+    const nose = p.keypoints?.find(k => k.name === 'nose');
+    if (!nose || (nose.score || 0) < .3) continue;
+    if (nose.x >= bx && nose.x <= bx + bw && nose.y >= by && nose.y <= by + bh) return p;
+  }
+  return null;
+}
+
+/* ══════════════════════════════════════
+   AUTO-RECONNECT
+══════════════════════════════════════ */
+function scheduleReconnect(id) {
+  const st = cameras[id];
+  if (!st) return;
+  if (st.reconnecting) return;
+  st.reconnecting = true;
+  st.reconnectAttempts = 0;
+  const overlay = $('recon-' + id);
+  if (overlay) overlay.classList.add('show');
+  $('dot-' + id)?.setAttribute('class', 'cam-dot');
+  doReconnect(id);
+}
+
+async function doReconnect(id) {
+  const st = cameras[id];
+  if (!st || !st.running) return;
+  const MAX = 8;
+  st.reconnectAttempts++;
+  const cnt = $('recon-cnt-' + id);
+  if (cnt) cnt.textContent = 'Intento ' + st.reconnectAttempts + ' / ' + MAX;
+
+  try {
+    if (st.stream) st.stream.getTracks().forEach(t => t.stop());
+    const constraints = {
+      video: { ...(st.deviceId ? { deviceId: { exact: st.deviceId } } : {}), width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    };
+    st.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    st.video.srcObject = st.stream;
+    await new Promise((res, rej) => {
+      st.video.onloadedmetadata = res;
+      setTimeout(() => rej(new Error('timeout')), 6000);
+    });
+    await st.video.play();
+    // Success
+    st.reconnecting = false;
+    const overlay = $('recon-' + id);
+    if (overlay) overlay.classList.remove('show');
+    $('dot-' + id)?.setAttribute('class', 'cam-dot on');
+    toast(st.name + ' RECONECTADA', 'ok');
+  } catch (e) {
+    if (st.reconnectAttempts < MAX) {
+      st.reconnectTimer = setTimeout(() => doReconnect(id), 3000 + st.reconnectAttempts * 500);
+    } else {
+      toast(st.name + ': FALLO RECONEXIÓN', 'err', 6000);
+      const cnt = $('recon-cnt-' + id);
+      if (cnt) cnt.textContent = 'Sin señal — retirando';
+    }
+  }
+}
+
+/* ══════════════════════════════════════
+   LATENCY UI
+══════════════════════════════════════ */
+function updateLatencyUI(ms) {
+  const cls = ms < 200 ? 'lat-ok' : ms < 500 ? 'lat-warn' : 'lat-slow';
+  const sb = $('sb-latency');
+  if (sb) { sb.textContent = 'AI: ' + ms + 'ms'; sb.className = 'sb-item ' + cls; }
+  const sl = $('sys-latency');
+  if (sl) { sl.textContent = ms + 'ms'; sl.className = 'sys-val ' + (ms < 200 ? 'ok' : ms < 500 ? 'warn' : 'err'); }
+}
+
+/* ══════════════════════════════════════
+   PUSH NOTIFICATIONS
+══════════════════════════════════════ */
+async function requestPushPermission() {
+  if (!('Notification' in window)) { toast('Notificaciones no disponibles en este navegador', 'warn'); return; }
+  const perm = await Notification.requestPermission();
+  pushNotifs = perm === 'granted';
+  const btn = $('btn-req-notif');
+  if (btn) { btn.textContent = pushNotifs ? '✓ PERMISO CONCEDIDO' : '✗ PERMISO DENEGADO'; btn.className = 'notif-btn ' + (pushNotifs ? 'granted' : 'denied'); }
+  const st = $('sys-push-st'); if (st) { st.textContent = perm.toUpperCase(); st.className = 'sys-val ' + (pushNotifs ? 'ok' : 'err'); }
+  const tog = $('tog-push'); if (tog) tog.checked = pushNotifs;
+  toast(pushNotifs ? '🔔 NOTIFICACIONES ACTIVADAS' : 'Permiso denegado por el navegador', pushNotifs ? 'ok' : 'warn');
+}
+
+function sendPushNotif(title, body, iconUrl) {
+  if (!pushNotifs || Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(title, { body, icon: iconUrl || '', tag: 'sv-det', renotify: true });
+    setTimeout(() => n.close(), 9000);
+  } catch (e) { console.warn('[push]', e); }
+}
+
+/* ══════════════════════════════════════
+   WEBHOOK
+══════════════════════════════════════ */
+async function sendWebhook(payload) {
+  if (!webhookUrl) return;
+  try {
+    const r = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) console.warn('[webhook] HTTP', r.status);
+  } catch (e) { console.warn('[webhook]', e); }
+}
+
+/* ══════════════════════════════════════
+   TELEGRAM BOT
+══════════════════════════════════════ */
+async function sendTelegram(payload, snapUrl) {
+  if (!telegramToken || !telegramChatId) return;
+  const typeEmoji = { person:'👤', animal:'🐾', vehicle:'🚗', other:'📦' }[payload.objType] || '📷';
+  const msg = `${typeEmoji} *${payload.type} DETECTADO*\n📷 ${payload.camName}\n🕐 ${new Date().toLocaleString('es-ES')}\n📊 Confianza: ${payload.conf}%`;
+  try {
+    if (snapUrl?.startsWith('data:')) {
+      const blob = await (await fetch(snapUrl)).blob();
+      const fd = new FormData();
+      fd.append('chat_id', telegramChatId);
+      fd.append('caption', msg);
+      fd.append('parse_mode', 'Markdown');
+      fd.append('photo', blob, 'detection.jpg');
+      await fetch(`https://api.telegram.org/bot${telegramToken}/sendPhoto`, { method: 'POST', body: fd });
+    } else {
+      await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: telegramChatId, text: msg, parse_mode: 'Markdown' })
+      });
+    }
+  } catch (e) { console.warn('[telegram]', e); }
+}
+
+/* ══════════════════════════════════════
+   FIRE ALL ALERT INTEGRATIONS
+══════════════════════════════════════ */
+function fireAlertIntegrations({ camName, type, objType, objClass, conf, snapUrl }) {
+  const payload = { event: 'detection', type, objType, objClass, camName, conf, timestamp: new Date().toISOString() };
+  sendPushNotif('⚠ ' + type + ' detectado — ' + camName, 'Confianza: ' + conf + '%', snapUrl);
+  sendWebhook(payload);
+  sendTelegram(payload, snapUrl);
+}
+
+function takeSnapshot(canvas, bbox, vw, vh) {
+  try {
+    const [bx, by, bw, bh] = bbox;
+    const pad = Math.round(Math.min(bw, bh) * .14);
+    const sx = Math.max(0, Math.round(bx - pad));
+    const sy = Math.max(0, Math.round(by - pad));
+    const sw = Math.min(vw - sx, Math.round(bw + pad * 2));
+    const sh = Math.min(vh - sy, Math.round(bh + pad * 2));
+    const c = document.createElement('canvas');
+    c.width = sw; c.height = sh;
+    c.getContext('2d').drawImage(canvas, sx, sy, sw, sh, 0, 0, sw, sh);
+    return c.toDataURL('image/jpeg', .76);
+  } catch (_) { return ''; }
+}
+
+/* ══════════════════════════════════════
+   OBJECT COLOR MAP (COCO-SSD classes)
+══════════════════════════════════════ */
+const OBJ_COLORS = {
+  // Animales
+  bird:'#ffb020', cat:'#ffb020', dog:'#ffb020', horse:'#ffb020', sheep:'#ffb020',
+  cow:'#ffb020', elephant:'#ffb020', bear:'#ffb020', zebra:'#ffb020', giraffe:'#ffb020',
+  // Vehículos
+  bicycle:'#3d9bff', car:'#3d9bff', motorcycle:'#3d9bff', airplane:'#3d9bff',
+  bus:'#3d9bff', train:'#3d9bff', truck:'#3d9bff', boat:'#3d9bff',
+  // Plantas
+  'potted plant':'#7ddf64',
+  // Electrónica
+  'cell phone':'#00d4f0', laptop:'#00d4f0', tv:'#00d4f0', monitor:'#00d4f0',
+  // Deportes / accesorios
+  'sports ball':'#ff8c42', 'tennis racket':'#ff8c42', skateboard:'#ff8c42',
+  // Comida
+  banana:'#ffd700', apple:'#ffd700', sandwich:'#ffd700', orange:'#ffd700',
+  broccoli:'#ffd700', carrot:'#ffd700', 'hot dog':'#ffd700', pizza:'#ffd700',
+  donut:'#ffd700', cake:'#ffd700',
+  // Mobiliario
+  chair:'#c084fc', couch:'#c084fc', bed:'#c084fc',
+};
+function getObjColor(cls) { return OBJ_COLORS[cls] || '#9b7ef8'; }
+
+/* ══════════════════════════════════════
+   DRAWING
+══════════════════════════════════════ */
+function drawScene(persons, poses, faces, objects, vw, vh, ctx) {
+  if (!persons.length && !faces?.length && !objects?.length) return;
+  const lw = Math.max(1.5, vw / 500);
+  const fs = Math.max(9, Math.round(vw / 72));
+  ctx.save();
+
+  // Skeleton
+  if (showSkeleton && poses?.length) {
+    const r = Math.max(2, Math.round(vw / 280));
+    poses.forEach(p => {
+      const kp = p.keypoints;
+      if (!kp?.length) return;
+      BONES.forEach(([i, j]) => {
+        const a = kp[i], b = kp[j];
+        if (a && b && (a.score || 0) >= .32 && (b.score || 0) >= .32) {
+          ctx.strokeStyle = 'rgba(0,232,122,.5)';
+          ctx.lineWidth = lw + .5;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      });
+      kp.forEach((k, i) => {
+        if (!k || (k.score || 0) < .32) return;
+        ctx.fillStyle = i < 5 ? '#ffe040' : '#00e87a';
+        ctx.strokeStyle = 'rgba(0,0,0,.55)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(k.x, k.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+    });
+  }
+
+  // Person boxes
+  ctx.font = `600 ${fs}px 'JetBrains Mono',monospace`;
+  persons.forEach(p => {
+    const [x, y, w, h] = p.bbox;
+    const matchedPose = poseForBbox(p.bbox, poses);
+    const hEst = estimateHeight(p.bbox, matchedPose, vh);
+    const bEst = estimateBuild(p.bbox, matchedPose);
+    const cornerSize = Math.min(w, h) * .16;
+
+    // Corner brackets
+    ctx.shadowColor = 'rgba(0,232,122,.35)';
+    ctx.shadowBlur = 8;
+    ctx.strokeStyle = '#00e87a';
+    ctx.lineWidth = lw;
+    ctx.beginPath();
+    ctx.moveTo(x + cornerSize, y); ctx.lineTo(x, y); ctx.lineTo(x, y + cornerSize);
+    ctx.moveTo(x + w - cornerSize, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + cornerSize);
+    ctx.moveTo(x, y + h - cornerSize); ctx.lineTo(x, y + h); ctx.lineTo(x + cornerSize, y + h);
+    ctx.moveTo(x + w - cornerSize, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - cornerSize);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Box outline
+    ctx.strokeStyle = 'rgba(0,232,122,.18)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, w, h);
+
+    // Label
+    const label = 'PERSONA·' + Math.round(p.score * 100) + '%';
+    const lw2 = ctx.measureText(label).width + 10;
+    ctx.fillStyle = 'rgba(4,6,10,.88)';
+    ctx.fillRect(x, y - fs - 7, lw2, fs + 9);
+    ctx.strokeStyle = 'rgba(0,232,122,.35)';
+    ctx.lineWidth = .5;
+    ctx.strokeRect(x, y - fs - 7, lw2, fs + 9);
+    ctx.fillStyle = '#00e87a';
+    ctx.fillText(label, x + 5, y - 2);
+
+    // Sub-labels
+    const fs2 = Math.max(8, fs - 2);
+    ctx.font = `600 ${fs2}px 'JetBrains Mono',monospace`;
+    const hl = '↕ ' + hEst.label;
+    const hlw = ctx.measureText(hl).width + 10;
+    ctx.fillStyle = 'rgba(4,6,10,.88)';
+    ctx.fillRect(x, y + h + 2, hlw, fs2 + 7);
+    ctx.fillStyle = hEst.color;
+    ctx.fillText(hl, x + 5, y + h + fs2 + 3);
+    const blw = ctx.measureText(bEst.label).width + 10;
+    ctx.fillStyle = 'rgba(4,6,10,.88)';
+    ctx.fillRect(x + hlw + 3, y + h + 2, blw, fs2 + 7);
+    ctx.fillStyle = bEst.color;
+    ctx.fillText(bEst.label, x + hlw + 8, y + h + fs2 + 3);
+  });
+
+  // Face boxes
+  if (faces?.length) {
+    ctx.setLineDash([4, 3]);
+    faces.forEach(f => {
+      if (!f.topLeft || !f.bottomRight) return;
+      const [x1, y1] = f.topLeft, [x2, y2] = f.bottomRight;
+      if (x2 <= x1 || y2 <= y1) return;
+      ctx.strokeStyle = 'rgba(255,69,69,.65)';
+      ctx.lineWidth = lw * .8;
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+    });
+    ctx.setLineDash([]);
+  }
+
+  // Other COCO objects (animals, vehicles, plants, items…)
+  if (objects?.length) {
+    ctx.setLineDash([]);
+    objects.forEach(obj => {
+      const [x, y, w, h] = obj.bbox;
+      const color = getObjColor(obj.class);
+      const cornerSize = Math.min(w, h) * .18;
+      // Shadow glow
+      ctx.shadowColor = color;
+      ctx.shadowBlur = 7;
+      // Corner brackets
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      ctx.moveTo(x + cornerSize, y); ctx.lineTo(x, y); ctx.lineTo(x, y + cornerSize);
+      ctx.moveTo(x + w - cornerSize, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + cornerSize);
+      ctx.moveTo(x, y + h - cornerSize); ctx.lineTo(x, y + h); ctx.lineTo(x + cornerSize, y + h);
+      ctx.moveTo(x + w - cornerSize, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w, y + h - cornerSize);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      // Subtle box outline
+      ctx.strokeStyle = color + '30';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, w, h);
+      // Label background + text
+      ctx.font = `600 ${fs}px 'JetBrains Mono',monospace`;
+      const label = obj.class.toUpperCase() + '·' + Math.round(obj.score * 100) + '%';
+      const labelW = ctx.measureText(label).width + 10;
+      ctx.fillStyle = 'rgba(4,6,10,.88)';
+      ctx.fillRect(x, y - fs - 7, labelW, fs + 9);
+      ctx.strokeStyle = color + '55';
+      ctx.lineWidth = .5;
+      ctx.strokeRect(x, y - fs - 7, labelW, fs + 9);
+      ctx.fillStyle = color;
+      ctx.fillText(label, x + 5, y - 2);
+    });
+  }
+
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════
+   REGISTRY
+══════════════════════════════════════ */
+function addToRegistry({ camId, camName, height, build, conf, snapUrl, objType = 'person', objClass = 'person' }) {
+  regCounter++;
+  const entry = { id: regCounter, camId, camName, height, build, conf, snapUrl, objType, objClass, time: new Date() };
+  registry.unshift(entry);
+  if (registry.length > 500) registry.pop();
+  hourlyStats[entry.time.getHours()]++;
+  renderEvList();
+  renderGallery();
+  renderStats();
+  renderMobEvents();
+  renderMobGallery();
+  flashAlert(camName);
+  showMobAlert(camName);
+  return entry;
+}
+
+function flashAlert(camName) {
+  const p = $('pill-alert');
+  if (!p) return;
+  p.style.display = 'inline';
+  p.textContent = '▲ ' + camName.substring(0, 14);
+  clearTimeout(p._t);
+  p._t = setTimeout(() => { p.style.display = 'none'; }, 3500);
+  const ht = $('hs-today');
+  if (ht) ht.textContent = registry.filter(e => e.time.toDateString() === new Date().toDateString()).length;
+}
+
+/* ══════════════════════════════════════
+   RENDERS (desktop)
+══════════════════════════════════════ */
+function renderEvList() {
+  const list = $('ev-list');
+  if (!list) return;
+  const query = $('ev-search')?.value.toLowerCase() || '';
+  const camFilter = $('ev-fil')?.value || 'all';
+  const typeFilter = $('ev-type-fil')?.value || 'all';
+
+  // Type groups
+  const ANIMALS  = new Set(['bird','cat','dog','horse','sheep','cow','elephant','bear','zebra','giraffe']);
+  const VEHICLES = new Set(['bicycle','car','motorcycle','airplane','bus','train','truck','boat']);
+  function getTypeGroup(objType, objClass) {
+    if (objType === 'person') return 'person';
+    if (ANIMALS.has(objClass)) return 'animal';
+    if (VEHICLES.has(objClass)) return 'vehicle';
+    return 'other';
+  }
+  const TYPE_LABEL = { person: '👤 PERSONA', animal: '🐾 ANIMAL', vehicle: '🚗 VEHÍCULO', other: '📦 OTRO' };
+  const TYPE_CSS   = { person: 'etag-type-person', animal: 'etag-type-animal', vehicle: 'etag-type-vehicle', other: 'etag-type-other' };
+
+  const filtered = registry.filter(e => {
+    if (camFilter !== 'all' && e.camId !== camFilter) return false;
+    if (typeFilter !== 'all') {
+      const grp = getTypeGroup(e.objType, e.objClass);
+      if (grp !== typeFilter) return false;
+    }
+    if (query) return `${e.id} ${e.camName} ${e.height?.label || ''} ${e.build?.label || ''} ${e.objClass || ''}`.toLowerCase().includes(query);
+    return true;
+  });
+
+  const sfTotal = $('sf-total');
+  if (sfTotal) { sfTotal.textContent = registry.length; sfTotal.className = 'sf-val green'; }
+  if (!filtered.length) { list.innerHTML = '<div class="ev-empty">SIN RESULTADOS</div>'; return; }
+
+  list.innerHTML = filtered.map(e => {
+    const grp = getTypeGroup(e.objType, e.objClass);
+    const typeLabel = TYPE_LABEL[grp] || '📦 OTRO';
+    const typeCss   = TYPE_CSS[grp]  || 'etag-type-other';
+    const snapPh = e.objType === 'person' ? '👤' : (e.objType === 'animal' ? '🐾' : '📦');
+    return `
+    <div class="ev-item" onclick="openLightbox(${e.id})">
+      ${e.snapUrl ? `<img class="ev-snap" src="${e.snapUrl}">` : `<div class="ev-snap-ph">${snapPh}</div>`}
+      <div class="ev-data">
+        <div class="ev-head">
+          <span class="ev-id">#${String(e.id).padStart(4, '0')}</span>
+          <span class="ev-cam">${e.camName.substring(0, 10)}</span>
+        </div>
+        <div class="ev-tags">
+          <span class="etag ${typeCss}">${typeLabel}</span>
+          ${e.objType === 'person' ? `<span class="etag etag-h">↕${e.height.label}</span><span class="etag etag-b">⬛${e.build.label}</span>` : `<span class="etag etag-h">${(e.objClass || '').toUpperCase()}</span>`}
+          <span class="etag etag-c">${e.conf}%</span>
+        </div>
+        <div class="ev-time">${e.time.toLocaleTimeString('es-ES')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGallery() {
+  const grid = $('gal-grid');
+  if (!grid) return;
+  const snaps = registry.filter(e => e.snapUrl);
+  const cnt = $('gal-cnt');
+  if (cnt) cnt.textContent = snaps.length + ' capturas';
+  if (!snaps.length) { grid.innerHTML = '<div class="gal-empty">SIN CAPTURAS AÚN</div>'; return; }
+  grid.innerHTML = snaps.map(e => `
+    <div class="gal-item" onclick="openLightbox(${e.id})">
+      <img src="${e.snapUrl}" loading="lazy">
+      <div class="gal-item-id">#${String(e.id).padStart(4, '0')}</div>
+    </div>`).join('');
+}
+
+function renderStats() {
+  const today = new Date().toDateString();
+  const todayCount = registry.filter(e => e.time.toDateString() === today).length;
+  const stToday = $('sc-today');
+  if (stToday) stToday.textContent = todayCount;
+  if (!registry.length) return;
+  const avg = Math.round(registry.reduce((s, e) => s + e.conf, 0) / registry.length);
+  const stAvg = $('sc-avgc');
+  if (stAvg) stAvg.textContent = avg + '%';
+  const peakHour = hourlyStats.indexOf(Math.max(...hourlyStats));
+  const stPeak = $('sc-peak');
+  if (stPeak) stPeak.textContent = String(peakHour).padStart(2, '0') + ':00';
+  const stPeakV = $('sc-peak-v');
+  if (stPeakV) stPeakV.textContent = hourlyStats[peakHour] + ' det.';
+  const camCounts = {};
+  registry.forEach(e => { camCounts[e.camName] = (camCounts[e.camName] || 0) + 1; });
+  const topCam = Object.entries(camCounts).sort((a, b) => b[1] - a[1])[0];
+  const stTop = $('sc-topc');
+  if (stTop && topCam) stTop.textContent = topCam[0].substring(0, 8);
+  const maxVal = Math.max(...Object.values(camCounts), 1);
+  const bdRows = $('bd-rows');
+  if (bdRows) {
+    bdRows.innerHTML = Object.entries(camCounts).sort((a, b) => b[1] - a[1]).map(([name, val]) => `
+      <div class="bd-row">
+        <span class="bd-name">${name}</span>
+        <div class="bd-track"><div class="bd-fill" style="width:${(val / maxVal * 100).toFixed(0)}%"></div></div>
+        <span class="bd-count">${val}</span>
+      </div>`).join('');
+  }
+  renderChart();
+}
+
+function initChartCanvas() {
+  const cv = $('chart-cv');
+  if (!cv) return;
+  cv.width = cv.offsetWidth || 290;
+  cv.height = 84;
+}
+function renderChart() {
+  const cv = $('chart-cv');
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const w = cv.width, h = cv.height;
+  const pad = 16;
+  const cur = new Date().getHours();
+  const mx = Math.max(1, ...hourlyStats);
+  const bw = w / 24;
+  ctx.clearRect(0, 0, w, h);
+  // Grid
+  ctx.strokeStyle = 'rgba(0,200,120,.07)';
+  ctx.lineWidth = .5;
+  [.25, .5, .75, 1].forEach(r => {
+    const y = pad + (h - pad * 2) * (1 - r);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  });
+  // Bars
+  for (let i = 0; i < 24; i++) {
+    const bh = ((hourlyStats[i] / mx) * (h - pad * 2)) || 0;
+    const x = i * bw + 1;
+    const y = h - pad - bh;
+    ctx.fillStyle = i === cur ? 'rgba(0,232,122,.9)' : 'rgba(0,232,122,.28)';
+    if (bh > 0) ctx.fillRect(x, y, bw - 2, bh);
+    if (i % 6 === 0) {
+      ctx.fillStyle = 'rgba(100,140,160,.65)';
+      ctx.font = '7px JetBrains Mono';
+      ctx.fillText(String(i).padStart(2, '0'), x, h - 2);
+    }
+  }
+}
+setInterval(renderChart, 60000);
+window.addEventListener('resize', () => { initChartCanvas(); renderChart(); });
+
+function updateLive() {
+  const live = Object.values(cameras).reduce((s, c) => s + c.tracker.count, 0);
+  const hl = $('hs-live');
+  if (hl) { hl.textContent = live; hl.className = 'hstat-v' + (live > 0 ? ' active' : ''); }
+  const fl = $('sf-live');
+  if (fl) fl.textContent = live;
+  const mp = $('mob-pill-live');
+  if (mp) { mp.textContent = live + ' LIVE'; mp.className = 'pill' + (live > 0 ? ' warn' : ''); }
+}
+
+function updateStats() {
+  const recs = Object.values(cameras).filter(c => c.mediaRecorder?.state === 'recording').length;
+  const hr = $('hs-rec');
+  if (hr) { hr.textContent = recs; hr.style.color = recs > 0 ? 'var(--red)' : 'var(--txt-3)'; }
+  const fr = $('sf-rec');
+  if (fr) { fr.textContent = recs; fr.className = 'sf-val' + (recs > 0 ? ' red' : ''); }
+  renderStats();
+}
+
+/* ══════════════════════════════════════
+   MOBILE RENDERS
+══════════════════════════════════════ */
+function updateMobDots() {
+  const dots = $('mob-dots');
+  if (!dots) return;
+  const n = Object.keys(cameras).length;
+  if (!n) { dots.innerHTML = ''; return; }
+  dots.innerHTML = Array.from({ length: n }, (_, i) =>
+    `<div class="mob-dot${i === activeCamIdx ? ' active' : ''}"></div>`
+  ).join('');
+}
+
+function renderMobEvents() {
+  const list = $('mob-ev-list');
+  if (!list) return;
+  const n = registry.length;
+  const badge = $('mob-ev-badge');
+  if (badge) { badge.textContent = n; badge.className = 'mob-badge' + (n > 0 ? ' show' : ''); }
+  const shBadge = $('mob-sh-ev-cnt');
+  if (shBadge) { shBadge.textContent = n; shBadge.className = 'mob-sh-badge' + (n === 0 ? ' zero' : ''); }
+  if (!n) { list.innerHTML = '<div class="mob-ev-empty">SIN EVENTOS AÚN<br>Las personas aparecerán aquí</div>'; return; }
+  list.innerHTML = registry.slice(0, 100).map(e => `
+    <div class="mob-ev-item" onclick="openLightbox(${e.id})">
+      ${e.snapUrl ? `<img class="mob-ev-snap" src="${e.snapUrl}" loading="lazy">` : '<div class="mob-ev-ph">👤</div>'}
+      <div class="mob-ev-info">
+        <div class="mob-ev-top">
+          <span class="mob-ev-id">#${String(e.id).padStart(4, '0')}</span>
+          <span class="mob-ev-cam">${e.camName.substring(0, 14)}</span>
+        </div>
+        <div class="mob-ev-tags">
+          <span class="mob-ev-tag" style="color:${e.height.color}">↕${e.height.label}</span>
+          <span class="mob-ev-tag" style="color:${e.build.color}">${e.build.label}</span>
+          <span class="mob-ev-tag">${e.conf}%</span>
+        </div>
+        <div class="mob-ev-time">${e.time.toLocaleTimeString('es-ES')} · ${e.time.toLocaleDateString('es-ES')}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderMobGallery() {
+  const grid = $('mob-gal-grid');
+  if (!grid) return;
+  const snaps = registry.filter(e => e.snapUrl);
+  const cnt = $('mob-sh-gal-cnt');
+  if (cnt) { cnt.textContent = snaps.length; cnt.className = 'mob-sh-badge' + (snaps.length === 0 ? ' zero' : ''); }
+  if (!snaps.length) { grid.innerHTML = '<div class="mob-gal-empty">SIN CAPTURAS AÚN</div>'; return; }
+  grid.innerHTML = snaps.slice(0, 90).map(e => `
+    <div class="mob-gal-item" onclick="openLightbox(${e.id})">
+      <img src="${e.snapUrl}" loading="lazy">
+      <div class="mob-gal-id">#${e.id}</div>
+    </div>`).join('');
+}
+
+function showMobAlert(camName) {
+  if (!isMobile()) return;
+  const el = $('mob-alert');
+  if (!el) return;
+  const t = $('mob-alert-txt'), c = $('mob-alert-cam');
+  if (t) t.textContent = 'NUEVA PERSONA DETECTADA';
+  if (c) c.textContent = camName;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ══════════════════════════════════════
+   MOBILE SHEETS
+══════════════════════════════════════ */
+function openSheet(name) {
+  $('mob-overlay').classList.add('open');
+  ['events', 'gallery', 'system'].forEach(s => $('mob-sheet-' + s)?.classList.remove('open'));
+  if (name) $('mob-sheet-' + name)?.classList.add('open');
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.sheet === name));
+}
+function closeSheets() {
+  $('mob-overlay').classList.remove('open');
+  ['events', 'gallery', 'system'].forEach(s => $('mob-sheet-' + s)?.classList.remove('open'));
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.sheet === ''));
+}
+
+/* ══════════════════════════════════════
+   LIGHTBOX
+══════════════════════════════════════ */
+function openLightbox(entryId) {
+  const idx = registry.findIndex(e => e.id === entryId);
+  if (idx < 0) return;
+  lbIndex = idx;
+  showLightboxEntry();
+  $('lightbox').classList.add('open');
+}
+
+function showLightboxEntry() {
+  const e = registry[lbIndex];
+  if (!e) return;
+  $('lb-img').src = e.snapUrl || '';
+  $('lb-id').textContent = '#' + String(e.id).padStart(4, '0');
+  $('lb-cam').textContent = e.camName;
+  $('lb-time').textContent = e.time.toLocaleString('es-ES');
+  const lbH = $('lb-height');
+  if (lbH) { lbH.textContent = e.height.label + ' · ' + e.height.sub; lbH.style.color = e.height.color; }
+  const lbB = $('lb-build');
+  if (lbB) { lbB.textContent = e.build.label; lbB.style.color = e.build.color; }
+  const lbC = $('lb-conf');
+  if (lbC) lbC.textContent = e.conf + '%';
+  const lbP = $('lb-pos');
+  if (lbP) lbP.textContent = (lbIndex + 1) + ' / ' + registry.length;
+}
+
+$('lb-close').addEventListener('click', () => $('lightbox').classList.remove('open'));
+$('lightbox').addEventListener('click', e => { if (e.target === $('lightbox')) $('lightbox').classList.remove('open'); });
+$('lb-prev').addEventListener('click', () => { lbIndex = Math.min(registry.length - 1, lbIndex + 1); showLightboxEntry(); });
+$('lb-next').addEventListener('click', () => { lbIndex = Math.max(0, lbIndex - 1); showLightboxEntry(); });
+document.addEventListener('keydown', e => {
+  const lb = $('lightbox');
+  if (lb.classList.contains('open')) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { lbIndex = Math.min(registry.length - 1, lbIndex + 1); showLightboxEntry(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')   { lbIndex = Math.max(0, lbIndex - 1); showLightboxEntry(); }
+    if (e.key === 'Escape') lb.classList.remove('open');
+  } else if (e.key === 'Escape') closeSheets();
+});
+
+/* ══════════════════════════════════════
+   CAMERA MODAL
+══════════════════════════════════════ */
+async function openCamModal() {
+  selDevId = ''; selDevLabel = '';
+  $('modal-confirm').disabled = true;
+  $('dev-list').innerHTML = '<div class="device-msg">DETECTANDO CÁMARAS…</div>';
+  $('cam-modal').classList.add('open');
+  try {
+    const tmp = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    tmp.getTracks().forEach(t => t.stop());
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cams = devices.filter(d => d.kind === 'videoinput');
+    const usedIds = new Set(Object.values(cameras).map(c => c.deviceId));
+    if (!cams.length) {
+      $('dev-list').innerHTML = '<div class="device-msg">NO SE ENCONTRARON CÁMARAS</div>';
+      return;
+    }
+    $('dev-list').innerHTML = cams.map((d, i) => {
+      const label = d.label || 'CÁMARA ' + (i + 1);
+      const isUsed = usedIds.has(d.deviceId);
+      return `<div class="device-item${isUsed ? ' used' : ''}" data-id="${d.deviceId}" data-label="${label}">
+        <span class="device-icon">📷</span>
+        <span class="device-label">${label}</span>
+        ${isUsed ? '<span class="device-badge">ACTIVA</span>' : ''}
+      </div>`;
+    }).join('');
+    $('dev-list').querySelectorAll('.device-item:not(.used)').forEach(el => {
+      el.addEventListener('click', () => {
+        $('dev-list').querySelectorAll('.device-item').forEach(x => x.classList.remove('selected'));
+        el.classList.add('selected');
+        selDevId = el.dataset.id;
+        selDevLabel = el.dataset.label;
+        $('modal-confirm').disabled = false;
+      });
+    });
+  } catch (e) {
+    $('dev-list').innerHTML = `<div class="device-msg" style="color:var(--red)">ERROR: ${e.message}<br><br>Acepta el permiso de cámara en el navegador.</div>`;
+  }
+}
+
+$('btn-add').addEventListener('click', openCamModal);
+$('modal-cancel').addEventListener('click', () => $('cam-modal').classList.remove('open'));
+$('cam-modal').addEventListener('click', e => { if (e.target === $('cam-modal')) $('cam-modal').classList.remove('open'); });
+$('modal-confirm').addEventListener('click', () => {
+  $('cam-modal').classList.remove('open');
+  addCamera(selDevId, selDevLabel);
+});
+$('mob-btn-add')?.addEventListener('click', openCamModal);
+
+/* ══════════════════════════════════════
+   SAVE DIRECTORY
+══════════════════════════════════════ */
+$('btn-dir').addEventListener('click', async () => {
+  if (!window.showDirectoryPicker) {
+    toast('Requiere Chrome/Edge en desktop para selección de carpeta', 'warn', 5000);
+    return;
+  }
+  try {
+    saveDir = await window.showDirectoryPicker({ mode: 'readwrite' });
+    const name = saveDir.name;
+    const sbDir = $('sb-dir-st'); if (sbDir) { sbDir.textContent = '📁 ' + name; sbDir.className = 'sb-item ok'; }
+    const sysDir = $('sys-dir'); if (sysDir) { sysDir.textContent = name; sysDir.className = 'sys-val ok'; }
+    const mobDir = $('mob-dir-val'); if (mobDir) { mobDir.textContent = name; mobDir.className = 'mob-sys-val ok'; }
+    toast('CARPETA CONFIGURADA: ' + name, 'ok');
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('Error: ' + e.message, 'err');
+  }
+});
+
+/* ══════════════════════════════════════
+   TABS
+══════════════════════════════════════ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    $(btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 't-stats') { initChartCanvas(); renderChart(); }
+  });
+});
+
+/* ══════════════════════════════════════
+   SEARCH / FILTER
+══════════════════════════════════════ */
+$('ev-search')?.addEventListener('input', renderEvList);
+$('ev-fil')?.addEventListener('change', renderEvList);
+$('ev-clr')?.addEventListener('click', () => {
+  if (!registry.length || !confirm('¿Limpiar el registro?')) return;
+  clearAllData();
+});
+
+function updateFilterOptions() {
+  const sel = $('ev-fil');
+  if (!sel) return;
+  const existing = new Set([...sel.querySelectorAll('option')].map(o => o.value));
+  Object.values(cameras).forEach(st => {
+    if (!existing.has(st.id)) {
+      const opt = document.createElement('option');
+      opt.value = st.id; opt.textContent = st.name;
+      sel.appendChild(opt);
+    }
+  });
+}
+
+/* ══════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════ */
+$('conf-sel')?.addEventListener('change', e => { confThresh = parseFloat(e.target.value); updateThreshUI(); });
+$('thresh-sl')?.addEventListener('input', e => { confThresh = parseInt(e.target.value) / 100; updateThreshUI(); });
+function updateThreshUI() {
+  const tv = $('thresh-val');
+  if (tv) tv.textContent = Math.round(confThresh * 100) + '%';
+  const cs = $('conf-sel');
+  if (cs) {
+    const nearest = [.3, .4, .5, .65].reduce((a, b) => Math.abs(b - confThresh) < Math.abs(a - confThresh) ? b : a);
+    const opt = cs.querySelector(`option[value="${nearest}"]`);
+    if (opt) cs.value = String(nearest);
+  }
+}
+
+// Sync toggles desktop ↔ mobile
+$('tog-sound')?.addEventListener('change', e => { alertSound = e.target.checked; const m = $('mob-tog-sound'); if (m) m.checked = e.target.checked; });
+$('tog-skel')?.addEventListener('change', e => { showSkeleton = e.target.checked; const m = $('mob-tog-skel'); if (m) m.checked = e.target.checked; });
+$('tog-snaps')?.addEventListener('change', e => { saveSnaps = e.target.checked; });
+$('mob-tog-sound')?.addEventListener('change', e => { alertSound = e.target.checked; const d = $('tog-sound'); if (d) d.checked = e.target.checked; });
+$('mob-tog-skel')?.addEventListener('change', e => { showSkeleton = e.target.checked; const d = $('tog-skel'); if (d) d.checked = e.target.checked; });
+
+// ECO mode
+$('tog-eco')?.addEventListener('change', e => {
+  ecoMode = e.target.checked;
+  const badge = $('sb-eco');
+  if (badge) { badge.textContent = ecoMode ? 'ECO' : ''; badge.className = 'sb-item eco-badge' + (ecoMode ? '' : ' off'); }
+  toast(ecoMode ? '🌿 MODO ECO ACTIVADO — CPU reducida en inactividad' : 'Modo ECO desactivado', 'ok');
+});
+
+// Push notifications
+$('btn-req-notif')?.addEventListener('click', requestPushPermission);
+$('tog-push')?.addEventListener('change', async e => {
+  if (e.target.checked && Notification.permission !== 'granted') {
+    await requestPushPermission();
+  } else {
+    pushNotifs = e.target.checked;
+  }
+});
+
+// Webhook
+$('btn-webhook-save')?.addEventListener('click', () => {
+  webhookUrl = $('inp-webhook')?.value.trim() || '';
+  const st = $('sys-webhook-st');
+  if (st) { st.textContent = webhookUrl ? '✓ Configurado' : 'No configurado'; st.className = 'sys-val ' + (webhookUrl ? 'ok' : ''); }
+  toast(webhookUrl ? 'WEBHOOK GUARDADO' : 'Webhook eliminado', webhookUrl ? 'ok' : 'warn');
+});
+$('btn-webhook-test')?.addEventListener('click', async () => {
+  if (!webhookUrl) { toast('Primero configura una URL', 'warn'); return; }
+  toast('Enviando test…', 'ok');
+  await sendWebhook({ event: 'test', source: 'SecureVision PRO', timestamp: new Date().toISOString() });
+  toast('TEST WEBHOOK ENVIADO', 'ok');
+});
+$('btn-webhook-clr')?.addEventListener('click', () => {
+  webhookUrl = ''; const inp = $('inp-webhook'); if (inp) inp.value = '';
+  const st = $('sys-webhook-st'); if (st) { st.textContent = 'No configurado'; st.className = 'sys-val'; }
+  toast('Webhook eliminado', 'warn');
+});
+
+// Telegram
+$('btn-tg-save')?.addEventListener('click', () => {
+  telegramToken  = $('inp-tg-token')?.value.trim() || '';
+  telegramChatId = $('inp-tg-chat')?.value.trim() || '';
+  const ok = telegramToken && telegramChatId;
+  const st = $('sys-tg-st');
+  if (st) { st.textContent = ok ? '✓ Configurado' : 'Incompleto'; st.className = 'sys-val ' + (ok ? 'ok' : 'warn'); }
+  toast(ok ? '🤖 TELEGRAM CONFIGURADO' : 'Faltan datos de Telegram', ok ? 'ok' : 'warn');
+});
+$('btn-tg-test')?.addEventListener('click', async () => {
+  if (!telegramToken || !telegramChatId) { toast('Configura token y chat ID primero', 'warn'); return; }
+  toast('Enviando mensaje de prueba…', 'ok');
+  await sendTelegram({ type: 'TEST', objType: 'other', camName: 'TEST', conf: 100 }, null);
+  toast('MENSAJE TELEGRAM ENVIADO', 'ok');
+});
+$('btn-tg-clr')?.addEventListener('click', () => {
+  telegramToken = ''; telegramChatId = '';
+  const ti = $('inp-tg-token'); if (ti) ti.value = '';
+  const tc = $('inp-tg-chat');  if (tc) tc.value = '';
+  const st = $('sys-tg-st'); if (st) { st.textContent = 'No configurado'; st.className = 'sys-val'; }
+  toast('Telegram desvinculado', 'warn');
+});
+
+// Type filter
+$('ev-type-fil')?.addEventListener('change', renderEvList);
+
+/* ══════════════════════════════════════
+   EXPORT / CLEAR
+══════════════════════════════════════ */
+function exportCSV() {
+  if (!registry.length) { toast('Sin datos para exportar', 'warn'); return; }
+  const rows = [
+    'ID,CAMARA,FECHA,HORA,TIPO,CLASE,ESTATURA,COMPLEXION,CONFIANZA',
+    ...registry.map(e => [
+      e.id,
+      `"${e.camName}"`,
+      e.time.toLocaleDateString('es-ES'),
+      e.time.toLocaleTimeString('es-ES'),
+      e.objType || 'person',
+      e.objClass || 'person',
+      e.height?.label || '—',
+      e.build?.label || '—',
+      e.conf + '%'
+    ].join(','))
+  ].join('\n');
+  const url = URL.createObjectURL(new Blob([rows], { type: 'text/csv;charset=utf-8;' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'securevision_' + Date.now() + '.csv' });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast('CSV EXPORTADO (' + registry.length + ' registros)', 'ok');
+}
+
+function exportJSON() {
+  if (!registry.length) { toast('Sin datos', 'warn'); return; }
+  const data = registry.map(({ id, camId, camName, height, build, conf, objType, objClass, time }) => ({
+    id, camId, camName,
+    objType: objType || 'person', objClass: objClass || 'person',
+    height: height?.label, heightSub: height?.sub,
+    build: build?.label, conf,
+    timestamp: time.toISOString()
+  }));
+  const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'securevision_' + Date.now() + '.json' });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  toast('JSON EXPORTADO', 'ok');
+}
+
+function clearAllData() {
+  if (!confirm('¿BORRAR TODOS LOS DATOS?\nNo se puede deshacer.')) return;
+  registry = []; regCounter = 0; hourlyStats = new Array(24).fill(0);
+  renderEvList(); renderGallery(); renderStats(); renderMobEvents(); renderMobGallery();
+  const ht = $('hs-today'); if (ht) ht.textContent = '0';
+  toast('DATOS ELIMINADOS', 'warn');
+}
+
+$('btn-exp-csv')?.addEventListener('click', exportCSV);
+$('btn-exp-json')?.addEventListener('click', exportJSON);
+$('btn-exp-csv-g')?.addEventListener('click', exportCSV);
+$('btn-clr-all')?.addEventListener('click', clearAllData);
+$('btn-about')?.addEventListener('click', () => toast('SecureVision PRO v2.2 · TF.js 4.21 · COCO-SSD (80 clases) · BlazeFace · MoveNet MultiPose', 'ok', 6000));
+
+/* ══════════════════════════════════════
+   MOBILE NAV
+══════════════════════════════════════ */
+document.querySelectorAll('.mob-nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const sh = btn.dataset.sheet;
+    if (!sh) { closeSheets(); return; }
+    openSheet(sh);
+    if (sh === 'gallery') renderMobGallery();
+  });
+});
+$('mob-overlay')?.addEventListener('click', closeSheets);
+$('mob-ev-close')?.addEventListener('click', closeSheets);
+$('mob-gal-close')?.addEventListener('click', closeSheets);
+$('mob-sys-close')?.addEventListener('click', closeSheets);
+$('mob-btn-events')?.addEventListener('click', () => openSheet('events'));
+$('mob-menu')?.addEventListener('click', () => openSheet('system'));
+$('mob-btn-folder')?.addEventListener('click', () => $('btn-dir').click());
+$('mob-alert')?.addEventListener('click', () => { closeSheets(); openSheet('events'); });
+
+/* ══════════════════════════════════════
+   CAROUSEL DOTS
+══════════════════════════════════════ */
+const carousel = $('mob-carousel');
+carousel?.addEventListener('scroll', () => {
+  clearTimeout(carouselTimer);
+  carouselTimer = setTimeout(() => {
+    const c = $('mob-carousel');
+    if (!c) return;
+    const idx = Math.round(c.scrollLeft / (c.offsetWidth || 1));
+    activeCamIdx = Math.max(0, Math.min(idx, Object.keys(cameras).length - 1));
+    updateMobDots();
+  }, 60);
+}, { passive: true });
+
+/* ══════════════════════════════════════
+   SWIPE TO DISMISS
+══════════════════════════════════════ */
+let touchStartY = 0;
+document.querySelectorAll('.mob-sheet').forEach(sh => {
+  sh.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  sh.addEventListener('touchend', e => { if (e.changedTouches[0].clientY - touchStartY > 80) closeSheets(); }, { passive: true });
+});
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+window.addEventListener('load', loadAll);
+</script>
+</body>
+</html>
