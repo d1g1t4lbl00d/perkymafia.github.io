@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorldCam — Cámaras en Vivo</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070b12;--bg2:#0b1018;--bg3:#101620;
+  --border:#1a2838;--cyan:#00d4f5;--green:#00e57a;
+  --text:#8aacbe;--text-hi:#ddeeff;--muted:#2a4560;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Space Mono',monospace;overflow:hidden}
+
+/* HEADER */
+#hdr{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:12px;z-index:1000;position:relative}
+#hdr h1{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:6px;color:var(--cyan);font-weight:400}
+.ldot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:blink 1.4s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hdr-count{font-size:9px;letter-spacing:2px;color:var(--cyan);border:1px solid rgba(0,212,245,.25);padding:3px 10px}
+.hdr-sub{font-size:9px;letter-spacing:3px;color:var(--muted);margin-left:auto}
+
+/* LAYOUT */
+#app{display:flex;height:calc(100vh - 50px)}
+
+/* SIDEBAR */
+#sidebar{width:250px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#srch{padding:10px;border-bottom:1px solid var(--border)}
+#srch input{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text-hi);padding:7px 11px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.5px;outline:none;transition:border-color .2s}
+#srch input:focus{border-color:var(--cyan)}
+#srch input::placeholder{color:var(--muted)}
+#list{overflow-y:auto;flex:1}
+#list::-webkit-scrollbar{width:3px}
+#list::-webkit-scrollbar-thumb{background:var(--border)}
+.ci{padding:11px 13px;cursor:pointer;border-left:3px solid transparent;border-bottom:1px solid rgba(26,40,56,.4);transition:all .15s;display:flex;align-items:center;gap:9px}
+.ci:hover{background:var(--bg3);border-left-color:rgba(0,212,245,.3)}
+.ci.on{background:rgba(0,212,245,.04);border-left-color:var(--cyan)}
+.ci-ico{font-size:18px;flex-shrink:0}
+.ci-n{font-size:10px;color:var(--text-hi);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-c{font-size:9px;color:var(--muted);margin-top:1px}
+.ci-live{display:inline-flex;align-items:center;gap:3px;margin-top:4px;font-size:8px;color:var(--green);letter-spacing:1.5px}
+.ci-live span{width:4px;height:4px;background:var(--green);border-radius:50%;animation:blink 1.4s infinite}
+.ci.hidden{display:none}
+
+/* MAIN AREA */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+
+/* MAP */
+#map{flex:1;background:#050810;transition:flex .35s ease;min-height:100px}
+.leaflet-container{background:#050810!important}
+.cam-pin{width:13px;height:13px;background:var(--cyan);border-radius:50%;border:2px solid var(--bg);cursor:pointer;animation:pulse 2.4s infinite;transition:transform .2s}
+.cam-pin:hover{transform:scale(1.5)}
+.cam-pin.sel{background:#fff;border-color:var(--cyan);width:16px;height:16px;animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,212,245,.5)}70%{box-shadow:0 0 0 10px rgba(0,212,245,0)}100%{box-shadow:0 0 0 0 rgba(0,212,245,0)}}
+.leaflet-tooltip{background:#0b1018!important;border:1px solid #1a3040!important;color:#90b8c8!important;font-family:'Space Mono',monospace!important;font-size:11px!important;padding:5px 9px!important;border-radius:0!important;box-shadow:none!important}
+.leaflet-tooltip::before{display:none!important}
+.leaflet-control-zoom a{background:var(--bg2)!important;color:var(--text)!important;border-color:var(--border)!important}
+.leaflet-control-zoom a:hover{color:var(--cyan)!important}
+
+/* VIDEO PANEL */
+#vpanel{height:0;overflow:hidden;border-top:1px solid var(--border);flex-shrink:0;transition:height .35s cubic-bezier(.4,0,.2,1);display:flex;background:var(--bg)}
+#vpanel.open{height:320px}
+#vframe-wrap{flex:0 0 500px;background:#000;position:relative}
+#vframe-wrap iframe{width:100%;height:100%;border:none;display:block}
+#vloading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:var(--bg3);transition:opacity .3s}
+#vloading.hide{opacity:0;pointer-events:none}
+.vload-ico{font-size:36px}
+.vload-txt{font-size:10px;color:var(--muted);letter-spacing:2px;text-align:center;line-height:1.7}
+
+/* INFO SIDE */
+#vinfo{flex:1;padding:20px 22px;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+#vi-top{display:flex;align-items:flex-start;gap:14px}
+#vi-ico{font-size:38px;line-height:1;flex-shrink:0}
+#vi-txt{}
+#vi-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--text-hi);line-height:1}
+#vi-loc{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:2px}
+#vi-desc{font-size:11px;color:var(--text);margin-top:10px;line-height:1.7}
+#vi-badge{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:9px;color:var(--green);letter-spacing:2px;border:1px solid rgba(0,229,122,.2);padding:4px 10px}
+#vi-badge span{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.4s infinite}
+
+#vi-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn-refresh{background:transparent;border:1px solid var(--border);color:var(--text);padding:9px 16px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn-refresh:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-yt{background:var(--cyan);border:none;color:var(--bg);padding:9px 18px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;transition:opacity .2s;font-weight:700}
+.btn-yt:hover{opacity:.85}
+.yt-note{font-size:9px;color:var(--muted);letter-spacing:1px;line-height:1.6;margin-top:2px}
+
+/* PROMPT */
+#prompt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;pointer-events:none}
+#prompt.gone{display:none}
+.pr-ico{font-size:48px;opacity:.15}
+.pr-txt{font-size:11px;color:var(--muted);letter-spacing:3px;text-align:center;line-height:1.8;opacity:.5}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="ldot"></div>
+  <h1>WorldCam</h1>
+  <div class="hdr-count" id="hdr-count">20 CÁMARAS</div>
+  <span class="hdr-sub">RED GLOBAL EN DIRECTO</span>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div id="srch">
+      <input type="text" placeholder="Buscar ciudad o cámara..." oninput="filter(this.value)">
+    </div>
+    <div id="list"></div>
+  </div>
+
+  <div id="main">
+    <div id="map">
+      <div id="prompt">
+        <div class="pr-ico">📡</div>
+        <div class="pr-txt">HAZ CLIC EN UN MARCADOR<br>O SELECCIONA UNA CÁMARA</div>
+      </div>
+    </div>
+
+    <div id="vpanel">
+      <div id="vframe-wrap">
+        <iframe id="vframe" src="about:blank" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>
+        <div id="vloading">
+          <div class="vload-ico" id="vl-ico">📡</div>
+          <div class="vload-txt" id="vl-txt">CONECTANDO<br>CON EL SATÉLITE...</div>
+        </div>
+      </div>
+      <div id="vinfo">
+        <div id="vi-top">
+          <div id="vi-ico">🌍</div>
+          <div id="vi-txt">
+            <div id="vi-name">—</div>
+            <div id="vi-loc">—</div>
+            <div id="vi-desc">—</div>
+            <div id="vi-badge"><span></span>EMISIÓN EN DIRECTO</div>
+          </div>
+        </div>
+        <div>
+          <div id="vi-actions">
+            <button class="btn-refresh" onclick="reload()">↺ RECARGAR STREAM</button>
+            <button class="btn-yt" onclick="openYT()">⬡ VER EN YOUTUBE</button>
+          </div>
+          <div class="yt-note" id="yt-note">Si el vídeo no carga, el stream puede estar temporalmente offline.<br>Pulsa "VER EN YOUTUBE" para buscar otra señal en directo.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ─── CAMERAS ───────────────────────────────────────────────────────────────
+// embed  → YouTube video ID (carga el directo DENTRO de la página)
+// ytq    → búsqueda de YouTube como fallback
+const cams = [
+  {id:1,  n:"Times Square",          city:"Nueva York · EE.UU.",     lat:40.758,   lng:-73.9855, ico:"🗽",
+   embed:"1EiC9bvVGnk",   ytq:"times+square+live+webcam",
+   desc:"El cruce más famoso del mundo, iluminado las 24 horas del día."},
+
+  {id:2,  n:"ISS — Estación Espacial",city:"Órbita · Tierra",         lat:5,        lng:160,      ico:"🚀",
+   embed:"xRPjKQtRXR8",   ytq:"nasa+iss+live+earth+view",
+   desc:"Vista en directo de la Tierra desde la ISS. Transmisión 24/7 de la NASA."},
+
+  {id:3,  n:"Cruce de Shibuya",      city:"Tokio · Japón",           lat:35.6595,  lng:139.7004, ico:"🗾",
+   embed:"62-80_D4z5I",   ytq:"shibuya+crossing+live+stream",
+   desc:"El paso de peatones más concurrido del mundo, un caos fascinante."},
+
+  {id:4,  n:"Big Ben",               city:"Londres · Reino Unido",   lat:51.5007,  lng:-0.1246,  ico:"🏰",
+   embed:"oNmY5pSi9Jk",   ytq:"london+big+ben+live+webcam",
+   desc:"El Parlamento y el Támesis, corazón histórico de Londres."},
+
+  {id:5,  n:"Torre Eiffel",          city:"París · Francia",         lat:48.8584,  lng:2.2945,   ico:"🗼",
+   embed:"RubMVG5f6Ps",   ytq:"paris+eiffel+tower+live+cam",
+   desc:"El monumento más visitado del mundo sobre el río Sena."},
+
+  {id:6,  n:"Cataratas del Niágara", city:"Ontario · Canadá",        lat:43.0799,  lng:-79.0747, ico:"🌊",
+   embed:"PgPEbpBqFOg",   ytq:"niagara+falls+live+webcam",
+   desc:"Tres cataratas colosales en la frontera entre Canadá y EE.UU."},
+
+  {id:7,  n:"Puerto de Sídney",      city:"Sídney · Australia",      lat:-33.8568, lng:151.2153, ico:"🌉",
+   embed:"TJFWMmLnO2Y",   ytq:"sydney+harbour+opera+house+live+cam",
+   desc:"La Ópera y el puente icónico bañados por el océano Pacífico."},
+
+  {id:8,  n:"Fontana di Trevi",      city:"Roma · Italia",           lat:41.9009,  lng:12.4833,  ico:"⛲",
+   embed:"oKzExKhHqdw",   ytq:"trevi+fountain+rome+live+cam",
+   desc:"Obra maestra barroca. Lanza una moneda y pide un deseo."},
+
+  {id:9,  n:"Burj Khalifa",          city:"Dubái · EAU",             lat:25.1972,  lng:55.2744,  ico:"🌆",
+   embed:"GFwN3zqM6t0",   ytq:"dubai+burj+khalifa+live+webcam",
+   desc:"El edificio más alto del mundo, 828 metros sobre el desierto."},
+
+  {id:10, n:"Las Vegas Strip",       city:"Las Vegas · EE.UU.",      lat:36.1147,  lng:-115.1728,ico:"🎰",
+   embed:"yv_-7P5GNrQ",   ytq:"las+vegas+strip+live+webcam",
+   desc:"La capital del entretenimiento, brillante e inagotable toda la noche."},
+
+  {id:11, n:"Golden Gate",           city:"San Francisco · EE.UU.",  lat:37.8199,  lng:-122.4783,ico:"🌁",
+   embed:"RBfQSy1VJvM",   ytq:"golden+gate+bridge+live+cam",
+   desc:"El puente colgante más fotografiado del mundo sobre la bahía."},
+
+  {id:12, n:"Puerto Victoria",       city:"Hong Kong · China",       lat:22.2855,  lng:114.1577, ico:"🏙️",
+   embed:"0NxSd1pjqI4",   ytq:"hong+kong+harbour+skyline+live+cam",
+   desc:"Skyline espectacular entre el pico Victoria y Kowloon."},
+
+  {id:13, n:"Sagrada Família",       city:"Barcelona · España",      lat:41.4036,  lng:2.1744,   ico:"⛪",
+   embed:"AV9EOCBO3_U",   ytq:"sagrada+familia+barcelona+live+webcam",
+   desc:"La obra maestra inacabada de Gaudí, emblema de Barcelona."},
+
+  {id:14, n:"Auroras Boreales",      city:"Tromsø · Noruega",        lat:69.6492,  lng:18.9553,  ico:"🌌",
+   embed:"live_stream?channel=UCeY0bbntWzzVIaj2z3QQsZA",
+   ytq:"northern+lights+aurora+borealis+live+norway",
+   desc:"Aurora boreal en tiempo real sobre el Círculo Polar Ártico."},
+
+  {id:15, n:"Old Faithful",          city:"Yellowstone · EE.UU.",    lat:44.4605,  lng:-110.8281,ico:"♨️",
+   embed:"live_stream?channel=UCW-FqEbfHE3XfpW7NaswPbQ",
+   ytq:"yellowstone+old+faithful+geyser+live",
+   desc:"El géiser más famoso del mundo erupciona cada ~90 minutos."},
+
+  {id:16, n:"Coliseo Romano",        city:"Roma · Italia",            lat:41.8902,  lng:12.4922,  ico:"🏛️",
+   embed:"b2RZJHJfuOk",   ytq:"colosseum+rome+live+webcam",
+   desc:"Anfiteatro romano de 2.000 años, símbolo eterno de la historia."},
+
+  {id:17, n:"Machu Picchu",          city:"Cusco · Perú",             lat:-13.1631, lng:-72.545,  ico:"🗻",
+   embed:"C0aQh1klO0s",   ytq:"machu+picchu+live+webcam",
+   desc:"Ciudadela inca en las alturas neblinosas de los Andes."},
+
+  {id:18, n:"Copacabana",            city:"Río de Janeiro · Brasil",  lat:-22.9718, lng:-43.1827, ico:"🏖️",
+   embed:"VWfYEhY4SuM",   ytq:"copacabana+beach+rio+live+cam",
+   desc:"La playa más famosa de Sudamérica bajo el Pan de Azúcar."},
+
+  {id:19, n:"Waikiki Beach",         city:"Honolulú · EE.UU.",        lat:21.2793,  lng:-157.829, ico:"🌺",
+   embed:"C0kYd1jLpNw",   ytq:"waikiki+beach+hawaii+live+cam",
+   desc:"Arena blanca, olas perfectas y el volcán Diamond Head al fondo."},
+
+  {id:20, n:"Gran Cañón",            city:"Arizona · EE.UU.",         lat:36.1069,  lng:-112.1129,ico:"🏜️",
+   embed:"live_stream?channel=UCFzMDWQTsLc84kDJ_Hv6Gxg",
+   ytq:"grand+canyon+live+webcam",
+   desc:"Desfiladero de 1,6 km de profundidad esculpido por el Colorado."},
+];
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let active = null;
+let markers = {};
+let map;
+
+// ─── SIDEBAR ───────────────────────────────────────────────────────────────
+function buildList() {
+  document.getElementById('list').innerHTML = cams.map(c => `
+    <div class="ci" id="ci${c.id}" onclick="pick(${c.id})">
+      <div class="ci-ico">${c.ico}</div>
+      <div style="flex:1;min-width:0">
+        <div class="ci-n">${c.n}</div>
+        <div class="ci-c">${c.city}</div>
+        <div class="ci-live"><span></span>EN DIRECTO</div>
+      </div>
+    </div>`).join('');
+}
+
+function filter(q) {
+  const ql = q.toLowerCase();
+  let n = 0;
+  cams.forEach(c => {
+    const el = document.getElementById('ci' + c.id);
+    const show = !q || c.n.toLowerCase().includes(ql) || c.city.toLowerCase().includes(ql);
+    el.classList.toggle('hidden', !show);
+    if (show) n++;
+  });
+  document.getElementById('hdr-count').textContent = (q ? n : cams.length) + ' CÁMARAS';
+}
+
+// ─── PICK CAMERA ───────────────────────────────────────────────────────────
+function pick(id) {
+  active = cams.find(c => c.id === id);
+  if (!active) return;
+
+  // Sidebar
+  document.querySelectorAll('.ci').forEach(e => e.classList.remove('on'));
+  const el = document.getElementById('ci' + id);
+  if (el) { el.classList.add('on'); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+
+  // Map
+  Object.keys(markers).forEach(k => {
+    const pin = markers[k].getElement();
+    if (pin) pin.classList.remove('sel');
+  });
+  if (markers[id]) {
+    const pin = markers[id].getElement();
+    if (pin) pin.classList.add('sel');
+    map.flyTo([active.lat, active.lng], Math.max(map.getZoom(), 5), { duration: 1.2 });
+  }
+
+  // Hide prompt
+  document.getElementById('prompt').classList.add('gone');
+
+  // Panel info
+  document.getElementById('vi-ico').textContent = active.ico;
+  document.getElementById('vi-name').textContent = active.n;
+  document.getElementById('vi-loc').textContent = active.city;
+  document.getElementById('vi-desc').textContent = active.desc;
+
+  // Open panel
+  document.getElementById('vpanel').classList.add('open');
+
+  // Load stream
+  loadStream(active);
+}
+
+// ─── STREAM LOADING ────────────────────────────────────────────────────────
+function loadStream(cam) {
+  const loading = document.getElementById('vloading');
+  const frame = document.getElementById('vframe');
+
+  // Show loading
+  loading.classList.remove('hide');
+  document.getElementById('vl-ico').textContent = cam.ico;
+  document.getElementById('vl-txt').textContent = 'CONECTANDO CON EL SATÉLITE...';
+  frame.src = 'about:blank';
+
+  // Build YouTube embed URL
+  const embedId = cam.embed;
+  let src;
+  if (embedId.startsWith('live_stream')) {
+    src = `https://www.youtube.com/embed/${embedId}&autoplay=1&mute=1&rel=0&modestbranding=1&iv_load_policy=3`;
+  } else {
+    src = `https://www.youtube.com/embed/${embedId}?autoplay=1&mute=1&rel=0&modestbranding=1&iv_load_policy=3`;
+  }
+
+  // Load iframe
+  setTimeout(() => {
+    frame.src = src;
+    // Hide loading overlay after brief delay (YouTube takes a moment)
+    setTimeout(() => loading.classList.add('hide'), 2500);
+  }, 300);
+}
+
+function reload() {
+  if (active) {
+    document.getElementById('vloading').classList.remove('hide');
+    loadStream(active);
+  }
+}
+
+function openYT() {
+  if (!active) return;
+  const url = 'https://www.youtube.com/results?search_query=' + active.ytq + '&sp=EgJAAQ%253D%253D';
+  window.open(url, '_blank');
+}
+
+// ─── MAP ───────────────────────────────────────────────────────────────────
+buildList();
+
+window.addEventListener('load', () => {
+  map = L.map('map', { center: [22, 10], zoom: 2, zoomControl: true, attributionControl: false });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 18 }).addTo(map);
+
+  cams.forEach(cam => {
+    const el = document.createElement('div');
+    el.className = 'cam-pin';
+    const icon = L.divIcon({ html: el, className: '', iconSize: [13, 13], iconAnchor: [6, 6] });
+    const m = L.marker([cam.lat, cam.lng], { icon }).addTo(map);
+    m.on('click', () => pick(cam.id));
+    m.bindTooltip(`<b>${cam.n}</b> · ${cam.city}`, { permanent: false, direction: 'top', offset: [0, -10] });
+    markers[cam.id] = m;
+  });
+});
+</script>
+</body>
+</html>
