@@ -132,29 +132,10 @@ a{color:inherit}
   letter-spacing:-.015em;
 }
 .hero-type h1 span:nth-child(2){padding-left:.09em}
-.hero-sub{
-  margin-top:14px;text-transform:uppercase;letter-spacing:.3em;font-size:clamp(10px,1.6vw,14px);
-  color:var(--bone);
-}
 
-.hero-foot{
-  position:absolute;left:0;right:0;bottom:0;z-index:3;
-  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-  padding:12px var(--pad);
-  border-top:2px solid var(--bone);
-  background:rgba(8,8,8,.72);
-  backdrop-filter:blur(4px);
-  font-size:11px;text-transform:uppercase;letter-spacing:.16em;
-}
-.hero-foot .dot{
-  width:9px;height:9px;background:var(--acid);flex:none;
-  animation:blink 1.2s steps(2,end) infinite;
-}
-.hero-hint{color:var(--grey)}
-.hero-cities{margin-left:auto;color:var(--pink)}
 
 .hero-scroll{
-  position:absolute;right:var(--pad);bottom:64px;z-index:3;
+  position:absolute;right:var(--pad);bottom:26px;z-index:3;
   width:44px;height:44px;display:grid;place-items:center;
   border:2px solid var(--bone);text-decoration:none;font-size:18px;
   background:var(--ink);
@@ -165,18 +146,6 @@ a{color:inherit}
 @keyframes blink{50%{opacity:.15}}
 @keyframes bob{50%{transform:translateY(7px)}}
 
-/* ---------- ticker ---------- */
-.ticker{
-  overflow:hidden;background:var(--pink);color:var(--bone);
-  border-bottom:var(--line);
-  padding:9px 0;
-}
-.ticker-track{display:flex;width:max-content;animation:slide 26s linear infinite}
-.ticker-track span{
-  padding-right:44px;white-space:nowrap;
-  font-family:var(--f-big);font-size:clamp(20px,3.4vw,34px);letter-spacing:.03em;
-}
-@keyframes slide{to{transform:translateX(-50%)}}
 
 /* ---------- secciones ---------- */
 .sect{position:relative;padding-block:clamp(56px,9vw,120px);border-bottom:var(--line)}
@@ -341,8 +310,7 @@ a{color:inherit}
   .bar-cta{margin-left:auto}
   .hero-type h1{font-size:clamp(48px,19vw,120px)}
   .hero-scroll{display:none}
-  .hero-cities{margin-left:0;width:100%}
-  .artist-btn{flex-wrap:wrap;gap:8px}
+    .artist-btn{flex-wrap:wrap;gap:8px}
   .artist-live{margin-left:auto}
   .artist-play{width:100%;text-align:center}
   .artist-embed iframe{height:232px}
@@ -354,7 +322,7 @@ a{color:inherit}
 
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .ticker-track,.hero-scroll,.hero-foot .dot,.artist-live i{animation:none}
+  .hero-scroll,.artist-live i{animation:none}
   .reveal{opacity:1;transform:none;transition:none}
   .bar{transition:none}
 }

@@ -9,7 +9,6 @@
   var canvas = document.getElementById('pills');
   var hero = document.querySelector('.hero');
   var fallback = document.querySelector('.hero-fallback');
-  var hint = document.getElementById('heroHint');
   if (!canvas || !hero) return;
 
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -18,7 +17,6 @@
     canvas.style.display = 'none';
     if (fallback) fallback.hidden = false;
     hero.style.cursor = 'default';
-    if (hint) hint.textContent = 'sube el volumen';
   }
 
   if (typeof window.THREE === 'undefined') { giveUp(); return; }
@@ -115,7 +113,7 @@
   var pointer = new TH.Vector3(0, 0, 0);
   var pointerPrev = new TH.Vector3(0, 0, 0);
   var pointerVel = new TH.Vector3(0, 0, 0);
-  var pointerIn = false, dragging = false, touched = false;
+  var pointerIn = false, dragging = false;
 
   function toWorld(clientX, clientY, out) {
     var r = canvas.getBoundingClientRect();
@@ -125,18 +123,12 @@
     out.set(nx * (h * camera.aspect) / 2, ny * h / 2, 0);
   }
 
-  function markTouched() {
-    if (touched || !hint) return;
-    touched = true;
-    hint.textContent = 'eso es · sigue dándole';
-  }
 
   hero.addEventListener('pointermove', function (e) {
     pointerPrev.copy(pointer);
     toWorld(e.clientX, e.clientY, pointer);
     pointerVel.subVectors(pointer, pointerPrev);
     pointerIn = true;
-    markTouched();
   });
 
   hero.addEventListener('pointerleave', function () { pointerIn = false; dragging = false; hero.classList.remove('is-dragging'); });
@@ -149,7 +141,6 @@
     pointerPrev.copy(pointer);
     pointerIn = true;
     burst(pointer);
-    markTouched();
   });
 
   window.addEventListener('pointerup', function () { dragging = false; hero.classList.remove('is-dragging'); });
