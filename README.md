@@ -6,7 +6,7 @@ dependencias que instalar.
 ## Qué hay
 
 ```
-index.html            La web entera (hero 3D, artistas, temas, descargas, mafia)
+index.html            La web entera (hero 3D, artistas, temas, mafia)
 css/perky.css         Estilos. Los colores y las tipografías salen de :root
 js/pills3d.js         El hero: nube de pastillas en 3D con three.js
 js/perky.js           Menú, artistas desplegables, animaciones de scroll, el secreto
@@ -27,10 +27,9 @@ las tipografías ni el 3D.
 ## Tocar cosas
 
 - **Colores y tipos**: variables al principio de `css/perky.css`.
-- **Artistas**: cada `<li class="artist">` de `index.html` lleva su id de Spotify en
-  `data-spotify`. El iframe solo se carga cuando alguien le da a "escuchar".
-- **Descargas**: son `<li class="dl-row">`. Para marcar una como no disponible,
-  añade la clase `is-soon` y deja el botón como `<span class="dl-btn dl-soon">`.
+- **Artistas**: cada `<li class="artist">` de `index.html` lleva o `data-spotify`
+  con el id de artista de Spotify, o `data-soundcloud` con el nombre de usuario de
+  SoundCloud. El reproductor solo se carga cuando alguien le da al botón.
 - **Hero 3D**: número de pastillas, colores y fuerzas, arriba del todo en `js/pills3d.js`.
   Si el navegador no tiene WebGL, sale la imagen de `assets/hero-pill.png` en su lugar.
 
