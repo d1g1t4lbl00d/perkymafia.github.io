@@ -233,7 +233,7 @@ a{color:inherit}
 
 .mafia-side{display:flex;flex-direction:column;gap:clamp(12px,2vw,18px)}
 .social{
-  display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  flex:1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
   border:var(--line);padding:clamp(16px,2.6vw,24px);text-decoration:none;
   transition:background .18s ease,color .18s ease;
 }
@@ -243,7 +243,6 @@ a{color:inherit}
 .social:hover .social-handle{color:var(--ink)}
 .social-go{margin-left:auto;font-size:22px}
 
-.mafia-note{flex:1;display:flex;align-items:center;border:3px dashed var(--grey);padding:clamp(16px,2.6vw,24px);color:var(--grey);font-size:14px}
 
 /* ---------- pie ---------- */
 .foot{padding-block:clamp(28px,4vw,48px);background:var(--ink)}
