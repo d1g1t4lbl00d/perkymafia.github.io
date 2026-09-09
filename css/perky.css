@@ -193,7 +193,9 @@ a{color:inherit}
 .artist.is-open .artist-play{background:var(--pink);border-color:var(--pink);color:var(--bone)}
 
 .artist-embed{padding:0 0 clamp(14px,2.4vw,22px)}
-.artist-embed iframe{width:100%;height:352px;border:0;display:block}
+.artist-embed iframe{width:100%;border:0;display:block}
+.artist-embed .embed-spotify{height:352px}
+.artist-embed .embed-soundcloud{height:420px}
 
 /* ---------- temas ---------- */
 .player-box{border:var(--line);background:var(--ink)}
@@ -211,29 +213,6 @@ a{color:inherit}
   border-bottom:4px solid var(--pink);padding-bottom:4px;
 }
 .big-link:hover{color:var(--acid);border-color:var(--acid)}
-
-/* ---------- descargas ---------- */
-.dl{list-style:none;margin:0;padding:0;border-top:var(--line)}
-.dl-row{
-  display:grid;grid-template-columns:110px 1fr auto;align-items:center;gap:clamp(12px,2.5vw,28px);
-  padding:clamp(16px,2.6vw,26px) 0;border-bottom:var(--line);
-}
-.dl-tag{
-  justify-self:start;padding:4px 9px;border:2px solid var(--bone);
-  font-size:11px;text-transform:uppercase;letter-spacing:.14em;
-}
-.dl-main h3{font-size:clamp(20px,3.4vw,34px)}
-.dl-main p{margin-top:8px;color:var(--grey);max-width:60ch;font-size:14px}
-.dl-btn{
-  justify-self:end;white-space:nowrap;text-decoration:none;
-  padding:11px 18px;background:var(--acid);color:var(--ink);
-  font-size:12px;text-transform:uppercase;letter-spacing:.14em;font-weight:500;
-  border:2px solid var(--acid);
-}
-.dl-btn:hover{background:var(--ink);color:var(--acid)}
-.dl-soon{background:none;border-color:var(--grey);color:var(--grey);cursor:not-allowed}
-.dl-soon:hover{background:none;color:var(--grey)}
-.is-soon .dl-main h3{color:var(--grey)}
 
 /* ---------- mafia ---------- */
 .mafia{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(16px,3vw,32px)}
@@ -313,9 +292,8 @@ a{color:inherit}
     .artist-btn{flex-wrap:wrap;gap:8px}
   .artist-live{margin-left:auto}
   .artist-play{width:100%;text-align:center}
-  .artist-embed iframe{height:232px}
-  .dl-row{grid-template-columns:1fr;gap:12px}
-  .dl-btn{justify-self:start}
+  .artist-embed .embed-spotify{height:232px}
+  .artist-embed .embed-soundcloud{height:340px}
   .foot-links{margin-left:0;width:100%}
   .player-box iframe{height:440px}
 }

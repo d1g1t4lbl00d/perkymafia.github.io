@@ -34,29 +34,44 @@
     }, { passive: true });
   }
 
-  /* ---------- artistas: el iframe de spotify se carga al pedirlo ---------- */
-  var EMBED = 'https://open.spotify.com/embed/artist/';
+  /* ---------- artistas: el reproductor se carga al pedirlo, no antes ---------- */
+  var SPOTIFY = 'https://open.spotify.com/embed/artist/';
+  var SOUNDCLOUD = 'https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/';
+  var SC_OPTS = '&color=%23ff2a6d&auto_play=false&hide_related=true&show_comments=false' +
+                '&show_user=true&show_reposts=false&show_teaser=false&visual=false';
 
   document.querySelectorAll('.artist').forEach(function (item) {
     var btn = item.querySelector('.artist-btn');
     var box = item.querySelector('.artist-embed');
-    var id = item.getAttribute('data-spotify');
-    var label = item.querySelector('.artist-name');
     var play = item.querySelector('.artist-play');
-    if (!btn || !box || !id) return;
+    var label = item.querySelector('.artist-name');
+    var name = label ? label.textContent : 'artista';
+    var spotify = item.getAttribute('data-spotify');
+    var soundcloud = item.getAttribute('data-soundcloud');
+    if (!btn || !box || (!spotify && !soundcloud)) return;
+
+    var shut = play ? play.textContent : '';
 
     btn.addEventListener('click', function () {
       var open = item.classList.toggle('is-open');
       btn.setAttribute('aria-expanded', open ? 'true' : 'false');
       box.hidden = !open;
-      if (play) play.textContent = open ? '■ cerrar' : '▶ escuchar';
+      if (play) play.textContent = open ? '■ cerrar' : shut;
 
       if (open && !box.firstChild) {
         var frame = document.createElement('iframe');
-        frame.src = EMBED + id + '?utm_source=generator';
-        frame.title = 'Spotify de ' + (label ? label.textContent : 'artista');
+        if (spotify) {
+          frame.src = SPOTIFY + spotify + '?utm_source=generator';
+          frame.title = 'Spotify de ' + name;
+          frame.className = 'embed-spotify';
+          frame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
+        } else {
+          frame.src = SOUNDCLOUD + encodeURIComponent(soundcloud) + SC_OPTS;
+          frame.title = 'SoundCloud de ' + name;
+          frame.className = 'embed-soundcloud';
+          frame.allow = 'autoplay';
+        }
         frame.loading = 'lazy';
-        frame.allow = 'autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture';
         frame.setAttribute('frameborder', '0');
         box.appendChild(frame);
       }
@@ -64,7 +79,7 @@
   });
 
   /* ---------- aparecer al hacer scroll ---------- */
-  var targets = document.querySelectorAll('.sect-head, .artist, .dl-row, .player-box, .mafia-card, .mafia-side > *');
+  var targets = document.querySelectorAll('.sect-head, .artist, .player-box, .mafia-card, .mafia-side > *');
   if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     var obs = new IntersectionObserver(function (entries) {
       entries.forEach(function (e) {
