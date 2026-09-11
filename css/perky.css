@@ -120,6 +120,13 @@ a{color:inherit}
   width:min(60vw,420px);opacity:.9;
 }
 
+/* cuando el logotipo 3D esta en pantalla, el titulo plano se esconde pero sigue
+   en la pagina para los buscadores y los lectores de pantalla */
+.hero.has-3d-logo .hero-type{
+  position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;
+  clip-path:inset(50%);white-space:nowrap;
+}
+
 .hero-type{
   position:relative;z-index:2;
   padding-inline:var(--pad);
